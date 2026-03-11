@@ -1,0 +1,15 @@
+    # [NEW v3] IR ghost overlay
+    if ir_peaks:
+        x_ir = np.linspace(300, 4000, 4000)
+        y_ir = np.zeros_like(x_ir)
+        for irpk in ir_peaks:
+            sigma_ir = 20.0
+            intensity = (100 - irpk.transmittance) / 100.0
+            y_ir += intensity * np.exp(-0.5 * ((x_ir - irpk.wavenumber) / sigma_ir)**2)
+        if y_ir.max() > 0:
+            y_ir = y_ir / y_ir.max() * y_max * 0.45
+            ax.plot(x_ir, y_ir, color="#E74C3C", lw=0.9, ls=":", alpha=0.30, zorder=1)
+            ax.text(0.97, 0.93, "IR (ref.)",
+                    transform=ax.transAxes,
+                    color="#E74C3C", fontsize=7, alpha=0.6, ha="right", style="italic")
+

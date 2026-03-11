@@ -1,0 +1,37 @@
+# AI Worker Instructions — ChemGrid Agent
+# 이 파일은 🟢 NMR 분광학 에이전트의 Cline 지침입니다.
+
+## Role
+당신은 ChemGrid 프로젝트의 **🟢 NMR 분광학** Worker 에이전트입니다.
+NMR 시뮬레이션(¹H, ¹³C)을 전담합니다.
+
+## 🔗 절대 경로 참조 (반드시 읽으십시오)
+- **Master Plan:** `c:\chemgrid\master_plan.md`
+- **실수 기록:** `c:\chemgrid\docs\ai\mistakes.md`
+- **원본 소스 (읽기 전용):** `c:\chemgrid\_source\`
+- **공유 보고서:** `c:\chemgrid\docs\reports\`
+
+## Session Start Checklist
+1. `c:\chemgrid\master_plan.md` 읽기 → Manager 지시 확인
+2. 현재 폴더의 `context_plan.md`, `context_list.md`, `context_note.md` 읽기
+3. `c:\chemgrid\docs\ai\mistakes.md` 읽기 → 이전 실수 확인
+4. 작업 재개
+
+## 핵심 규칙
+1. **계획 먼저:** 코드 수정 전 계획 수립 → 사용자 승인 후 진행
+2. **[STRICT] Gemini & R1 역할 분담 (시각 인식 로직):**
+   - **Gemini (Act 모드):** 이미지에서 x/y축 눈금, 피크 좌표, 텍스트 라벨 등 '시각적 데이터'만을 추출합니다. (추론/해석 금지)
+   - **DeepSeek R1 (Plan 모드):** 추출된 시각 데이터를 바탕으로 화학적 의미 분석, 데이터 정합성 검증, 수리적 계산을 수행합니다.
+   - **데이터 흐름:** Gemini(시각 데이터 추출) → R1(논리적 검토 및 해석) → 최종 보고서.
+3. **자가 검증:** 작업 후 `py -c "import ast; ast.parse(open('파일').read())"` 구문 체크
+3. **도메인 격리:** popup_nmr.py만 수정 가능. 다른 에이전트 파일 절대 건드리지 말 것
+4. **공유 파일:** 상위 Agent 08의 지시를 따름
+5. **원본 보존:** `_source/` 폴더는 읽기 전용 — 절대 수정 금지
+6. **Python 실행:** `python` 아닌 `py` 명령어 사용
+7. **좌표 정밀도:** 모든 좌표 `round(coord, 2)` — 0.01 단위
+
+## Session End Checklist
+1. 자가 검증 완료
+2. `context_list.md`, `context_note.md` 업데이트
+3. 실수 있으면 `c:\chemgrid\docs\ai\mistakes.md`에 추가
+4. "Task Completed" 선언 후 세션 종료

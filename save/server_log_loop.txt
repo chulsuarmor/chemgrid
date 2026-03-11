@@ -1,0 +1,43 @@
+C:\chemgrid\agents\mcp_server\server.py:5: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [43848]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+Starting Gemini MCP Server & Tooling...
+INFO:     127.0.0.1:54874 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54875 - "POST /canvas/reset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54877 - "POST /molecule/generate?level=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54878 - "POST /tools/select?category=element&value=O HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54879 - "POST /draw/click?x=5&y=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54882 - "POST /canvas/reset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54883 - "POST /molecule/generate?level=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54884 - "POST /tools/select?category=bond&value=single HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54885 - "POST /tools/select?category=element&value=C HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54887 - "POST /draw/drag?start_x=4&start_y=5&end_x=5&end_y=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54888 - "POST /tools/select?category=element&value=O HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54889 - "POST /draw/drag?start_x=5&start_y=5&end_x=6&end_y=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54890 - "POST /canvas/reset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54891 - "POST /molecule/generate?level=6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54892 - "POST /tools/select?category=bond&value=single HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54893 - "POST /tools/select?category=element&value=C HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54894 - "POST /draw/drag?start_x=5&start_y=3&end_x=4&end_y=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54895 - "POST /draw/drag?start_x=4&start_y=4&end_x=4&end_y=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54896 - "POST /draw/drag?start_x=4&start_y=5&end_x=5&end_y=6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54898 - "POST /draw/drag?start_x=5&start_y=6&end_x=6&end_y=6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54899 - "POST /draw/drag?start_x=6&start_y=6&end_x=7&end_y=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54900 - "POST /draw/drag?start_x=7&start_y=5&end_x=7&end_y=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54901 - "POST /draw/drag?start_x=7&start_y=4&end_x=5&end_y=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54902 - "POST /tools/select?category=bond&value=double HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54903 - "POST /draw/click?x=4&y=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54904 - "POST /draw/click?x=5&y=6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54917 - "POST /draw/click?x=7&y=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54918 - "POST /tools/select?category=charge&value=%2B1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54919 - "POST /draw/click?x=5&y=3 HTTP/1.1" 200 OK

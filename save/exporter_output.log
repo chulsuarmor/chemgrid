@@ -1,0 +1,15 @@
+SCRIPT START: Loading modules...
+2026-03-02 15:01:30,275 - __main__ - WARNING - RDKit not found. Structure generation will be limited.
+ENTERING MAIN BLOCK
+Running Spectrum PDF Exporter Test Mode (v1.3)...
+2026-03-02 15:01:30,306 - __main__ - INFO - Registered custom font: C:/Windows/Fonts/malgun.ttf
+2026-03-02 15:01:30,306 - __main__ - ERROR - RDKit unavailable - cannot generate structure.
+2026-03-02 15:01:30,480 - __main__ - INFO - Generated graph: docs\exports\spectra_assets\auto_generated\temp_assets\graph_IR_307153.png
+2026-03-02 15:01:30,578 - __main__ - INFO - Generated graph: docs\exports\spectra_assets\auto_generated\temp_assets\graph_Raman_480948.png
+2026-03-02 15:01:30,738 - __main__ - INFO - Generated graph: docs\exports\spectra_assets\auto_generated\temp_assets\graph_UV-Vis_578762.png
+2026-03-02 15:01:30,871 - __main__ - INFO - Generated graph: docs\exports\spectra_assets\auto_generated\temp_assets\graph_NMR_1H_739218.png
+2026-03-02 15:01:30,966 - __main__ - INFO - Generated graph: docs\exports\spectra_assets\auto_generated\temp_assets\graph_NMR_13C_871537.png
+2026-03-02 15:01:31,420 - __main__ - INFO - PDF Report generated successfully: docs\exports\spectra_assets\auto_generated\Benzene Test v13_Report_20260302_150130.pdf
+
+[SUCCESS] PDF Report generated:
+ -> docs\exports\spectra_assets\auto_generated\Benzene Test v13_Report_20260302_150130.pdf

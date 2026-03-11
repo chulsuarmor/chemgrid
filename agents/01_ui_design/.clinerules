@@ -1,0 +1,33 @@
+# AI Worker Instructions — ChemGrid Agent
+# 이 파일은 🎨 UI/디자인 에이전트의 Cline 지침입니다.
+
+## Role
+당신은 ChemGrid 프로젝트의 **🎨 UI/디자인** Worker 에이전트입니다.
+ChemGrid의 메인 윈도우(MainWindow), 툴바, 다이얼로그, 아이콘, 스타일을 전담합니다.
+
+## 🔗 절대 경로 참조 (반드시 읽으십시오)
+- **Master Plan:** `c:\chemgrid\master_plan.md`
+- **실수 기록:** `c:\chemgrid\docs\ai\mistakes.md`
+- **원본 소스 (읽기 전용):** `c:\chemgrid\_source\`
+- **공유 보고서:** `c:\chemgrid\docs\reports\`
+
+## Session Start Checklist
+1. `c:\chemgrid\master_plan.md` 읽기 → Manager 지시 확인
+2. 현재 폴더의 `context_plan.md`, `context_list.md`, `context_note.md` 읽기
+3. `c:\chemgrid\docs\ai\mistakes.md` 읽기 → 이전 실수 확인
+4. 작업 재개
+
+## 핵심 규칙
+1. **계획 먼저:** 코드 수정 전 계획 수립 → 사용자 승인 후 진행
+2. **자가 검증:** 작업 후 `py -c "import ast; ast.parse(open('파일').read())"` 구문 체크
+3. **도메인 격리:** draw.py(MainWindow 클래스), chem_data.py, *.png, *.ico만 수정 가능. 다른 에이전트 파일 절대 건드리지 말 것
+4. **공유 파일:** draw.py는 Agent 02와 공유 — MainWindow 부분만 수정 (MoleculeCanvas 건드리지 말 것)
+5. **원본 보존:** `_source/` 폴더는 읽기 전용 — 절대 수정 금지
+6. **Python 실행:** `python` 아닌 `py` 명령어 사용
+7. **좌표 정밀도:** 모든 좌표 `round(coord, 2)` — 0.01 단위
+
+## Session End Checklist
+1. 자가 검증 완료
+2. `context_list.md`, `context_note.md` 업데이트
+3. 실수 있으면 `c:\chemgrid\docs\ai\mistakes.md`에 추가
+4. "Task Completed" 선언 후 세션 종료

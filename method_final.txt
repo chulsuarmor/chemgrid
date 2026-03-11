@@ -1,0 +1,31 @@
+    def _load_estimated_vibrations(self, smiles: str):
+        try:
+            from rdkit import Chem
+            import math
+            mol = Chem.MolFromSmiles(smiles)
+            if mol is None:
+                return
+            mol = Chem.AddHs(mol)
+            FC = {("C","H",1):480,("O","H",1):780,("N","H",1):600,("C","C",1):300,("C","C",2):600,("C","C",3):900,("C","N",1):350,("C","N",2):650,("C","N",3):800,("C","O",1):350,("C","O",2):750,("C","F",1):440,("C","Cl",1):240,("C","Br",1):200,("C","S",1):200,("S","O",2):500}
+            AM = {"H":1,"C":12,"N":14,"O":16,"F":19,"P":31,"S":32,"Cl":35,"Br":80,"I":127}
+            freqs = []
+            intensities = []
+            for bond in mol.GetBonds():
+                a1 = bond.GetBeginAtom().GetSymbol()
+                a2 = bond.GetEndAtom().GetSymbol()
+                order = max(1, round(bond.GetBondTypeAsDouble()))
+                key = (a1,a2,order) if (a1,a2,order) in FC else (a2,a1,order)
+                k = FC.get(key, 300)
+                m1 = AM.get(a1, 12) * 1.66054e-27
+                m2 = AM.get(a2, 12) * 1.66054e-27
+                mu = (m1 * m2) / (m1 + m2)
+                freq_hz = math.sqrt(k / mu) / (2 * math.pi)
+                freq_cm = freq_hz / 2.998e10
+                freqs.append(round(freq_cm, 1))
+                intensities.append(0.8 if a1 in ("O","N") or a2 in ("O","N") else 0.4)
+            if freqs and hasattr(self, "tab_vibration"):
+                self.tab_vibration.load_modes(freqs, intensities)
+                if hasattr(self.tab_vibration, "info_label"):
+                    self.tab_vibration.info_label.setText(str(len(freqs))+" vibration modes (harmonic oscillator approx.)")
+        except Exception as e:
+            logger.warning("Vibration estimation failed: %s" % e)

@@ -1,0 +1,13 @@
+{
+  "bonds_draw": "✅ 3 bonds 그려짐 (크래시 없음)",
+  "element_tool": "✅ O 원소 배치 (크래시 없음)",
+  "undo_redo": "✅ Undo/Redo 동작 (크래시 없음)",
+  "lewis_layer": "✅ 루이스 레이어 전환 (크래시 없음)",
+  "theory_layer": "✅ 이론 레이어 전환 (크래시 없음)",
+  "cloud_toggle": "✅ 전자구름 토글 (크래시 없음)",
+  "save_menu": "✅ 저장 메뉴 열림 (크래시 없음)",
+  "text_tool": "✅ Text 도구 클릭 (크래시 없음)",
+  "eraser": "✅ Eraser 동작 (크래시 없음)",
+  "clear_all": "✅ 전체 지우기 (크래시 없음)",
+  "select_hand": "✅ Select/Hand 동작 (크래시 없음)"
+}

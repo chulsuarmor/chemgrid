@@ -1,0 +1,192 @@
+{
+  "scanned_files": 15,
+  "valid_pdfs": [
+    {
+      "file": "_source\\lewis_structures\\pdf\\1_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 1,
+      "has_images": true,
+      "text_content_length": 0,
+      "keywords_found": [],
+      "error": null
+    },
+    {
+      "file": "_source\\lewis_structures\\pdf\\2_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 1,
+      "has_images": true,
+      "text_content_length": 0,
+      "keywords_found": [],
+      "error": null
+    },
+    {
+      "file": "_source\\lewis_structures\\pdf\\3_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 1,
+      "has_images": true,
+      "text_content_length": 0,
+      "keywords_found": [],
+      "error": null
+    },
+    {
+      "file": "_source\\lewis_structures\\pdf\\4_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 1,
+      "has_images": true,
+      "text_content_length": 0,
+      "keywords_found": [],
+      "error": null
+    },
+    {
+      "file": "_source\\lewis_structures\\pdf\\5_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 1,
+      "has_images": true,
+      "text_content_length": 0,
+      "keywords_found": [],
+      "error": null
+    },
+    {
+      "file": "_source\\lewis_structures\\pdf\\6_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 1,
+      "has_images": true,
+      "text_content_length": 0,
+      "keywords_found": [],
+      "error": null
+    },
+    {
+      "file": "_source\\lewis_structures\\pdf\\7_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 1,
+      "has_images": true,
+      "text_content_length": 0,
+      "keywords_found": [],
+      "error": null
+    },
+    {
+      "file": "_source\\lewis_structures\\pdf\\8_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 1,
+      "has_images": true,
+      "text_content_length": 0,
+      "keywords_found": [],
+      "error": null
+    },
+    {
+      "file": "_source\\lewis_structures\\pdf\\9_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 1,
+      "has_images": true,
+      "text_content_length": 0,
+      "keywords_found": [],
+      "error": null
+    },
+    {
+      "file": "_source\\lewis_structures\\pdf\\test1_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 1,
+      "has_images": true,
+      "text_content_length": 0,
+      "keywords_found": [],
+      "error": null
+    },
+    {
+      "file": "docs\\exports\\spectra_assets\\auto_generated\\Benzene Final Test_Report_20260302_062905.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 6,
+      "has_images": true,
+      "text_content_length": 184,
+      "keywords_found": [
+        "Molecule",
+        "Report",
+        "Analysis"
+      ],
+      "error": null
+    },
+    {
+      "file": "docs\\exports\\spectra_assets\\auto_generated\\Benzene Test v13_Report_20260302_145956.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 6,
+      "has_images": false,
+      "text_content_length": 148,
+      "keywords_found": [
+        "Molecule",
+        "Report",
+        "Analysis"
+      ],
+      "error": null
+    },
+    {
+      "file": "docs\\exports\\spectra_assets\\auto_generated\\Benzene Test v13_Report_20260302_150130.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 6,
+      "has_images": false,
+      "text_content_length": 148,
+      "keywords_found": [
+        "Molecule",
+        "Report",
+        "Analysis"
+      ],
+      "error": null
+    },
+    {
+      "file": "docs\\exports\\spectra_assets\\auto_generated\\Ethyl Benzoate Test v14_Report_20260302_153932.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 6,
+      "has_images": false,
+      "text_content_length": 172,
+      "keywords_found": [
+        "Molecule",
+        "Report",
+        "Analysis"
+      ],
+      "error": null
+    },
+    {
+      "file": "docs\\exports\\spectra_assets\\auto_generated\\Ethyl Benzoate Test v14_Report_20260303_232045.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "page_count": 6,
+      "has_images": false,
+      "text_content_length": 172,
+      "keywords_found": [
+        "Molecule",
+        "Report",
+        "Analysis"
+      ],
+      "error": null
+    }
+  ],
+  "invalid_pdfs": [],
+  "issues": [
+    "1_lewis.pdf: Very little text content (0 chars)",
+    "2_lewis.pdf: Very little text content (0 chars)",
+    "3_lewis.pdf: Very little text content (0 chars)",
+    "4_lewis.pdf: Very little text content (0 chars)",
+    "5_lewis.pdf: Very little text content (0 chars)",
+    "6_lewis.pdf: Very little text content (0 chars)",
+    "7_lewis.pdf: Very little text content (0 chars)",
+    "8_lewis.pdf: Very little text content (0 chars)",
+    "9_lewis.pdf: Very little text content (0 chars)",
+    "test1_lewis.pdf: Very little text content (0 chars)",
+    "Benzene Test v13_Report_20260302_145956.pdf: No images found (Structure likely missing)",
+    "Benzene Test v13_Report_20260302_150130.pdf: No images found (Structure likely missing)",
+    "Ethyl Benzoate Test v14_Report_20260302_153932.pdf: No images found (Structure likely missing)",
+    "Ethyl Benzoate Test v14_Report_20260303_232045.pdf: No images found (Structure likely missing)"
+  ]
+}

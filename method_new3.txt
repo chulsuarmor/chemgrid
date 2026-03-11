@@ -1,0 +1,16 @@
+    def _load_estimated_vibrations(self, smiles: str):
+        try:
+            from rdkit import Chem
+            import math
+            mol = Chem.MolFromSmiles(smiles)
+            if mol is None:
+                return
+            mol = Chem.AddHs(mol)
+            FC = {("C","H",1):480}
+            AM = {"H":1,"C":12}
+            freqs = []
+            intensities = []
+            if freqs and hasattr(self, "tab_vibration"):
+                self.tab_vibration.load_modes(freqs, intensities)
+        except Exception as e:
+            logger.warning("Vib failed: %s" % e)

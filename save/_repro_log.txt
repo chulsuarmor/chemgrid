@@ -1,0 +1,81 @@
+C:\chemgrid\agents\10_testing_build\integrated\popup_3d.py:85: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai_lib
+2026-03-05 02:09:39,900 - INFO - [Integration] Phase B-D integration attached to canvas
+2026-03-05 02:09:40,991 - INFO - Starting Repro Test for Level 4 (Server Def)
+2026-03-05 02:09:40,991 - INFO - Action: mode Bond
+2026-03-05 02:09:41,091 - INFO - Action: drag ((200, 138.56), (180.0, 173.2))
+2026-03-05 02:09:41,091 - INFO - [Integration] Molecule updated: 2 atoms, 1 bonds
+2026-03-05 02:09:41,091 - INFO - [Integration] IUPAC analysis started
+2026-03-05 02:09:41,099 - ERROR - [Phase D Error] [Phase D] RDKit not available
+2026-03-05 02:09:41,192 - INFO - Action: drag ((180.0, 173.2), (200, 207.84))
+2026-03-05 02:09:41,192 - INFO - [Integration] Molecule updated: 3 atoms, 2 bonds
+2026-03-05 02:09:41,192 - INFO - [Integration] IUPAC analysis started
+2026-03-05 02:09:41,195 - ERROR - [Phase D Error] [Phase D] RDKit not available
+2026-03-05 02:09:41,293 - INFO - Action: drag ((200, 207.84), (240, 207.84))
+2026-03-05 02:09:41,293 - INFO - [Integration] Molecule updated: 4 atoms, 3 bonds
+2026-03-05 02:09:41,293 - INFO - [Integration] IUPAC analysis started
+2026-03-05 02:09:41,295 - ERROR - [Phase D Error] [Phase D] RDKit not available
+2026-03-05 02:09:41,394 - INFO - Action: drag ((240, 207.84), (260.0, 173.2))
+2026-03-05 02:09:41,394 - INFO - [Integration] Molecule updated: 5 atoms, 4 bonds
+2026-03-05 02:09:41,394 - INFO - [Integration] IUPAC analysis started
+2026-03-05 02:09:41,396 - ERROR - [Phase D Error] [Phase D] RDKit not available
+2026-03-05 02:09:41,495 - INFO - Action: drag ((260.0, 173.2), (200, 138.56))
+2026-03-05 02:09:41,495 - INFO - [Integration] Molecule updated: 5 atoms, 5 bonds
+2026-03-05 02:09:41,495 - INFO - [Integration] IUPAC analysis started
+2026-03-05 02:09:41,499 - ERROR - [Phase D Error] [Phase D] RDKit not available
+2026-03-05 02:09:41,597 - INFO - Action: drag ((180.0, 173.2), (200, 207.84))
+2026-03-05 02:09:41,597 - INFO - [Integration] Molecule updated: 5 atoms, 5 bonds
+2026-03-05 02:09:41,597 - INFO - [Integration] IUPAC analysis started
+2026-03-05 02:09:41,600 - ERROR - [Phase D Error] [Phase D] RDKit not available
+2026-03-05 02:09:41,697 - INFO - Action: drag ((240, 207.84), (260.0, 173.2))
+2026-03-05 02:09:41,697 - INFO - [Integration] Molecule updated: 5 atoms, 5 bonds
+2026-03-05 02:09:41,697 - INFO - [Integration] IUPAC analysis started
+2026-03-05 02:09:41,699 - ERROR - [Phase D Error] [Phase D] RDKit not available
+2026-03-05 02:09:41,798 - INFO - Action: mode Radical
+2026-03-05 02:09:41,898 - INFO - Action: click (200, 138.56)
+2026-03-05 02:09:41,999 - INFO - Steps completed. Capturing result...
+2026-03-05 02:09:42,000 - INFO - Generated SMILES: C1=CCC=C1
+2026-03-05 02:09:42,000 - INFO - Analysis Result Keys: ['charges', 'islands', 'aromatic', 'atoms', 'bonds', 'adj', 'stereo', 'theory_data']
+2026-03-05 02:09:42,001 - INFO - Islands: [{(180.0, 173.2), (260.0, 173.2), (240, 207.84), (200, 207.84), (200, 138.56)}]
+2026-03-05 02:09:42,001 - INFO - Aromatic Rings: set()
+2026-03-05 02:09:42,001 - WARNING - No electron_clouds key (expected)
+"QColor::setAlpha": invalid value 315
+"QColor::setAlpha": invalid value 315
+"QColor::setAlpha": invalid value 315
+"QColor::setAlpha": invalid value 315
+"QColor::setAlpha": invalid value 315
+2026-03-05 02:09:42,022 - INFO - Saved _repro_radical_C.png
+"QColor::setAlpha": invalid value 315
+"QColor::setAlpha": invalid value 315
+"QColor::setAlpha": invalid value 315
+"QColor::setAlpha": invalid value 315
+"QColor::setAlpha": invalid value 315
+DEBUG: Current CWD: C:\chemgrid
+DEBUG: sys.path added hardcoded paths
+[Phase D] RDKit not available, IUPAC naming disabled
+DEBUG: Successfully imported canvas and renderer
+ -> Radical detected at (200, 138.56)
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (200, 138.56): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (180.0, 173.2): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (260.0, 173.2): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (200, 207.84): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (240, 207.84): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (200, 138.56) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (180.0, 173.2) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (260.0, 173.2) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (200, 207.84) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (240, 207.84) (dist: 0.00) | H:1, LP:0, Charge:0

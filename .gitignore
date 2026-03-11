@@ -1,0 +1,30 @@
+# External binaries (too large for git)
+Orca.6.1.1/
+AvogadroOrca4.1/
+orca_extracted/
+training_logs/captures/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Build artifacts
+build/
+dist/
+bin/
+*.spec
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude internal
+.claude/
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store

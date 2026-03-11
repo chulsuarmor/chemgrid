@@ -1,0 +1,34 @@
+Cleaning up previous instances...
+Cleanup complete.
+C:\chemgrid\agents\10_testing_build\integrated\popup_3d.py:85: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai_lib
+[Phase D] RDKit not available, IUPAC naming disabled
+[main_window.py] Verification report module not available
+[TOOLBAR_V5] setup_toolbars loaded - 2-row layout with addToolBarBreak
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+Step 1: Cleanup...
+Step 2: Starting MCP Server...
+Step 3: Starting ChemGrid...
+Waiting for services to start (10s)...
+Step 4: Testing MCP Endpoints...
+
+[ERROR] Connection failed: HTTPConnectionPool(host='127.0.0.1', port=8000): Max retries exceeded with url: / (Caused by NewConnectionError("HTTPConnection(host='127.0.0.1', port=8000): Failed to establish a new connection: [WinError 10061] 대상 컴퓨터에서 연결을 거부했으므로 연결하지 못했습니다"))
+Server process exited unexpectedly.
+
+Processes are left running for user interaction.
+MCP Server PID: 43016
+ChemGrid PID: 43636

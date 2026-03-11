@@ -1,0 +1,10 @@
+def _load_estimated_vibrations(self, smiles: str):
+        try:
+            from rdkit import Chem
+            import math
+            mol = Chem.MolFromSmiles(smiles)
+            if mol is None:
+                return
+            mol = Chem.AddHs(mol)
+            FC = {("C","H",1):480,("O","H",1):780,("N","H",1):600,("C","C",1):300,("C","C",2):600,("C","C",3):900,("C","N",1):350,("C","N",2):650,("C","N",3):800,("C","O",1):350,("C","O",2):750,("C","F",1):440,("C","Cl",1):240,("C","Br",1):200,("C","S",1):200,("S","O",2):500}
+            AM = {"H":1,"C":12,"N":14,"O":16,"F":19,"P":31,"S

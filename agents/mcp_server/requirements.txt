@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+python-multipart
+google-generativeai
+pillow
+python-dotenv
+pyautogui
+pygetwindow
+pywin32
+# Claude Prefix Caching 지원
+anthropic>=0.34.0
