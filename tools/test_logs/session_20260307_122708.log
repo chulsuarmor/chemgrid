@@ -1,0 +1,356 @@
+
+══════════════════════════════════════════════════════════════════════
+  STEP 0: 초기화 — 파일 동기화 & ChemGrid 실행
+══════════════════════════════════════════════════════════════════════
+  ✅  [12:27:08] 파일 동기화 완료: 16개
+  ℹ️   ChemGrid 실행: C:\ProgramData\anaconda3\envs\chemgrid\python.exe draw.py
+  ℹ️   작업 디렉터리: c:\chemgrid\src\app
+  ✅  [12:27:08] 프로세스 시작됨 (PID: 30828)
+  ℹ️   ChemGrid 창 로딩 대기 중 (최대 25초)...
+  ✅  [12:27:08] 창 감지: 'chemgrid 및 1개 탭 - 파일 탐색기'  (1057×852)
+  ✅  [12:27:09] 스크린샷: 00_app_launched_122708.png
+  [앱][12:27:11] c:\chemgrid\src\app\popup_3d.py:114: FutureWarning:
+  [앱][12:27:11] All support for the `google.generativeai` package has ended. It will no longer be receiving
+  [앱][12:27:11] updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+  [앱][12:27:11] See README for more details:
+  [앱][12:27:11] https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+  [앱][12:27:11] import google.generativeai as genai_lib
+  [앱][12:27:11] [Phase D] RDKit not available, IUPAC naming disabled
+  [앱][12:27:11] [main_window.py] Verification report module not available
+  [앱][12:27:11] [TOOLBAR_V5] setup_toolbars loaded - 2-row layout with addToolBarBreak
+  [앱][12:27:11] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:11] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:11] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:11] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+
+══════════════════════════════════════════════════════════════════════
+  STEP 1: AI 텍스트 입력창으로 벤젠 그리기
+══════════════════════════════════════════════════════════════════════
+
+  👉  ChemGrid 하단 중앙의 어두운 텍스트 입력창을 클릭하세요.
+  👉  플레이스홀더 텍스트:  '🤖 분자명 입력 (예: hemoglobin, benzene...)'
+  👉  
+  👉  'benzene' 을 입력한 뒤 Enter 키를 누르세요.
+  👉  (또는 ⚗ 버튼 클릭)
+
+  ℹ️   앱 로그에서 그리기 완료 신호를 최대 35초간 감지합니다...
+  [앱][12:27:16] [MainWindow] Progress tracking and Discord reporting activated
+  [앱][12:27:16] [CHIRALITY AUDIT LOG]
+  [앱][12:27:16] [RDKIT ATOM ANALYSIS]
+  [앱][12:27:16] Atom C at (640.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:27:16] Atom C at (680.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:27:16] Atom C at (620.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:27:16] Atom C at (700.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:27:16] Atom C at (640.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:27:16] Atom C at (680.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:27:16] >>> [FINAL RESULT] SMILES: C1CCCCC1
+  [앱][12:27:16] [LEWIS DATA INJECTION LOG]
+  [앱][12:27:16] -> SUCCESS: Matched Lewis Data at (640.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:27:16] -> SUCCESS: Matched Lewis Data at (680.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:27:16] -> SUCCESS: Matched Lewis Data at (620.0, 381.04) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:27:16] -> SUCCESS: Matched Lewis Data at (700.0, 381.04) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:27:16] -> SUCCESS: Matched Lewis Data at (640.0, 415.68) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:27:16] -> SUCCESS: Matched Lewis Data at (680.0, 415.68) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:27:16] [MolDraw] 'benzene' �� 6 atoms, 6 bonds  (selected_keys=6)
+  ✅  [12:27:16] 벤젠 그리기 감지: [MolDraw] 'benzene' �� 6 atoms, 6 bonds  (selected_keys=6)
+  ✅  [12:27:16] 스크린샷: 01_benzene_drawn_122716.png
+
+══════════════════════════════════════════════════════════════════════
+  STEP 2: 이론적 구조 레이어 전환
+══════════════════════════════════════════════════════════════════════
+
+  👉  ChemGrid 우하단의 파란색 '이론적 구조' 버튼을 클릭하세요.
+  👉  (루이스 구조 계산 후 이론적 구조 레이어로 이동합니다)
+  👉  
+  👉  이동 후 오른쪽에 파란 '입체 구조' 버튼이 나타나야 합니다.
+
+  ℹ️   레이어 전환 신호 최대 30초 대기...
+  [앱][12:27:22] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:22] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:23] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:23] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:24] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:24] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:26] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:26] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:26] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:26] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:26] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:26] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:26] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:27] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:27] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:27] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:27] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:27] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:27] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:27] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:31] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][12:27:31] self.figure.tight_layout()
+  [앱][12:27:31] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][12:27:31] self.figure.tight_layout()
+  [앱][12:27:31] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][12:27:31] self.figure.tight_layout()
+  [앱][12:27:31] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][12:27:31] self.figure.tight_layout()
+  [앱][12:27:31] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][12:27:31] self.canvas.draw()
+  [앱][12:27:31] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][12:27:31] self.canvas.draw()
+  [앱][12:27:31] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][12:27:31] self.canvas.draw()
+  [앱][12:27:31] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][12:27:31] self.canvas.draw()
+  [앱][12:27:31] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:31] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:31] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:31] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:31] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:31] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:31] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:31] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:27:33] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][12:27:33] sys.exit(app.exec())
+  [앱][12:27:33] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][12:27:33] sys.exit(app.exec())
+  [앱][12:27:33] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][12:27:33] sys.exit(app.exec())
+  [앱][12:27:33] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][12:27:33] sys.exit(app.exec())
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 50508 (\N{HANGUL SYLLABLE AL}) missing from font(s) DejaVu Sans.
+  [앱][12:27:38] self.figure.tight_layout()
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 53420 (\N{HANGUL SYLLABLE KIL}) missing from font(s) DejaVu Sans.
+  [앱][12:27:38] self.figure.tight_layout()
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 52996 (\N{HANGUL SYLLABLE KEN}) missing from font(s) DejaVu Sans.
+  [앱][12:27:38] self.figure.tight_layout()
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 48169 (\N{HANGUL SYLLABLE BANG}) missing from font(s) DejaVu Sans.
+  [앱][12:27:38] self.figure.tight_layout()
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 54693 (\N{HANGUL SYLLABLE HYANG}) missing from font(s) DejaVu Sans.
+  [앱][12:27:38] self.figure.tight_layout()
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 51313 (\N{HANGUL SYLLABLE JOG}) missing from font(s) DejaVu Sans.
+  [앱][12:27:38] self.figure.tight_layout()
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Tight layout not applied. The bottom and top margins cannot be made large enough to accommodate all Axes decorations.
+  [앱][12:27:38] self.figure.tight_layout()
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 50508 (\N{HANGUL SYLLABLE AL}) missing from font(s) DejaVu Sans.
+  [앱][12:27:38] self.canvas.draw()
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 53420 (\N{HANGUL SYLLABLE KIL}) missing from font(s) DejaVu Sans.
+  [앱][12:27:38] self.canvas.draw()
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 52996 (\N{HANGUL SYLLABLE KEN}) missing from font(s) DejaVu Sans.
+  [앱][12:27:38] self.canvas.draw()
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 48169 (\N{HANGUL SYLLABLE BANG}) missing from font(s) DejaVu Sans.
+  [앱][12:27:38] self.canvas.draw()
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 54693 (\N{HANGUL SYLLABLE HYANG}) missing from font(s) DejaVu Sans.
+  [앱][12:27:38] self.canvas.draw()
+  [앱][12:27:38] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 51313 (\N{HANGUL SYLLABLE JOG}) missing from font(s) DejaVu Sans.
+  [앱][12:27:38] self.canvas.draw()
+  [앱][12:27:40] c:\chemgrid\src\app\popup_3d.py:2819: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][12:27:40] self.figure.tight_layout()
+  [앱][12:27:40] c:\chemgrid\src\app\popup_3d.py:2819: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][12:27:40] self.figure.tight_layout()
+  [앱][12:27:40] c:\chemgrid\src\app\popup_3d.py:2819: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][12:27:40] self.figure.tight_layout()
+  [앱][12:27:40] c:\chemgrid\src\app\popup_3d.py:2819: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][12:27:40] self.figure.tight_layout()
+  [앱][12:27:40] c:\chemgrid\src\app\popup_3d.py:2820: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][12:27:40] self.canvas.draw()
+  [앱][12:27:40] c:\chemgrid\src\app\popup_3d.py:2820: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][12:27:40] self.canvas.draw()
+  [앱][12:27:40] c:\chemgrid\src\app\popup_3d.py:2820: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][12:27:40] self.canvas.draw()
+  [앱][12:27:40] c:\chemgrid\src\app\popup_3d.py:2820: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][12:27:40] self.canvas.draw()
+  ⚠️   전환 로그 미감지 — 30초 타임아웃으로 진행
+  ✅  [12:27:49] 스크린샷: 02_theory_mode_122749.png
+
+══════════════════════════════════════════════════════════════════════
+  STEP 3: 입체 구조 3D 팝업 열기
+══════════════════════════════════════════════════════════════════════
+
+  👉  이론적 구조 레이어 우측의 파란색 '입체 구조' 버튼을 클릭하세요.
+  👉  
+  👉  [버튼이 회색(비활성)이면 → B1 버그]
+  👉  agents/06_3d_structure/activation_handler.py 수정 필요
+  👉  이 경우: 스크린샷만 찍고 다음 단계로 넘어갑니다.
+
+  ℹ️   '3D 분자 분석' 팝업 창이 열릴 때까지 최대 40초 대기...
+  ✅  [12:27:49] 3D 팝업 감지: 'ChemGrid — 통합 3D 분자 분석'
+  ✅  [12:27:49] 창 캡처: 03_3d_popup_122749.png  (1116×1188)
+  ✅  [12:27:50] 스크린샷: 03_3d_popup_full_122749.png
+
+══════════════════════════════════════════════════════════════════════
+  STEP 4: 최종 상태 캡처 & 결과 보고
+══════════════════════════════════════════════════════════════════════
+  ✅  [12:27:51] 스크린샷: 99_final_state_122751.png
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📊 테스트 결과 요약
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  • 스크린샷 저장 위치 : c:\chemgrid\tools\test_screenshots
+  • 세션 로그 파일    : c:\chemgrid\tools\test_logs\session_20260307_122708.log
+  • 캡처된 파일 수    : 49개
+  • ChemGrid 프로세스 : 실행 중 (PID 30828)
+
+  수정 필요 항목 (master_plan.md 기준):
+  🔴 B1: '이론적 구조'에서 '입체 구조' 버튼 비활성 → activation_handler.py
+  🔴 B2: 3D 팝업 미실행 → popup_3d.py 임포트/경로 오류
+  🔴 B4: 벤젠 전자구름 비균등 → engine_resonance.py ConjugationEngine
+
+  최근 캡처된 스크린샷:
+    99_final_state_022210.png
+    99_final_state_041144.png
+    99_final_state_122751.png
+    99_final_state_204306.png
+    99_final_state_205934.png
+    99_final_state_222148.png
+
+  ★ AI 피드백용 로그: c:\chemgrid\tools\test_logs\session_20260307_122708.log
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [앱][12:28:00] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:28:05] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:28:05] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][12:28:08] [CHIRALITY AUDIT LOG]
+  [앱][12:28:08] [RDKIT ATOM ANALYSIS]
+  [앱][12:28:08] Atom C at (640.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (620.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (700.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (640.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] >>> [FINAL RESULT] SMILES: C1CCCCC1
+  [앱][12:28:08] [LEWIS DATA INJECTION LOG]
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (620.0, 381.04) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (700.0, 381.04) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 415.68) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 415.68) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:28:08] [CHIRALITY AUDIT LOG]
+  [앱][12:28:08] [RDKIT ATOM ANALYSIS]
+  [앱][12:28:08] Atom C at (640.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (620.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (700.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (640.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] >>> [FINAL RESULT] SMILES: C1=CCCCC1
+  [앱][12:28:08] [LEWIS DATA INJECTION LOG]
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (620.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (700.0, 381.04) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 415.68) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 415.68) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:28:08] [CHIRALITY AUDIT LOG]
+  [앱][12:28:08] [RDKIT ATOM ANALYSIS]
+  [앱][12:28:08] Atom C at (640.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (620.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (700.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (640.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] >>> [FINAL RESULT] SMILES: C1=CCCC=C1
+  [앱][12:28:08] [LEWIS DATA INJECTION LOG]
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (620.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (700.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 415.68) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 415.68) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][12:28:08] [CHIRALITY AUDIT LOG]
+  [앱][12:28:08] [RDKIT ATOM ANALYSIS]
+  [앱][12:28:08] Atom C at (640.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (620.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (700.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (640.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] >>> [FINAL RESULT] SMILES: c1ccccc1
+  [앱][12:28:08] [LEWIS DATA INJECTION LOG]
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (620.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (700.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 415.68) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 415.68) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] [3D-FIX] �巡�� ���� �Ϸ�: 6�� ����, btn_3d Ȱ��ȭ
+  [앱][12:28:08] [CHIRALITY AUDIT LOG]
+  [앱][12:28:08] [RDKIT ATOM ANALYSIS]
+  [앱][12:28:08] Atom C at (640.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (620.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (700.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (640.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] >>> [FINAL RESULT] SMILES: c1ccccc1
+  [앱][12:28:08] [LEWIS DATA INJECTION LOG]
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (620.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (700.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 415.68) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 415.68) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] [CHIRALITY AUDIT LOG]
+  [앱][12:28:08] [RDKIT ATOM ANALYSIS]
+  [앱][12:28:08] Atom C at (640.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (620.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (700.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (640.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] >>> [FINAL RESULT] SMILES: c1ccccc1
+  [앱][12:28:08] [LEWIS DATA INJECTION LOG]
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (620.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (700.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 415.68) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 415.68) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] [CHIRALITY AUDIT LOG]
+  [앱][12:28:08] [RDKIT ATOM ANALYSIS]
+  [앱][12:28:08] Atom C at (640.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (620.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (700.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (640.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] >>> [FINAL RESULT] SMILES: c1ccccc1
+  [앱][12:28:08] [LEWIS DATA INJECTION LOG]
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (620.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (700.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 415.68) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 415.68) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] [CHIRALITY AUDIT LOG]
+  [앱][12:28:08] [RDKIT ATOM ANALYSIS]
+  [앱][12:28:08] Atom C at (640.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (620.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (700.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (640.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] Atom C at (680.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:08] >>> [FINAL RESULT] SMILES: c1ccccc1
+  [앱][12:28:08] [LEWIS DATA INJECTION LOG]
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (620.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (700.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (640.0, 415.68) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] -> SUCCESS: Matched Lewis Data at (680.0, 415.68) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:08] [CHIRALITY AUDIT LOG]
+  [앱][12:28:32] [RDKIT ATOM ANALYSIS]
+  [앱][12:28:32] Atom C at (640.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:32] Atom C at (680.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:32] Atom C at (620.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:32] Atom C at (700.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:32] Atom C at (640.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:32] Atom C at (680.0, 415.68): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][12:28:32] >>> [FINAL RESULT] SMILES: c1ccccc1
+  [앱][12:28:32] [LEWIS DATA INJECTION LOG]
+  [앱][12:28:32] -> SUCCESS: Matched Lewis Data at (640.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:32] -> SUCCESS: Matched Lewis Data at (680.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:32] -> SUCCESS: Matched Lewis Data at (620.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:32] -> SUCCESS: Matched Lewis Data at (700.0, 381.04) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:32] -> SUCCESS: Matched Lewis Data at (640.0, 415.68) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][12:28:32] -> SUCCESS: Matched Lewis Data at (680.0, 415.68) (dist: 0.00) | H:1, LP:0, Charge:0
+  ✅  [12:29:47] ChemGrid 프로세스 종료 완료

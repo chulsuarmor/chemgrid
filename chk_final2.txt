@@ -1,0 +1,7 @@
+        except Exception as e:
+            QMessageBox.critical(self, "❌ 내보내기 오류", f"파일 저장에 실패했습니다:\n{e}")
+            logger.error(f"Export failed: {e}")
+
+    def closeEvent(self, event):
+        if isinstance(self.viewer, Molecule3DViewer):
+            sel

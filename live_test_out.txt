@@ -1,0 +1,56 @@
+=== ChemGrid 시각 검증 시작 ===
+[OK] 창 발견: 'ChemGrid V5' @ (219,98) 1158x721
+
+[1/10] 벤젠 (방향족) (benzene)
+  [Screenshot] c:\chemgrid\docs\reports\live_test\01_1_s0_draw_benzene.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\01_1_s1_theory_benzene.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\01_1_s2_select_benzene.png
+
+[2/10] 나프탈렌 (다환 방향족) (naphthalene)
+  [Screenshot] c:\chemgrid\docs\reports\live_test\02_2_s0_draw_naphthalene.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\02_2_s1_theory_naphthalene.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\02_2_s2_select_naphthalene.png
+
+[3/10] 카페인 (이중고리 복합) (caffeine)
+  [Screenshot] c:\chemgrid\docs\reports\live_test\03_3_s0_draw_caffeine.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\03_3_s1_theory_caffeine.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\03_3_s2_select_caffeine.png
+
+[4/10] 아스피린 (방향족+산기) (aspirin)
+  [Screenshot] c:\chemgrid\docs\reports\live_test\04_4_s0_draw_aspirin.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\04_4_s1_theory_aspirin.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\04_4_s2_select_aspirin.png
+
+[5/10] 바이페닐 (SMILES 직접입력) (c1ccc(-c2ccccc2)cc1)
+  [Screenshot] c:\chemgrid\docs\reports\live_test\05_5_s0_draw_c1ccc(-c2ccccc2)cc1.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\05_5_s1_theory_c1ccc(-c2ccccc2)cc1.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\05_5_s2_select_c1ccc(-c2ccccc2)cc1.png
+
+[6/10] CP- (이온성 방향족) (cp-)
+  [Screenshot] c:\chemgrid\docs\reports\live_test\06_6_s0_draw_cp-.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\06_6_s1_theory_cp-.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\06_6_s2_select_cp-.png
+
+[7/10] 트로필리움 (이온성 방향족) (tropylium)
+  [Screenshot] c:\chemgrid\docs\reports\live_test\07_7_s0_draw_tropylium.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\07_7_s1_theory_tropylium.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\07_7_s2_select_tropylium.png
+
+[8/10] 아데닌 (핵산 염기) (adenine)
+  [Screenshot] c:\chemgrid\docs\reports\live_test\08_8_s0_draw_adenine.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\08_8_s1_theory_adenine.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\08_8_s2_select_adenine.png
+
+[9/10] 콜레스테롤 (대형 스테로이드) (cholesterol)
+  [Screenshot] c:\chemgrid\docs\reports\live_test\09_9_s0_draw_cholesterol.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\09_9_s1_theory_cholesterol.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\09_9_s2_select_cholesterol.png
+
+[10/10] 헤모글로빈 (→ heme fallback) (hemoglobin)
+  [Screenshot] c:\chemgrid\docs\reports\live_test\10_10_s0_draw_hemoglobin.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\10_10_s1_theory_hemoglobin.png
+  [Screenshot] c:\chemgrid\docs\reports\live_test\10_10_s2_select_hemoglobin.png
+
+[Report] c:\chemgrid\docs\reports\live_visual_report.html
+
+=== 테스트 완료: 10개 분자 ===

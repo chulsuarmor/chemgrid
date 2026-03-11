@@ -1,0 +1,180 @@
+
+══════════════════════════════════════════════════════════════════════
+  STEP 0: 초기화 — 파일 동기화 & ChemGrid 실행
+══════════════════════════════════════════════════════════════════════
+  ✅  [02:21:26] 파일 동기화 완료: 16개
+  ℹ️   ChemGrid 실행: C:\ProgramData\anaconda3\envs\chemgrid\python.exe draw.py
+  ℹ️   작업 디렉터리: c:\chemgrid\src\app
+  ✅  [02:21:26] 프로세스 시작됨 (PID: 35864)
+  ℹ️   ChemGrid 창 로딩 대기 중 (최대 25초)...
+  ✅  [02:21:26] 창 감지: 'chemgrid - 파일 탐색기'  (1285×852)
+  ✅  [02:21:26] 스크린샷: 00_app_launched_022126.png
+  [앱][02:21:27] c:\chemgrid\src\app\popup_3d.py:114: FutureWarning:
+  [앱][02:21:27] All support for the `google.generativeai` package has ended. It will no longer be receiving
+  [앱][02:21:27] updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+  [앱][02:21:27] See README for more details:
+  [앱][02:21:27] https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+  [앱][02:21:27] import google.generativeai as genai_lib
+  [앱][02:21:28] [Phase D] RDKit not available, IUPAC naming disabled
+  [앱][02:21:28] [main_window.py] Verification report module not available
+  [앱][02:21:28] [TOOLBAR_V5] setup_toolbars loaded - 2-row layout with addToolBarBreak
+  [앱][02:21:28] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:28] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:28] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:28] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+
+══════════════════════════════════════════════════════════════════════
+  STEP 1: AI 텍스트 입력창으로 벤젠 그리기
+══════════════════════════════════════════════════════════════════════
+
+  👉  ChemGrid 하단 중앙의 어두운 텍스트 입력창을 클릭하세요.
+  👉  플레이스홀더 텍스트:  '🤖 분자명 입력 (예: hemoglobin, benzene...)'
+  👉  
+  👉  'benzene' 을 입력한 뒤 Enter 키를 누르세요.
+  👉  (또는 ⚗ 버튼 클릭)
+
+  ℹ️   앱 로그에서 그리기 완료 신호를 최대 35초간 감지합니다...
+  [앱][02:21:36] [MainWindow] Progress tracking and Discord reporting activated
+  [앱][02:21:36] [CHIRALITY AUDIT LOG]
+  [앱][02:21:36] [RDKIT ATOM ANALYSIS]
+  [앱][02:21:36] Atom C at (640.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][02:21:36] Atom C at (620.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][02:21:36] Atom C at (660.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][02:21:36] >>> [FINAL RESULT] SMILES: CCC
+  [앱][02:21:36] [LEWIS DATA INJECTION LOG]
+  [앱][02:21:36] -> SUCCESS: Matched Lewis Data at (640.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][02:21:36] -> SUCCESS: Matched Lewis Data at (620.0, 381.04) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][02:21:36] -> SUCCESS: Matched Lewis Data at (660.0, 381.04) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][02:21:36] [MolDraw] 'propane' �� 3 atoms, 2 bonds  (selected_keys=3)
+  ✅  [02:21:36] 벤젠 그리기 감지: [MolDraw] 'propane' �� 3 atoms, 2 bonds  (selected_keys=3)
+  ✅  [02:21:36] 스크린샷: 01_benzene_drawn_022136.png
+
+══════════════════════════════════════════════════════════════════════
+  STEP 2: 이론적 구조 레이어 전환
+══════════════════════════════════════════════════════════════════════
+
+  👉  ChemGrid 우하단의 파란색 '이론적 구조' 버튼을 클릭하세요.
+  👉  (루이스 구조 계산 후 이론적 구조 레이어로 이동합니다)
+  👉  
+  👉  이동 후 오른쪽에 파란 '입체 구조' 버튼이 나타나야 합니다.
+
+  ℹ️   레이어 전환 신호 최대 30초 대기...
+  [앱][02:21:38] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:38] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:40] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:40] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:42] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:42] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:42] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:42] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:42] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:42] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:42] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:48] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:48] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:48] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:48] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:48] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:48] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:48] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][02:21:48] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  ⚠️   전환 로그 미감지 — 30초 타임아웃으로 진행
+  ✅  [02:22:07] 스크린샷: 02_theory_mode_022207.png
+
+══════════════════════════════════════════════════════════════════════
+  STEP 3: 입체 구조 3D 팝업 열기
+══════════════════════════════════════════════════════════════════════
+
+  👉  이론적 구조 레이어 우측의 파란색 '입체 구조' 버튼을 클릭하세요.
+  👉  
+  👉  [버튼이 회색(비활성)이면 → B1 버그]
+  👉  agents/06_3d_structure/activation_handler.py 수정 필요
+  👉  이 경우: 스크린샷만 찍고 다음 단계로 넘어갑니다.
+
+  ℹ️   '3D 분자 분석' 팝업 창이 열릴 때까지 최대 40초 대기...
+  ✅  [02:22:07] 3D 팝업 감지: 'ChemGrid — 통합 3D 분자 분석'
+  ✅  [02:22:08] 창 캡처: 03_3d_popup_022208.png  (1116×1173)
+  ✅  [02:22:08] 스크린샷: 03_3d_popup_full_022208.png
+
+══════════════════════════════════════════════════════════════════════
+  STEP 4: 최종 상태 캡처 & 결과 보고
+══════════════════════════════════════════════════════════════════════
+  ✅  [02:22:10] 스크린샷: 99_final_state_022210.png
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📊 테스트 결과 요약
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  • 스크린샷 저장 위치 : c:\chemgrid\tools\test_screenshots
+  • 세션 로그 파일    : c:\chemgrid\tools\test_logs\session_20260307_022126.log
+  • 캡처된 파일 수    : 37개
+  • ChemGrid 프로세스 : 실행 중 (PID 35864)
+
+  수정 필요 항목 (master_plan.md 기준):
+  🔴 B1: '이론적 구조'에서 '입체 구조' 버튼 비활성 → activation_handler.py
+  🔴 B2: 3D 팝업 미실행 → popup_3d.py 임포트/경로 오류
+  🔴 B4: 벤젠 전자구름 비균등 → engine_resonance.py ConjugationEngine
+
+  최근 캡처된 스크린샷:
+    99_final_203036.png
+    99_final_state_001551.png
+    99_final_state_022210.png
+    99_final_state_204306.png
+    99_final_state_205934.png
+    99_final_state_222148.png
+
+  ★ AI 피드백용 로그: c:\chemgrid\tools\test_logs\session_20260307_022126.log
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [앱][02:51:28] Exception in thread Thread-1 (periodic_reporter):
+  [앱][02:51:28] Traceback (most recent call last):
+  [앱][02:51:28] File "C:\ProgramData\anaconda3\envs\chemgrid\Lib\threading.py", line 1075, in _bootstrap_inner
+  [앱][02:51:28] self.run()
+  [앱][02:51:28] File "C:\ProgramData\anaconda3\envs\chemgrid\Lib\threading.py", line 1012, in run
+  [앱][02:51:28] self._target(*self._args, **self._kwargs)
+  [앱][02:51:28] File "c:\chemgrid\src\app\progress_tracker.py", line 179, in periodic_reporter
+  [앱][02:51:28] report_to_discord(summary)
+  [앱][02:51:28] File "c:\chemgrid\src\app\progress_tracker.py", line 165, in report_to_discord
+  [앱][02:51:28] print(message)
+  [앱][02:51:28] UnicodeEncodeError: 'cp949' codec can't encode character '\U0001f52c' in position 2: illegal multibyte sequence
+  [앱][03:12:15] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:12:18] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:12:18] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:14:20] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:14:20] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:22:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][03:28:00] [3D-FIX] �巡�� ���� �Ϸ�: 3�� ����, btn_3d Ȱ��ȭ
+  [앱][03:28:00] [CHIRALITY AUDIT LOG]
+  [앱][03:28:00] [RDKIT ATOM ANALYSIS]
+  [앱][03:28:00] Atom C at (640.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][03:28:00] Atom C at (620.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][03:28:00] Atom C at (660.0, 381.04): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][03:28:00] >>> [FINAL RESULT] SMILES: CCC
+  [앱][03:28:00] [LEWIS DATA INJECTION LOG]
+  [앱][03:28:00] -> SUCCESS: Matched Lewis Data at (640.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][03:28:00] -> SUCCESS: Matched Lewis Data at (620.0, 381.04) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][03:28:00] -> SUCCESS: Matched Lewis Data at (660.0, 381.04) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][03:28:00] ============================================================
+  [앱][03:28:00] [DISCORD REPORT - 02:51:28]
+  [앱][03:28:00] ============================================================
+  ✅  [03:28:11] ChemGrid 프로세스 종료 완료

@@ -1,0 +1,1082 @@
+[
+  {
+    "name": "benzene",
+    "smiles": "c1ccccc1",
+    "expected": "GREEN/slight-RED",
+    "note": "중성방향족 π halo",
+    "stages": {
+      "S0_draw": [
+        [
+          "그리기 레이어",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\030916_01_benzene_S0_draw.png"
+        ]
+      ],
+      "S1_lewis": [
+        [
+          "루이스 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\030920_01_benzene_S1_lewis.png"
+        ]
+      ],
+      "S2_theory": [
+        [
+          "이론적 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\030923_01_benzene_S2_theory.png"
+        ]
+      ],
+      "S3_select": [
+        [
+          "전체 선택",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\030928_01_benzene_S3_select.png"
+        ]
+      ],
+      "S4_3d": [
+        [
+          "3D 초기",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\030938_01_benzene_S4_3d_initial.png"
+        ],
+        [
+          "3D X회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\030941_01_benzene_S4_3d_rotX.png"
+        ],
+        [
+          "3D Y회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\030943_01_benzene_S4_3d_rotY.png"
+        ]
+      ],
+      "S5_spectra": [
+        [
+          "IR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\030951_01_benzene_S5_IR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — IR: 4000→400cm⁻¹, Transmittance%, 피크↓",
+          "없음"
+        ],
+        [
+          "Raman",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\030956_01_benzene_S5_Raman_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — Raman: Shift cm⁻¹, Intensity, 피크↑",
+          "없음"
+        ],
+        [
+          "1H-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031001_01_benzene_S5_1H-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 1H-NMR: 12→0ppm, Integration line",
+          "없음"
+        ],
+        [
+          "13C-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031006_01_benzene_S5_13C-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 13C-NMR: 220→0ppm, Zone색 (aliphatic/aromatic/carbonyl)",
+          "없음"
+        ],
+        [
+          "UV-Vis",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031011_01_benzene_S5_UV-Vis_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — UV-Vis: 듀얼뷰 ε+logε, 200→800nm",
+          "없음"
+        ],
+        [
+          "MolOrbital",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031016_01_benzene_S5_MolOrbital_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 분자 오비탈 시각화",
+          "없음"
+        ]
+      ],
+      "S6_pdf": [
+        [
+          "스펙트럼 팝업 없음 (ORCA 필요?)",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031023_01_benzene_S6_pdf_nospec.png"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "tropylium",
+    "smiles": "C1=CC=CC=C[CH+]1",
+    "expected": "BLUE",
+    "note": "C7H7+ 양이온 방향족",
+    "stages": {
+      "S0_draw": [
+        [
+          "그리기 레이어",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031030_02_tropylium_S0_draw.png"
+        ]
+      ],
+      "S1_lewis": [
+        [
+          "루이스 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031034_02_tropylium_S1_lewis.png"
+        ]
+      ],
+      "S2_theory": [
+        [
+          "이론적 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031037_02_tropylium_S2_theory.png"
+        ]
+      ],
+      "S3_select": [
+        [
+          "전체 선택",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031042_02_tropylium_S3_select.png"
+        ]
+      ],
+      "S4_3d": [
+        [
+          "3D 초기",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031051_02_tropylium_S4_3d_initial.png"
+        ],
+        [
+          "3D X회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031054_02_tropylium_S4_3d_rotX.png"
+        ],
+        [
+          "3D Y회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031056_02_tropylium_S4_3d_rotY.png"
+        ]
+      ],
+      "S5_spectra": [
+        [
+          "IR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031103_02_tropylium_S5_IR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — IR: 4000→400cm⁻¹, Transmittance%, 피크↓",
+          "없음"
+        ],
+        [
+          "Raman",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031109_02_tropylium_S5_Raman_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — Raman: Shift cm⁻¹, Intensity, 피크↑",
+          "없음"
+        ],
+        [
+          "1H-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031114_02_tropylium_S5_1H-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 1H-NMR: 12→0ppm, Integration line",
+          "없음"
+        ],
+        [
+          "13C-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031119_02_tropylium_S5_13C-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 13C-NMR: 220→0ppm, Zone색 (aliphatic/aromatic/carbonyl)",
+          "없음"
+        ],
+        [
+          "UV-Vis",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031124_02_tropylium_S5_UV-Vis_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — UV-Vis: 듀얼뷰 ε+logε, 200→800nm",
+          "없음"
+        ],
+        [
+          "MolOrbital",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031129_02_tropylium_S5_MolOrbital_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 분자 오비탈 시각화",
+          "없음"
+        ]
+      ],
+      "S6_pdf": [
+        [
+          "스펙트럼 팝업 없음 (ORCA 필요?)",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031135_02_tropylium_S6_pdf_nospec.png"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "cp-",
+    "smiles": "[cH-]1cccc1",
+    "expected": "RED",
+    "note": "Cp- 음이온 방향족",
+    "stages": {
+      "S0_draw": [
+        [
+          "그리기 레이어",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031142_03_cp-_S0_draw.png"
+        ]
+      ],
+      "S1_lewis": [
+        [
+          "루이스 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031146_03_cp-_S1_lewis.png"
+        ]
+      ],
+      "S2_theory": [
+        [
+          "이론적 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031150_03_cp-_S2_theory.png"
+        ]
+      ],
+      "S3_select": [
+        [
+          "전체 선택",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031154_03_cp-_S3_select.png"
+        ]
+      ],
+      "S4_3d": [
+        [
+          "3D 초기",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031204_03_cp-_S4_3d_initial.png"
+        ],
+        [
+          "3D X회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031206_03_cp-_S4_3d_rotX.png"
+        ],
+        [
+          "3D Y회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031209_03_cp-_S4_3d_rotY.png"
+        ]
+      ],
+      "S5_spectra": [
+        [
+          "IR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031216_03_cp-_S5_IR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — IR: 4000→400cm⁻¹, Transmittance%, 피크↓",
+          "없음"
+        ],
+        [
+          "Raman",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031221_03_cp-_S5_Raman_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — Raman: Shift cm⁻¹, Intensity, 피크↑",
+          "없음"
+        ],
+        [
+          "1H-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031226_03_cp-_S5_1H-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 1H-NMR: 12→0ppm, Integration line",
+          "없음"
+        ],
+        [
+          "13C-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031231_03_cp-_S5_13C-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 13C-NMR: 220→0ppm, Zone색 (aliphatic/aromatic/carbonyl)",
+          "없음"
+        ],
+        [
+          "UV-Vis",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031237_03_cp-_S5_UV-Vis_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — UV-Vis: 듀얼뷰 ε+logε, 200→800nm",
+          "없음"
+        ],
+        [
+          "MolOrbital",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031242_03_cp-_S5_MolOrbital_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 분자 오비탈 시각화",
+          "없음"
+        ]
+      ],
+      "S6_pdf": [
+        [
+          "스펙트럼 팝업 없음 (ORCA 필요?)",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031248_03_cp-_S6_pdf_nospec.png"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "acetic acid",
+    "smiles": "CC(=O)O",
+    "expected": "RED(O)+BLUE(C=O)",
+    "note": "카보닐C=BLUE, O=RED",
+    "stages": {
+      "S0_draw": [
+        [
+          "그리기 레이어",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031255_04_acetic_acid_S0_draw.png"
+        ]
+      ],
+      "S1_lewis": [
+        [
+          "루이스 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031259_04_acetic_acid_S1_lewis.png"
+        ]
+      ],
+      "S2_theory": [
+        [
+          "이론적 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031303_04_acetic_acid_S2_theory.png"
+        ]
+      ],
+      "S3_select": [
+        [
+          "전체 선택",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031307_04_acetic_acid_S3_select.png"
+        ]
+      ],
+      "S4_3d": [
+        [
+          "3D 초기",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031317_04_acetic acid_S4_3d_initial.png"
+        ],
+        [
+          "3D X회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031319_04_acetic acid_S4_3d_rotX.png"
+        ],
+        [
+          "3D Y회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031321_04_acetic acid_S4_3d_rotY.png"
+        ]
+      ],
+      "S5_spectra": [
+        [
+          "IR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031329_04_acetic_acid_S5_IR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — IR: 4000→400cm⁻¹, Transmittance%, 피크↓",
+          "없음"
+        ],
+        [
+          "Raman",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031334_04_acetic_acid_S5_Raman_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — Raman: Shift cm⁻¹, Intensity, 피크↑",
+          "없음"
+        ],
+        [
+          "1H-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031339_04_acetic_acid_S5_1H-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 1H-NMR: 12→0ppm, Integration line",
+          "없음"
+        ],
+        [
+          "13C-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031344_04_acetic_acid_S5_13C-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 13C-NMR: 220→0ppm, Zone색 (aliphatic/aromatic/carbonyl)",
+          "없음"
+        ],
+        [
+          "UV-Vis",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031349_04_acetic_acid_S5_UV-Vis_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — UV-Vis: 듀얼뷰 ε+logε, 200→800nm",
+          "없음"
+        ],
+        [
+          "MolOrbital",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031354_04_acetic_acid_S5_MolOrbital_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 분자 오비탈 시각화",
+          "없음"
+        ]
+      ],
+      "S6_pdf": [
+        [
+          "스펙트럼 팝업 없음 (ORCA 필요?)",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031400_04_acetic_acid_S6_pdf_nospec.png"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "phenol",
+    "smiles": "Oc1ccccc1",
+    "expected": "RED(O)+mix",
+    "note": "OH→RED, ring=EDG편향",
+    "stages": {
+      "S0_draw": [
+        [
+          "그리기 레이어",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031408_05_phenol_S0_draw.png"
+        ]
+      ],
+      "S1_lewis": [
+        [
+          "루이스 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031411_05_phenol_S1_lewis.png"
+        ]
+      ],
+      "S2_theory": [
+        [
+          "이론적 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031415_05_phenol_S2_theory.png"
+        ]
+      ],
+      "S3_select": [
+        [
+          "전체 선택",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031420_05_phenol_S3_select.png"
+        ]
+      ],
+      "S4_3d": [
+        [
+          "3D 초기",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031429_05_phenol_S4_3d_initial.png"
+        ],
+        [
+          "3D X회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031432_05_phenol_S4_3d_rotX.png"
+        ],
+        [
+          "3D Y회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031434_05_phenol_S4_3d_rotY.png"
+        ]
+      ],
+      "S5_spectra": [
+        [
+          "IR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031441_05_phenol_S5_IR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — IR: 4000→400cm⁻¹, Transmittance%, 피크↓",
+          "없음"
+        ],
+        [
+          "Raman",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031446_05_phenol_S5_Raman_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — Raman: Shift cm⁻¹, Intensity, 피크↑",
+          "없음"
+        ],
+        [
+          "1H-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031452_05_phenol_S5_1H-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 1H-NMR: 12→0ppm, Integration line",
+          "없음"
+        ],
+        [
+          "13C-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031457_05_phenol_S5_13C-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 13C-NMR: 220→0ppm, Zone색 (aliphatic/aromatic/carbonyl)",
+          "없음"
+        ],
+        [
+          "UV-Vis",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031502_05_phenol_S5_UV-Vis_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — UV-Vis: 듀얼뷰 ε+logε, 200→800nm",
+          "없음"
+        ],
+        [
+          "MolOrbital",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031507_05_phenol_S5_MolOrbital_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 분자 오비탈 시각화",
+          "없음"
+        ]
+      ],
+      "S6_pdf": [
+        [
+          "스펙트럼 팝업 없음 (ORCA 필요?)",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031513_05_phenol_S6_pdf_nospec.png"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "aniline",
+    "smiles": "Nc1ccccc1",
+    "expected": "RED(N)+mix",
+    "note": "NH2→고리 RED편향",
+    "stages": {
+      "S0_draw": [
+        [
+          "그리기 레이어",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031520_06_aniline_S0_draw.png"
+        ]
+      ],
+      "S1_lewis": [
+        [
+          "루이스 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031524_06_aniline_S1_lewis.png"
+        ]
+      ],
+      "S2_theory": [
+        [
+          "이론적 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031528_06_aniline_S2_theory.png"
+        ]
+      ],
+      "S3_select": [
+        [
+          "전체 선택",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031532_06_aniline_S3_select.png"
+        ]
+      ],
+      "S4_3d": [
+        [
+          "3D 초기",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031542_06_aniline_S4_3d_initial.png"
+        ],
+        [
+          "3D X회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031544_06_aniline_S4_3d_rotX.png"
+        ],
+        [
+          "3D Y회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031546_06_aniline_S4_3d_rotY.png"
+        ]
+      ],
+      "S5_spectra": [
+        [
+          "IR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031554_06_aniline_S5_IR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — IR: 4000→400cm⁻¹, Transmittance%, 피크↓",
+          "없음"
+        ],
+        [
+          "Raman",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031559_06_aniline_S5_Raman_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — Raman: Shift cm⁻¹, Intensity, 피크↑",
+          "없음"
+        ],
+        [
+          "1H-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031604_06_aniline_S5_1H-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 1H-NMR: 12→0ppm, Integration line",
+          "없음"
+        ],
+        [
+          "13C-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031609_06_aniline_S5_13C-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 13C-NMR: 220→0ppm, Zone색 (aliphatic/aromatic/carbonyl)",
+          "없음"
+        ],
+        [
+          "UV-Vis",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031614_06_aniline_S5_UV-Vis_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — UV-Vis: 듀얼뷰 ε+logε, 200→800nm",
+          "없음"
+        ],
+        [
+          "MolOrbital",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031619_06_aniline_S5_MolOrbital_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 분자 오비탈 시각화",
+          "없음"
+        ]
+      ],
+      "S6_pdf": [
+        [
+          "스펙트럼 팝업 없음 (ORCA 필요?)",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031625_06_aniline_S6_pdf_nospec.png"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "chloromethane",
+    "smiles": "CCl",
+    "expected": "RED(Cl)+BLUE(C)",
+    "note": "Cl=RED, C=BLUE",
+    "stages": {
+      "S0_draw": [
+        [
+          "그리기 레이어",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031633_07_chloromethane_S0_draw.png"
+        ]
+      ],
+      "S1_lewis": [
+        [
+          "루이스 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031637_07_chloromethane_S1_lewis.png"
+        ]
+      ],
+      "S2_theory": [
+        [
+          "이론적 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031640_07_chloromethane_S2_theory.png"
+        ]
+      ],
+      "S3_select": [
+        [
+          "전체 선택",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031645_07_chloromethane_S3_select.png"
+        ]
+      ],
+      "S4_3d": [
+        [
+          "3D 초기",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031654_07_chloromethane_S4_3d_initial.png"
+        ],
+        [
+          "3D X회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031657_07_chloromethane_S4_3d_rotX.png"
+        ],
+        [
+          "3D Y회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031659_07_chloromethane_S4_3d_rotY.png"
+        ]
+      ],
+      "S5_spectra": [
+        [
+          "IR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031707_07_chloromethane_S5_IR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — IR: 4000→400cm⁻¹, Transmittance%, 피크↓",
+          "없음"
+        ],
+        [
+          "Raman",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031712_07_chloromethane_S5_Raman_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — Raman: Shift cm⁻¹, Intensity, 피크↑",
+          "없음"
+        ],
+        [
+          "1H-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031717_07_chloromethane_S5_1H-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 1H-NMR: 12→0ppm, Integration line",
+          "없음"
+        ],
+        [
+          "13C-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031722_07_chloromethane_S5_13C-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 13C-NMR: 220→0ppm, Zone색 (aliphatic/aromatic/carbonyl)",
+          "없음"
+        ],
+        [
+          "UV-Vis",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031727_07_chloromethane_S5_UV-Vis_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — UV-Vis: 듀얼뷰 ε+logε, 200→800nm",
+          "없음"
+        ],
+        [
+          "MolOrbital",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031732_07_chloromethane_S5_MolOrbital_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 분자 오비탈 시각화",
+          "없음"
+        ]
+      ],
+      "S6_pdf": [
+        [
+          "스펙트럼 팝업 없음 (ORCA 필요?)",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031738_07_chloromethane_S6_pdf_nospec.png"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "L-alanine",
+    "smiles": "C[C@@H](N)C(=O)O",
+    "expected": "CHIRAL",
+    "note": "R/S 키랄 중심",
+    "stages": {
+      "S0_draw": [
+        [
+          "그리기 레이어",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031746_08_L-alanine_S0_draw.png"
+        ]
+      ],
+      "S1_lewis": [
+        [
+          "루이스 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031749_08_L-alanine_S1_lewis.png"
+        ]
+      ],
+      "S2_theory": [
+        [
+          "이론적 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031753_08_L-alanine_S2_theory.png"
+        ]
+      ],
+      "S3_select": [
+        [
+          "전체 선택",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031758_08_L-alanine_S3_select.png"
+        ]
+      ],
+      "S4_3d": [
+        [
+          "3D 초기",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031807_08_L-alanine_S4_3d_initial.png"
+        ],
+        [
+          "3D X회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031810_08_L-alanine_S4_3d_rotX.png"
+        ],
+        [
+          "3D Y회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031812_08_L-alanine_S4_3d_rotY.png"
+        ]
+      ],
+      "S5_spectra": [
+        [
+          "IR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031820_08_L-alanine_S5_IR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — IR: 4000→400cm⁻¹, Transmittance%, 피크↓",
+          "없음"
+        ],
+        [
+          "Raman",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031825_08_L-alanine_S5_Raman_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — Raman: Shift cm⁻¹, Intensity, 피크↑",
+          "없음"
+        ],
+        [
+          "1H-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031830_08_L-alanine_S5_1H-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 1H-NMR: 12→0ppm, Integration line",
+          "없음"
+        ],
+        [
+          "13C-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031835_08_L-alanine_S5_13C-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 13C-NMR: 220→0ppm, Zone색 (aliphatic/aromatic/carbonyl)",
+          "없음"
+        ],
+        [
+          "UV-Vis",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031840_08_L-alanine_S5_UV-Vis_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — UV-Vis: 듀얼뷰 ε+logε, 200→800nm",
+          "없음"
+        ],
+        [
+          "MolOrbital",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031845_08_L-alanine_S5_MolOrbital_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 분자 오비탈 시각화",
+          "없음"
+        ]
+      ],
+      "S6_pdf": [
+        [
+          "스펙트럼 팝업 없음 (ORCA 필요?)",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031851_08_L-alanine_S6_pdf_nospec.png"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "naphthalene",
+    "smiles": "c1ccc2ccccc2c1",
+    "expected": "GREEN+RED-pi",
+    "note": "다환방향족 π halo",
+    "stages": {
+      "S0_draw": [
+        [
+          "그리기 레이어",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031859_09_naphthalene_S0_draw.png"
+        ]
+      ],
+      "S1_lewis": [
+        [
+          "루이스 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031902_09_naphthalene_S1_lewis.png"
+        ]
+      ],
+      "S2_theory": [
+        [
+          "이론적 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031906_09_naphthalene_S2_theory.png"
+        ]
+      ],
+      "S3_select": [
+        [
+          "전체 선택",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031911_09_naphthalene_S3_select.png"
+        ]
+      ],
+      "S4_3d": [
+        [
+          "3D 초기",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031920_09_naphthalene_S4_3d_initial.png"
+        ],
+        [
+          "3D X회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031923_09_naphthalene_S4_3d_rotX.png"
+        ],
+        [
+          "3D Y회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031925_09_naphthalene_S4_3d_rotY.png"
+        ]
+      ],
+      "S5_spectra": [
+        [
+          "IR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031933_09_naphthalene_S5_IR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — IR: 4000→400cm⁻¹, Transmittance%, 피크↓",
+          "없음"
+        ],
+        [
+          "Raman",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031938_09_naphthalene_S5_Raman_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — Raman: Shift cm⁻¹, Intensity, 피크↑",
+          "없음"
+        ],
+        [
+          "1H-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031943_09_naphthalene_S5_1H-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 1H-NMR: 12→0ppm, Integration line",
+          "없음"
+        ],
+        [
+          "13C-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031948_09_naphthalene_S5_13C-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 13C-NMR: 220→0ppm, Zone색 (aliphatic/aromatic/carbonyl)",
+          "없음"
+        ],
+        [
+          "UV-Vis",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031953_09_naphthalene_S5_UV-Vis_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — UV-Vis: 듀얼뷰 ε+logε, 200→800nm",
+          "없음"
+        ],
+        [
+          "MolOrbital",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\031958_09_naphthalene_S5_MolOrbital_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 분자 오비탈 시각화",
+          "없음"
+        ]
+      ],
+      "S6_pdf": [
+        [
+          "스펙트럼 팝업 없음 (ORCA 필요?)",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032004_09_naphthalene_S6_pdf_nospec.png"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "formaldehyde",
+    "smiles": "C=O",
+    "expected": "RED(O)+BLUE(C)",
+    "note": "C=O: C=BLUE, O=RED",
+    "stages": {
+      "S0_draw": [
+        [
+          "그리기 레이어",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032012_10_formaldehyde_S0_draw.png"
+        ]
+      ],
+      "S1_lewis": [
+        [
+          "루이스 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032015_10_formaldehyde_S1_lewis.png"
+        ]
+      ],
+      "S2_theory": [
+        [
+          "이론적 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032019_10_formaldehyde_S2_theory.png"
+        ]
+      ],
+      "S3_select": [
+        [
+          "전체 선택",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032024_10_formaldehyde_S3_select.png"
+        ]
+      ],
+      "S4_3d": [
+        [
+          "3D 초기",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032033_10_formaldehyde_S4_3d_initial.png"
+        ],
+        [
+          "3D X회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032036_10_formaldehyde_S4_3d_rotX.png"
+        ],
+        [
+          "3D Y회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032038_10_formaldehyde_S4_3d_rotY.png"
+        ]
+      ],
+      "S5_spectra": [
+        [
+          "IR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032045_10_formaldehyde_S5_IR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — IR: 4000→400cm⁻¹, Transmittance%, 피크↓",
+          "없음"
+        ],
+        [
+          "Raman",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032050_10_formaldehyde_S5_Raman_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — Raman: Shift cm⁻¹, Intensity, 피크↑",
+          "없음"
+        ],
+        [
+          "1H-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032055_10_formaldehyde_S5_1H-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 1H-NMR: 12→0ppm, Integration line",
+          "없음"
+        ],
+        [
+          "13C-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032101_10_formaldehyde_S5_13C-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 13C-NMR: 220→0ppm, Zone색 (aliphatic/aromatic/carbonyl)",
+          "없음"
+        ],
+        [
+          "UV-Vis",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032106_10_formaldehyde_S5_UV-Vis_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — UV-Vis: 듀얼뷰 ε+logε, 200→800nm",
+          "없음"
+        ],
+        [
+          "MolOrbital",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032111_10_formaldehyde_S5_MolOrbital_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 분자 오비탈 시각화",
+          "없음"
+        ]
+      ],
+      "S6_pdf": [
+        [
+          "스펙트럼 팝업 없음 (ORCA 필요?)",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032117_10_formaldehyde_S6_pdf_nospec.png"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "water",
+    "smiles": "O",
+    "expected": "RED(O)+BLUE(H)",
+    "note": "O=RED, H=BLUE",
+    "stages": {
+      "S0_draw": [
+        [
+          "그리기 레이어",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032124_11_water_S0_draw.png"
+        ]
+      ],
+      "S1_lewis": [
+        [
+          "루이스 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032128_11_water_S1_lewis.png"
+        ]
+      ],
+      "S2_theory": [
+        [
+          "이론적 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032131_11_water_S2_theory.png"
+        ]
+      ],
+      "S3_select": [
+        [
+          "전체 선택",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032136_11_water_S3_select.png"
+        ]
+      ],
+      "S4_3d": [
+        [
+          "3D 초기",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032145_11_water_S4_3d_initial.png"
+        ],
+        [
+          "3D X회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032148_11_water_S4_3d_rotX.png"
+        ],
+        [
+          "3D Y회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032150_11_water_S4_3d_rotY.png"
+        ]
+      ],
+      "S5_spectra": [
+        [
+          "IR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032158_11_water_S5_IR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — IR: 4000→400cm⁻¹, Transmittance%, 피크↓",
+          "없음"
+        ],
+        [
+          "Raman",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032203_11_water_S5_Raman_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — Raman: Shift cm⁻¹, Intensity, 피크↑",
+          "없음"
+        ],
+        [
+          "1H-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032208_11_water_S5_1H-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 1H-NMR: 12→0ppm, Integration line",
+          "없음"
+        ],
+        [
+          "13C-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032213_11_water_S5_13C-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 13C-NMR: 220→0ppm, Zone색 (aliphatic/aromatic/carbonyl)",
+          "없음"
+        ],
+        [
+          "UV-Vis",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032218_11_water_S5_UV-Vis_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — UV-Vis: 듀얼뷰 ε+logε, 200→800nm",
+          "없음"
+        ],
+        [
+          "MolOrbital",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032223_11_water_S5_MolOrbital_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 분자 오비탈 시각화",
+          "없음"
+        ]
+      ],
+      "S6_pdf": [
+        [
+          "스펙트럼 팝업 없음 (ORCA 필요?)",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032229_11_water_S6_pdf_nospec.png"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "aspirin",
+    "smiles": "CC(=O)Oc1ccccc1C(=O)O",
+    "expected": "MULTI",
+    "note": "복합 작용기",
+    "stages": {
+      "S0_draw": [
+        [
+          "그리기 레이어",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032236_12_aspirin_S0_draw.png"
+        ]
+      ],
+      "S1_lewis": [
+        [
+          "루이스 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032240_12_aspirin_S1_lewis.png"
+        ]
+      ],
+      "S2_theory": [
+        [
+          "이론적 구조",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032244_12_aspirin_S2_theory.png"
+        ]
+      ],
+      "S3_select": [
+        [
+          "전체 선택",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032248_12_aspirin_S3_select.png"
+        ]
+      ],
+      "S4_3d": [
+        [
+          "3D 초기",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032258_12_aspirin_S4_3d_initial.png"
+        ],
+        [
+          "3D X회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032301_12_aspirin_S4_3d_rotX.png"
+        ],
+        [
+          "3D Y회전",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032303_12_aspirin_S4_3d_rotY.png"
+        ]
+      ],
+      "S5_spectra": [
+        [
+          "IR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032310_12_aspirin_S5_IR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — IR: 4000→400cm⁻¹, Transmittance%, 피크↓",
+          "없음"
+        ],
+        [
+          "Raman",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032315_12_aspirin_S5_Raman_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — Raman: Shift cm⁻¹, Intensity, 피크↑",
+          "없음"
+        ],
+        [
+          "1H-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032320_12_aspirin_S5_1H-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 1H-NMR: 12→0ppm, Integration line",
+          "없음"
+        ],
+        [
+          "13C-NMR",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032326_12_aspirin_S5_13C-NMR_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 13C-NMR: 220→0ppm, Zone색 (aliphatic/aromatic/carbonyl)",
+          "없음"
+        ],
+        [
+          "UV-Vis",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032331_12_aspirin_S5_UV-Vis_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — UV-Vis: 듀얼뷰 ε+logε, 200→800nm",
+          "없음"
+        ],
+        [
+          "MolOrbital",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032336_12_aspirin_S5_MolOrbital_nodlg.png",
+          "팝업 없음 (ORCA 파일 필요?) — 분자 오비탈 시각화",
+          "없음"
+        ]
+      ],
+      "S6_pdf": [
+        [
+          "스펙트럼 팝업 없음 (ORCA 필요?)",
+          "c:\\chemgrid\\docs\\reports\\visual_shots\\032342_12_aspirin_S6_pdf_nospec.png"
+        ]
+      ]
+    }
+  }
+]

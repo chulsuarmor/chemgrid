@@ -1,0 +1,126 @@
+
+══════════════════════════════════════════════════════════════════════
+  STEP 0: 초기화 — 파일 동기화 & ChemGrid 실행
+══════════════════════════════════════════════════════════════════════
+  ✅  [22:20:36] 파일 동기화 완료: 16개
+  ℹ️   ChemGrid 실행: C:\ProgramData\anaconda3\envs\chemgrid\python.exe draw.py
+  ℹ️   작업 디렉터리: c:\chemgrid\src\app
+  ✅  [22:20:36] 프로세스 시작됨 (PID: 33092)
+  ℹ️   ChemGrid 창 로딩 대기 중 (최대 25초)...
+  ✅  [22:20:36] 창 감지: 'chemgrid - 파일 탐색기'  (1285×852)
+  ✅  [22:20:36] 스크린샷: 00_app_launched_222036.png
+  [앱][22:20:38] c:\chemgrid\src\app\popup_3d.py:85: FutureWarning:
+  [앱][22:20:38] All support for the `google.generativeai` package has ended. It will no longer be receiving
+  [앱][22:20:38] updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+  [앱][22:20:38] See README for more details:
+  [앱][22:20:38] https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+  [앱][22:20:38] import google.generativeai as genai_lib
+  [앱][22:20:39] [Phase D] RDKit not available, IUPAC naming disabled
+  [앱][22:20:39] [main_window.py] Verification report module not available
+  [앱][22:20:39] [TOOLBAR_V5] setup_toolbars loaded - 2-row layout with addToolBarBreak
+  [앱][22:20:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:20:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:20:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:20:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+
+══════════════════════════════════════════════════════════════════════
+  STEP 1: AI 텍스트 입력창으로 벤젠 그리기
+══════════════════════════════════════════════════════════════════════
+
+  👉  ChemGrid 하단 중앙의 어두운 텍스트 입력창을 클릭하세요.
+  👉  플레이스홀더 텍스트:  '🤖 분자명 입력 (예: hemoglobin, benzene...)'
+  👉  
+  👉  'benzene' 을 입력한 뒤 Enter 키를 누르세요.
+  👉  (또는 ⚗ 버튼 클릭)
+
+  ℹ️   앱 로그에서 그리기 완료 신호를 최대 35초간 감지합니다...
+  [앱][22:20:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:20:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:20:45] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:20:56] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:20:57] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:20:57] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:20:59] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:20:59] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:00] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:10] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:10] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:10] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:10] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:10] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:10] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:10] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:13] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:14] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  ⚠️   35초 내 자동 감지 실패.
+  ⚠️   → 입력창에 'benzene' 입력 후 Enter를 눌렀나요?
+  ⚠️   → Drawing 레이어(기본 화면)인지 확인하세요
+  ✅  [22:21:15] 스크린샷: 01_benzene_timeout_222114.png
+
+══════════════════════════════════════════════════════════════════════
+  STEP 2: 이론적 구조 레이어 전환
+══════════════════════════════════════════════════════════════════════
+
+  👉  ChemGrid 우하단의 파란색 '이론적 구조' 버튼을 클릭하세요.
+  👉  (루이스 구조 계산 후 이론적 구조 레이어로 이동합니다)
+  👉  
+  👉  이동 후 오른쪽에 파란 '입체 구조' 버튼이 나타나야 합니다.
+
+  ℹ️   레이어 전환 신호 최대 30초 대기...
+  [앱][22:21:19] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:19] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][22:21:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  ⚠️   전환 로그 미감지 — 30초 타임아웃으로 진행
+  ✅  [22:21:46] 스크린샷: 02_theory_mode_222146.png
+
+══════════════════════════════════════════════════════════════════════
+  STEP 3: 입체 구조 3D 팝업 열기
+══════════════════════════════════════════════════════════════════════
+
+  👉  이론적 구조 레이어 우측의 파란색 '입체 구조' 버튼을 클릭하세요.
+  👉  
+  👉  [버튼이 회색(비활성)이면 → B1 버그]
+  👉  agents/06_3d_structure/activation_handler.py 수정 필요
+  👉  이 경우: 스크린샷만 찍고 다음 단계로 넘어갑니다.
+
+  ℹ️   '3D 분자 분석' 팝업 창이 열릴 때까지 최대 40초 대기...
+  ✅  [22:21:46] 3D 팝업 감지: 'ChemGrid — 통합 3D 분자 분석'
+  ✅  [22:21:47] 창 캡처: 03_3d_popup_222147.png  (1116×1173)
+  ✅  [22:21:47] 스크린샷: 03_3d_popup_full_222147.png
+
+══════════════════════════════════════════════════════════════════════
+  STEP 4: 최종 상태 캡처 & 결과 보고
+══════════════════════════════════════════════════════════════════════
+  ✅  [22:21:48] 스크린샷: 99_final_state_222148.png
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📊 테스트 결과 요약
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  • 스크린샷 저장 위치 : c:\chemgrid\tools\test_screenshots
+  • 세션 로그 파일    : c:\chemgrid\tools\test_logs\session_20260306_222036.log
+  • 캡처된 파일 수    : 25개
+  • ChemGrid 프로세스 : 실행 중 (PID 33092)
+
+  수정 필요 항목 (master_plan.md 기준):
+  🔴 B1: '이론적 구조'에서 '입체 구조' 버튼 비활성 → activation_handler.py
+  🔴 B2: 3D 팝업 미실행 → popup_3d.py 임포트/경로 오류
+  🔴 B4: 벤젠 전자구름 비균등 → engine_resonance.py ConjugationEngine
+
+  최근 캡처된 스크린샷:
+    04_3d_popup_203035.png
+    05_no_popup_fallback_203035.png
+    99_final_203036.png
+    99_final_state_204306.png
+    99_final_state_205934.png
+    99_final_state_222148.png
+
+  ★ AI 피드백용 로그: c:\chemgrid\tools\test_logs\session_20260306_222036.log
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✅  [22:21:59] ChemGrid 프로세스 종료 완료

@@ -1,0 +1,977 @@
+
+══════════════════════════════════════════════════════════════════════
+  STEP 0: 초기화 — 파일 동기화 & ChemGrid 실행
+══════════════════════════════════════════════════════════════════════
+  ✅  [18:56:50] 파일 동기화 완료: 16개
+  ℹ️   ChemGrid 실행: C:\ProgramData\anaconda3\envs\chemgrid\python.exe draw.py
+  ℹ️   작업 디렉터리: c:\chemgrid\src\app
+  ✅  [18:56:50] 프로세스 시작됨 (PID: 27608)
+  ℹ️   ChemGrid 창 로딩 대기 중 (최대 25초)...
+  ✅  [18:56:50] 창 감지: 'chemgrid 및 1개 탭 - 파일 탐색기'  (1057×852)
+  ✅  [18:56:50] 스크린샷: 00_app_launched_185650.png
+  [앱][18:56:51] c:\chemgrid\src\app\popup_3d.py:114: FutureWarning:
+  [앱][18:56:51] All support for the `google.generativeai` package has ended. It will no longer be receiving
+  [앱][18:56:51] updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+  [앱][18:56:51] See README for more details:
+  [앱][18:56:51] https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+  [앱][18:56:51] import google.generativeai as genai_lib
+  [앱][18:56:52] [Phase D] RDKit not available, IUPAC naming disabled
+  [앱][18:56:52] [main_window.py] Verification report module not available
+  [앱][18:56:52] [TOOLBAR_V5] setup_toolbars loaded - 2-row layout with addToolBarBreak
+  [앱][18:56:52] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:56:52] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:56:52] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:56:52] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+
+══════════════════════════════════════════════════════════════════════
+  STEP 1: AI 텍스트 입력창으로 벤젠 그리기
+══════════════════════════════════════════════════════════════════════
+
+  👉  ChemGrid 하단 중앙의 어두운 텍스트 입력창을 클릭하세요.
+  👉  플레이스홀더 텍스트:  '🤖 분자명 입력 (예: hemoglobin, benzene...)'
+  👉  
+  👉  'benzene' 을 입력한 뒤 Enter 키를 누르세요.
+  👉  (또는 ⚗ 버튼 클릭)
+
+  ℹ️   앱 로그에서 그리기 완료 신호를 최대 35초간 감지합니다...
+  [앱][18:57:08] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:08] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  ⚠️   35초 내 자동 감지 실패.
+  ⚠️   → 입력창에 'benzene' 입력 후 Enter를 눌렀나요?
+  ⚠️   → Drawing 레이어(기본 화면)인지 확인하세요
+  ✅  [18:57:28] 스크린샷: 01_benzene_timeout_185728.png
+
+══════════════════════════════════════════════════════════════════════
+  STEP 2: 이론적 구조 레이어 전환
+══════════════════════════════════════════════════════════════════════
+
+  👉  ChemGrid 우하단의 파란색 '이론적 구조' 버튼을 클릭하세요.
+  👉  (루이스 구조 계산 후 이론적 구조 레이어로 이동합니다)
+  👉  
+  👉  이동 후 오른쪽에 파란 '입체 구조' 버튼이 나타나야 합니다.
+
+  ℹ️   레이어 전환 신호 최대 30초 대기...
+  [앱][18:57:30] [MainWindow] Progress tracking and Discord reporting activated
+  [앱][18:57:30] [CHIRALITY AUDIT LOG]
+  [앱][18:57:30] [RDKIT ATOM ANALYSIS]
+  [앱][18:57:30] Atom C at (740.0, 450.32): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][18:57:30] Atom C at (740.0, 588.88): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][18:57:30] >>> [FINAL RESULT] SMILES: CC
+  [앱][18:57:30] [LEWIS DATA INJECTION LOG]
+  [앱][18:57:30] -> SUCCESS: Matched Lewis Data at (740.0, 450.32) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][18:57:30] -> SUCCESS: Matched Lewis Data at (740.0, 588.88) (dist: 0.00) | H:3, LP:0, Charge:0
+  ✅  [18:57:30] 레이어 전환 감지: [LEWIS DATA INJECTION LOG]
+  [앱][18:57:30] [CHIRALITY AUDIT LOG]
+  [앱][18:57:30] [RDKIT ATOM ANALYSIS]
+  [앱][18:57:30] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][18:57:30] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][18:57:30] Atom C at (900.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][18:57:30] Atom C at (880.0, 762.08): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][18:57:30] >>> [FINAL RESULT] SMILES: CCCC
+  [앱][18:57:30] [LEWIS DATA INJECTION LOG]
+  [앱][18:57:30] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][18:57:30] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][18:57:30] -> SUCCESS: Matched Lewis Data at (900.0, 727.44) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][18:57:30] -> SUCCESS: Matched Lewis Data at (880.0, 762.08) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][18:57:30] [MolDraw] 'butane' �� 4 atoms, 3 bonds  (selected_keys=4)
+  ✅  [18:57:32] 스크린샷: 02_theory_mode_185731.png
+
+══════════════════════════════════════════════════════════════════════
+  STEP 3: 입체 구조 3D 팝업 열기
+══════════════════════════════════════════════════════════════════════
+
+  👉  이론적 구조 레이어 우측의 파란색 '입체 구조' 버튼을 클릭하세요.
+  👉  
+  👉  [버튼이 회색(비활성)이면 → B1 버그]
+  👉  agents/06_3d_structure/activation_handler.py 수정 필요
+  👉  이 경우: 스크린샷만 찍고 다음 단계로 넘어갑니다.
+
+  ℹ️   '3D 분자 분석' 팝업 창이 열릴 때까지 최대 40초 대기...
+  ✅  [18:57:32] 3D 팝업 감지: 'popup_3d.py - chemgrid - Visual Studio Code [Administrator]'
+  ✅  [18:57:32] 창 캡처: 03_3d_popup_185732.png  (1517×1392)
+  ✅  [18:57:32] 스크린샷: 03_3d_popup_full_185732.png
+
+══════════════════════════════════════════════════════════════════════
+  STEP 4: 최종 상태 캡처 & 결과 보고
+══════════════════════════════════════════════════════════════════════
+  ✅  [18:57:34] 스크린샷: 99_final_state_185734.png
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📊 테스트 결과 요약
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  • 스크린샷 저장 위치 : c:\chemgrid\tools\test_screenshots
+  • 세션 로그 파일    : c:\chemgrid\tools\test_logs\session_20260307_185650.log
+  • 캡처된 파일 수    : 64개
+  • ChemGrid 프로세스 : 실행 중 (PID 27608)
+
+  수정 필요 항목 (master_plan.md 기준):
+  🔴 B1: '이론적 구조'에서 '입체 구조' 버튼 비활성 → activation_handler.py
+  🔴 B2: 3D 팝업 미실행 → popup_3d.py 임포트/경로 오류
+  🔴 B4: 벤젠 전자구름 비균등 → engine_resonance.py ConjugationEngine
+
+  최근 캡처된 스크린샷:
+    99_final_state_185600.png
+    99_final_state_185602.png
+    99_final_state_185734.png
+    99_final_state_204306.png
+    99_final_state_205934.png
+    99_final_state_222148.png
+
+  ★ AI 피드백용 로그: c:\chemgrid\tools\test_logs\session_20260307_185650.log
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [앱][18:57:38] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:38] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:38] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:39] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:45] [CHIRALITY AUDIT LOG]
+  [앱][18:57:45] [RDKIT ATOM ANALYSIS]
+  [앱][18:57:45] Atom C at (800.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][18:57:45] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][18:57:45] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][18:57:45] Atom C at (860.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][18:57:45] Atom C at (840.0, 762.08): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][18:57:45] >>> [FINAL RESULT] SMILES: C1CCCC1
+  [앱][18:57:45] [LEWIS DATA INJECTION LOG]
+  [앱][18:57:45] -> SUCCESS: Matched Lewis Data at (800.0, 692.8) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][18:57:45] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][18:57:45] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][18:57:45] -> SUCCESS: Matched Lewis Data at (860.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][18:57:45] -> SUCCESS: Matched Lewis Data at (840.0, 762.08) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][18:57:45] [MolDraw] 'cyclopentane' �� 5 atoms, 5 bonds  (selected_keys=5)
+  [앱][18:57:49] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:49] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:51] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:51] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:51] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:51] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:55] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][18:57:55] self.figure.tight_layout()
+  [앱][18:57:55] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][18:57:55] self.figure.tight_layout()
+  [앱][18:57:55] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][18:57:55] self.figure.tight_layout()
+  [앱][18:57:55] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][18:57:55] self.figure.tight_layout()
+  [앱][18:57:55] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][18:57:55] self.canvas.draw()
+  [앱][18:57:55] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][18:57:55] self.canvas.draw()
+  [앱][18:57:55] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][18:57:55] self.canvas.draw()
+  [앱][18:57:55] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][18:57:55] self.canvas.draw()
+  [앱][18:57:55] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:55] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:55] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:55] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:55] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:55] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:55] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:57:55] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][18:59:54] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][18:59:54] sys.exit(app.exec())
+  [앱][18:59:54] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][18:59:54] sys.exit(app.exec())
+  [앱][18:59:54] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][18:59:54] sys.exit(app.exec())
+  [앱][18:59:54] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][18:59:54] sys.exit(app.exec())
+  [앱][19:00:00] Gemini peak analysis failed: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit.
+  [앱][19:00:00] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:00] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:00] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:00] Please retry in 59.687491095s. [links {
+  [앱][19:00:00] description: "Learn more about Gemini API quotas"
+  [앱][19:00:00] url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+  [앱][19:00:00] }
+  [앱][19:00:00] , violations {
+  [앱][19:00:00] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+  [앱][19:00:00] quota_id: "GenerateContentInputTokensPerModelPerMinute-FreeTier"
+  [앱][19:00:00] quota_dimensions {
+  [앱][19:00:00] key: "model"
+  [앱][19:00:00] value: "gemini-2.0-flash"
+  [앱][19:00:00] }
+  [앱][19:00:00] quota_dimensions {
+  [앱][19:00:00] key: "location"
+  [앱][19:00:00] value: "global"
+  [앱][19:00:00] }
+  [앱][19:00:00] }
+  [앱][19:00:00] violations {
+  [앱][19:00:00] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  [앱][19:00:00] quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+  [앱][19:00:00] quota_dimensions {
+  [앱][19:00:00] key: "model"
+  [앱][19:00:00] value: "gemini-2.0-flash"
+  [앱][19:00:00] }
+  [앱][19:00:00] quota_dimensions {
+  [앱][19:00:00] key: "location"
+  [앱][19:00:00] value: "global"
+  [앱][19:00:00] }
+  [앱][19:00:00] }
+  [앱][19:00:00] violations {
+  [앱][19:00:00] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  [앱][19:00:00] quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  [앱][19:00:00] quota_dimensions {
+  [앱][19:00:00] key: "model"
+  [앱][19:00:00] value: "gemini-2.0-flash"
+  [앱][19:00:00] }
+  [앱][19:00:00] quota_dimensions {
+  [앱][19:00:00] key: "location"
+  [앱][19:00:00] value: "global"
+  [앱][19:00:00] }
+  [앱][19:00:00] }
+  [앱][19:00:00] , retry_delay {
+  [앱][19:00:00] seconds: 59
+  [앱][19:00:00] }
+  [앱][19:00:00] ]
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3241: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3241: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3241: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3241: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3228: UserWarning: Glyph 50508 (\N{HANGUL SYLLABLE AL}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()  # matplotlib canvas ����
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3228: UserWarning: Glyph 52992 (\N{HANGUL SYLLABLE KE}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()  # matplotlib canvas ����
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3228: UserWarning: Glyph 51064 (\N{HANGUL SYLLABLE IN}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()  # matplotlib canvas ����
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3228: UserWarning: Glyph 48516 (\N{HANGUL SYLLABLE BUN}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()  # matplotlib canvas ����
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3228: UserWarning: Glyph 49437 (\N{HANGUL SYLLABLE SEOG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()  # matplotlib canvas ����
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3228: UserWarning: Glyph 52280 (\N{HANGUL SYLLABLE CAM}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()  # matplotlib canvas ����
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3228: UserWarning: Glyph 44256 (\N{HANGUL SYLLABLE GO}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()  # matplotlib canvas ����
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3228: UserWarning: Glyph 50857 (\N{HANGUL SYLLABLE YONG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()  # matplotlib canvas ����
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3228: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()  # matplotlib canvas ����
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3228: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()  # matplotlib canvas ����
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3228: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()  # matplotlib canvas ����
+  [앱][19:00:00] c:\chemgrid\src\app\popup_3d.py:3228: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:00] self.canvas.draw()  # matplotlib canvas ����
+  [앱][19:00:04] Gemini peak analysis failed: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit.
+  [앱][19:00:04] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:04] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:04] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:04] Please retry in 56.007854284s. [links {
+  [앱][19:00:04] description: "Learn more about Gemini API quotas"
+  [앱][19:00:04] url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+  [앱][19:00:04] }
+  [앱][19:00:04] , violations {
+  [앱][19:00:04] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  [앱][19:00:04] quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  [앱][19:00:04] quota_dimensions {
+  [앱][19:00:04] key: "model"
+  [앱][19:00:04] value: "gemini-2.0-flash"
+  [앱][19:00:04] }
+  [앱][19:00:04] quota_dimensions {
+  [앱][19:00:04] key: "location"
+  [앱][19:00:04] value: "global"
+  [앱][19:00:04] }
+  [앱][19:00:04] }
+  [앱][19:00:04] violations {
+  [앱][19:00:04] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  [앱][19:00:04] quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+  [앱][19:00:04] quota_dimensions {
+  [앱][19:00:04] key: "model"
+  [앱][19:00:04] value: "gemini-2.0-flash"
+  [앱][19:00:04] }
+  [앱][19:00:04] quota_dimensions {
+  [앱][19:00:04] key: "location"
+  [앱][19:00:04] value: "global"
+  [앱][19:00:04] }
+  [앱][19:00:04] }
+  [앱][19:00:04] violations {
+  [앱][19:00:04] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+  [앱][19:00:04] quota_id: "GenerateContentInputTokensPerModelPerMinute-FreeTier"
+  [앱][19:00:04] quota_dimensions {
+  [앱][19:00:04] key: "model"
+  [앱][19:00:04] value: "gemini-2.0-flash"
+  [앱][19:00:04] }
+  [앱][19:00:04] quota_dimensions {
+  [앱][19:00:04] key: "location"
+  [앱][19:00:04] value: "global"
+  [앱][19:00:04] }
+  [앱][19:00:04] }
+  [앱][19:00:04] , retry_delay {
+  [앱][19:00:04] seconds: 56
+  [앱][19:00:04] }
+  [앱][19:00:04] ]
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 50508 (\N{HANGUL SYLLABLE AL}) missing from font(s) DejaVu Sans.
+  [앱][19:00:07] self.figure.tight_layout()
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 53420 (\N{HANGUL SYLLABLE KIL}) missing from font(s) DejaVu Sans.
+  [앱][19:00:07] self.figure.tight_layout()
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 52996 (\N{HANGUL SYLLABLE KEN}) missing from font(s) DejaVu Sans.
+  [앱][19:00:07] self.figure.tight_layout()
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 48169 (\N{HANGUL SYLLABLE BANG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:07] self.figure.tight_layout()
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 54693 (\N{HANGUL SYLLABLE HYANG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:07] self.figure.tight_layout()
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 51313 (\N{HANGUL SYLLABLE JOG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:07] self.figure.tight_layout()
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Tight layout not applied. The bottom and top margins cannot be made large enough to accommodate all Axes decorations.
+  [앱][19:00:07] self.figure.tight_layout()
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 50508 (\N{HANGUL SYLLABLE AL}) missing from font(s) DejaVu Sans.
+  [앱][19:00:07] self.canvas.draw()
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 53420 (\N{HANGUL SYLLABLE KIL}) missing from font(s) DejaVu Sans.
+  [앱][19:00:07] self.canvas.draw()
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 52996 (\N{HANGUL SYLLABLE KEN}) missing from font(s) DejaVu Sans.
+  [앱][19:00:07] self.canvas.draw()
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 48169 (\N{HANGUL SYLLABLE BANG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:07] self.canvas.draw()
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 54693 (\N{HANGUL SYLLABLE HYANG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:07] self.canvas.draw()
+  [앱][19:00:07] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 51313 (\N{HANGUL SYLLABLE JOG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:07] self.canvas.draw()
+  [앱][19:00:09] Gemini peak analysis failed: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit.
+  [앱][19:00:09] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:09] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:09] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:09] Please retry in 50.959518335s. [links {
+  [앱][19:00:09] description: "Learn more about Gemini API quotas"
+  [앱][19:00:09] url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+  [앱][19:00:09] }
+  [앱][19:00:09] , violations {
+  [앱][19:00:09] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+  [앱][19:00:09] quota_id: "GenerateContentInputTokensPerModelPerMinute-FreeTier"
+  [앱][19:00:09] quota_dimensions {
+  [앱][19:00:09] key: "model"
+  [앱][19:00:09] value: "gemini-2.0-flash"
+  [앱][19:00:09] }
+  [앱][19:00:09] quota_dimensions {
+  [앱][19:00:09] key: "location"
+  [앱][19:00:09] value: "global"
+  [앱][19:00:09] }
+  [앱][19:00:09] }
+  [앱][19:00:09] violations {
+  [앱][19:00:09] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  [앱][19:00:09] quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+  [앱][19:00:09] quota_dimensions {
+  [앱][19:00:09] key: "model"
+  [앱][19:00:09] value: "gemini-2.0-flash"
+  [앱][19:00:09] }
+  [앱][19:00:09] quota_dimensions {
+  [앱][19:00:09] key: "location"
+  [앱][19:00:09] value: "global"
+  [앱][19:00:09] }
+  [앱][19:00:09] }
+  [앱][19:00:09] violations {
+  [앱][19:00:09] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  [앱][19:00:09] quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  [앱][19:00:09] quota_dimensions {
+  [앱][19:00:09] key: "model"
+  [앱][19:00:09] value: "gemini-2.0-flash"
+  [앱][19:00:09] }
+  [앱][19:00:09] quota_dimensions {
+  [앱][19:00:09] key: "location"
+  [앱][19:00:09] value: "global"
+  [앱][19:00:09] }
+  [앱][19:00:09] }
+  [앱][19:00:09] , retry_delay {
+  [앱][19:00:09] seconds: 50
+  [앱][19:00:09] }
+  [앱][19:00:09] ]
+  [앱][19:00:14] Gemini peak analysis failed: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit.
+  [앱][19:00:14] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:14] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:14] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:14] Please retry in 46.028406921s. [links {
+  [앱][19:00:14] description: "Learn more about Gemini API quotas"
+  [앱][19:00:14] url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+  [앱][19:00:14] }
+  [앱][19:00:14] , violations {
+  [앱][19:00:14] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+  [앱][19:00:14] quota_id: "GenerateContentInputTokensPerModelPerMinute-FreeTier"
+  [앱][19:00:14] quota_dimensions {
+  [앱][19:00:14] key: "model"
+  [앱][19:00:14] value: "gemini-2.0-flash"
+  [앱][19:00:14] }
+  [앱][19:00:14] quota_dimensions {
+  [앱][19:00:14] key: "location"
+  [앱][19:00:14] value: "global"
+  [앱][19:00:14] }
+  [앱][19:00:14] }
+  [앱][19:00:14] violations {
+  [앱][19:00:14] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  [앱][19:00:14] quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+  [앱][19:00:14] quota_dimensions {
+  [앱][19:00:14] key: "model"
+  [앱][19:00:14] value: "gemini-2.0-flash"
+  [앱][19:00:14] }
+  [앱][19:00:14] quota_dimensions {
+  [앱][19:00:14] key: "location"
+  [앱][19:00:14] value: "global"
+  [앱][19:00:14] }
+  [앱][19:00:14] }
+  [앱][19:00:14] violations {
+  [앱][19:00:14] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  [앱][19:00:14] quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  [앱][19:00:14] quota_dimensions {
+  [앱][19:00:14] key: "model"
+  [앱][19:00:14] value: "gemini-2.0-flash"
+  [앱][19:00:14] }
+  [앱][19:00:14] quota_dimensions {
+  [앱][19:00:14] key: "location"
+  [앱][19:00:14] value: "global"
+  [앱][19:00:14] }
+  [앱][19:00:14] }
+  [앱][19:00:14] , retry_delay {
+  [앱][19:00:14] seconds: 46
+  [앱][19:00:14] }
+  [앱][19:00:14] ]
+  [앱][19:00:16] c:\chemgrid\src\app\popup_3d.py:2819: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][19:00:16] self.figure.tight_layout()
+  [앱][19:00:16] c:\chemgrid\src\app\popup_3d.py:2819: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][19:00:16] self.figure.tight_layout()
+  [앱][19:00:16] c:\chemgrid\src\app\popup_3d.py:2819: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][19:00:16] self.figure.tight_layout()
+  [앱][19:00:16] c:\chemgrid\src\app\popup_3d.py:2819: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:16] self.figure.tight_layout()
+  [앱][19:00:16] c:\chemgrid\src\app\popup_3d.py:2820: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][19:00:16] self.canvas.draw()
+  [앱][19:00:16] c:\chemgrid\src\app\popup_3d.py:2820: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][19:00:16] self.canvas.draw()
+  [앱][19:00:16] c:\chemgrid\src\app\popup_3d.py:2820: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][19:00:16] self.canvas.draw()
+  [앱][19:00:16] c:\chemgrid\src\app\popup_3d.py:2820: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:16] self.canvas.draw()
+  [앱][19:00:17] Gemini peak analysis failed: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit.
+  [앱][19:00:17] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:17] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:17] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:17] Please retry in 42.366310695s. [links {
+  [앱][19:00:17] description: "Learn more about Gemini API quotas"
+  [앱][19:00:17] url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+  [앱][19:00:17] }
+  [앱][19:00:17] , violations {
+  [앱][19:00:17] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+  [앱][19:00:17] quota_id: "GenerateContentInputTokensPerModelPerMinute-FreeTier"
+  [앱][19:00:17] quota_dimensions {
+  [앱][19:00:17] key: "model"
+  [앱][19:00:17] value: "gemini-2.0-flash"
+  [앱][19:00:17] }
+  [앱][19:00:17] quota_dimensions {
+  [앱][19:00:17] key: "location"
+  [앱][19:00:17] value: "global"
+  [앱][19:00:17] }
+  [앱][19:00:17] }
+  [앱][19:00:17] violations {
+  [앱][19:00:17] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  [앱][19:00:17] quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+  [앱][19:00:17] quota_dimensions {
+  [앱][19:00:17] key: "model"
+  [앱][19:00:17] value: "gemini-2.0-flash"
+  [앱][19:00:17] }
+  [앱][19:00:17] quota_dimensions {
+  [앱][19:00:17] key: "location"
+  [앱][19:00:17] value: "global"
+  [앱][19:00:17] }
+  [앱][19:00:17] }
+  [앱][19:00:17] violations {
+  [앱][19:00:17] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  [앱][19:00:17] quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  [앱][19:00:17] quota_dimensions {
+  [앱][19:00:17] key: "model"
+  [앱][19:00:17] value: "gemini-2.0-flash"
+  [앱][19:00:17] }
+  [앱][19:00:17] quota_dimensions {
+  [앱][19:00:17] key: "location"
+  [앱][19:00:17] value: "global"
+  [앱][19:00:17] }
+  [앱][19:00:17] }
+  [앱][19:00:17] , retry_delay {
+  [앱][19:00:17] seconds: 42
+  [앱][19:00:17] }
+  [앱][19:00:17] ]
+  [앱][19:00:22] Gemini peak analysis failed: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit.
+  [앱][19:00:22] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:22] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:22] * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash
+  [앱][19:00:22] Please retry in 37.514309257s. [links {
+  [앱][19:00:22] description: "Learn more about Gemini API quotas"
+  [앱][19:00:22] url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+  [앱][19:00:22] }
+  [앱][19:00:22] , violations {
+  [앱][19:00:22] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  [앱][19:00:22] quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  [앱][19:00:22] quota_dimensions {
+  [앱][19:00:22] key: "model"
+  [앱][19:00:22] value: "gemini-2.0-flash"
+  [앱][19:00:22] }
+  [앱][19:00:22] quota_dimensions {
+  [앱][19:00:22] key: "location"
+  [앱][19:00:22] value: "global"
+  [앱][19:00:22] }
+  [앱][19:00:22] }
+  [앱][19:00:22] violations {
+  [앱][19:00:22] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  [앱][19:00:22] quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+  [앱][19:00:22] quota_dimensions {
+  [앱][19:00:22] key: "model"
+  [앱][19:00:22] value: "gemini-2.0-flash"
+  [앱][19:00:22] }
+  [앱][19:00:22] quota_dimensions {
+  [앱][19:00:22] key: "location"
+  [앱][19:00:22] value: "global"
+  [앱][19:00:22] }
+  [앱][19:00:22] }
+  [앱][19:00:22] violations {
+  [앱][19:00:22] quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+  [앱][19:00:22] quota_id: "GenerateContentInputTokensPerModelPerMinute-FreeTier"
+  [앱][19:00:22] quota_dimensions {
+  [앱][19:00:22] key: "model"
+  [앱][19:00:22] value: "gemini-2.0-flash"
+  [앱][19:00:22] }
+  [앱][19:00:22] quota_dimensions {
+  [앱][19:00:22] key: "location"
+  [앱][19:00:22] value: "global"
+  [앱][19:00:22] }
+  [앱][19:00:22] }
+  [앱][19:00:22] , retry_delay {
+  [앱][19:00:22] seconds: 37
+  [앱][19:00:22] }
+  [앱][19:00:22] ]
+  [앱][19:00:41] c:\chemgrid\src\app\popup_3d.py:2978: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][19:00:41] self.figure.savefig(filepath, dpi=200, bbox_inches='tight',
+  [앱][19:00:41] c:\chemgrid\src\app\popup_3d.py:2978: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][19:00:41] self.figure.savefig(filepath, dpi=200, bbox_inches='tight',
+  [앱][19:00:41] c:\chemgrid\src\app\popup_3d.py:2978: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][19:00:41] self.figure.savefig(filepath, dpi=200, bbox_inches='tight',
+  [앱][19:00:41] c:\chemgrid\src\app\popup_3d.py:2978: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][19:00:41] self.figure.savefig(filepath, dpi=200, bbox_inches='tight',
+  [앱][19:02:58] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Tight layout not applied. The bottom and top margins cannot be made large enough to accommodate all Axes decorations.
+  [앱][19:02:58] self.figure.tight_layout()
+  [앱][19:02:58] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 48169 (\N{HANGUL SYLLABLE BANG}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] self.canvas.draw()
+  [앱][19:02:58] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 54693 (\N{HANGUL SYLLABLE HYANG}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] self.canvas.draw()
+  [앱][19:02:58] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 51313 (\N{HANGUL SYLLABLE JOG}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] self.canvas.draw()
+  [앱][19:02:58] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] self.canvas.draw()
+  [앱][19:02:58] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] self.canvas.draw()
+  [앱][19:02:58] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] self.canvas.draw()
+  [앱][19:02:58] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] self.canvas.draw()
+  [앱][19:02:58] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 48169 (\N{HANGUL SYLLABLE BANG}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] sys.exit(app.exec())
+  [앱][19:02:58] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 54693 (\N{HANGUL SYLLABLE HYANG}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] sys.exit(app.exec())
+  [앱][19:02:58] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 51313 (\N{HANGUL SYLLABLE JOG}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] sys.exit(app.exec())
+  [앱][19:02:58] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] sys.exit(app.exec())
+  [앱][19:02:58] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] sys.exit(app.exec())
+  [앱][19:02:58] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] sys.exit(app.exec())
+  [앱][19:02:58] c:\chemgrid\src\app\draw.py:35: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][19:02:58] sys.exit(app.exec())
+  [앱][19:02:59] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 50508 (\N{HANGUL SYLLABLE AL}) missing from font(s) DejaVu Sans.
+  [앱][19:02:59] self.canvas.draw()
+  [앱][19:02:59] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 53420 (\N{HANGUL SYLLABLE KIL}) missing from font(s) DejaVu Sans.
+  [앱][19:02:59] self.canvas.draw()
+  [앱][19:02:59] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 52996 (\N{HANGUL SYLLABLE KEN}) missing from font(s) DejaVu Sans.
+  [앱][19:02:59] self.canvas.draw()
+  [앱][19:07:58] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:07:58] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:01] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:01] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:01] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:01] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:01] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:01] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:01] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:01] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:22] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:22] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:22] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:22] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:22] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:22] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:22] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:22] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:23] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:23] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:23] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:23] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:23] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:23] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:23] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:23] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:23] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:29] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:29] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:30] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:30] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:30] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:34] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:35] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:35] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:35] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:35] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:35] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:35] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:36] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:36] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:36] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:36] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:36] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:36] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:37] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:37] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:37] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:37] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:40] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:40] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:42] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:42] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:43] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:44] [CHIRALITY AUDIT LOG]
+  [앱][19:08:44] [RDKIT ATOM ANALYSIS]
+  [앱][19:08:44] Atom C at (800.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (860.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (840.0, 762.08): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] >>> [FINAL RESULT] SMILES: C1CCCC1
+  [앱][19:08:44] [LEWIS DATA INJECTION LOG]
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (800.0, 692.8) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (860.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (840.0, 762.08) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] [CHIRALITY AUDIT LOG]
+  [앱][19:08:44] [RDKIT ATOM ANALYSIS]
+  [앱][19:08:44] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] >>> [FINAL RESULT] SMILES: CC
+  [앱][19:08:44] [LEWIS DATA INJECTION LOG]
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][19:08:44] [CHIRALITY AUDIT LOG]
+  [앱][19:08:44] [RDKIT ATOM ANALYSIS]
+  [앱][19:08:44] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] >>> [FINAL RESULT] SMILES: CCC
+  [앱][19:08:44] [LEWIS DATA INJECTION LOG]
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][19:08:44] [CHIRALITY AUDIT LOG]
+  [앱][19:08:44] [RDKIT ATOM ANALYSIS]
+  [앱][19:08:44] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] >>> [FINAL RESULT] SMILES: CCCC
+  [앱][19:08:44] [LEWIS DATA INJECTION LOG]
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][19:08:44] [CHIRALITY AUDIT LOG]
+  [앱][19:08:44] [RDKIT ATOM ANALYSIS]
+  [앱][19:08:44] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] >>> [FINAL RESULT] SMILES: CCCCC
+  [앱][19:08:44] [LEWIS DATA INJECTION LOG]
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:3, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] [CHIRALITY AUDIT LOG]
+  [앱][19:08:44] [RDKIT ATOM ANALYSIS]
+  [앱][19:08:44] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] >>> [FINAL RESULT] SMILES: C1CCCC1
+  [앱][19:08:44] [LEWIS DATA INJECTION LOG]
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] [CHIRALITY AUDIT LOG]
+  [앱][19:08:44] [RDKIT ATOM ANALYSIS]
+  [앱][19:08:44] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] >>> [FINAL RESULT] SMILES: C1=CCCC1
+  [앱][19:08:44] [LEWIS DATA INJECTION LOG]
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] [CHIRALITY AUDIT LOG]
+  [앱][19:08:44] [RDKIT ATOM ANALYSIS]
+  [앱][19:08:44] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] >>> [FINAL RESULT] SMILES: C1=CCC=C1
+  [앱][19:08:44] [LEWIS DATA INJECTION LOG]
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] [CHIRALITY AUDIT LOG]
+  [앱][19:08:44] [RDKIT ATOM ANALYSIS]
+  [앱][19:08:44] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] >>> [FINAL RESULT] SMILES: C1=CCC=C1
+  [앱][19:08:44] [LEWIS DATA INJECTION LOG]
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] [CHIRALITY AUDIT LOG]
+  [앱][19:08:44] [RDKIT ATOM ANALYSIS]
+  [앱][19:08:44] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] >>> [FINAL RESULT] SMILES: C1=CCC=C1
+  [앱][19:08:44] [LEWIS DATA INJECTION LOG]
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:08:44] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:08:44] -> Radical detected at (780.0, 727.44)
+  [앱][19:08:44] [CHIRALITY AUDIT LOG]
+  [앱][19:08:44] [RDKIT ATOM ANALYSIS]
+  [앱][19:08:44] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:08:44] >>> [FINAL RESULT] SMILES: C1=CCC=C1
+  [앱][19:08:44] [LEWIS DATA INJECTION LOG]
+  [앱][19:08:46] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:1, LP:0, Charge:0QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:46] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:47] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:47] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:47] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:47] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:47] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:48] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:52] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:52] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:53] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:53] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:53] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:55] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:55] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:55] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:56] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:58] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:08:58] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:03] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][19:09:03] self.figure.tight_layout()
+  [앱][19:09:03] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][19:09:03] self.figure.tight_layout()
+  [앱][19:09:03] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][19:09:03] self.figure.tight_layout()
+  [앱][19:09:03] c:\chemgrid\src\app\popup_3d.py:2846: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][19:09:03] self.figure.tight_layout()
+  [앱][19:09:03] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 44592 (\N{HANGUL SYLLABLE GI}) missing from font(s) DejaVu Sans.
+  [앱][19:09:03] self.canvas.draw()
+  [앱][19:09:03] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 48152 (\N{HANGUL SYLLABLE BAN}) missing from font(s) DejaVu Sans.
+  [앱][19:09:03] self.canvas.draw()
+  [앱][19:09:03] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 50696 (\N{HANGUL SYLLABLE YE}) missing from font(s) DejaVu Sans.
+  [앱][19:09:03] self.canvas.draw()
+  [앱][19:09:03] c:\chemgrid\src\app\popup_3d.py:2847: UserWarning: Glyph 52769 (\N{HANGUL SYLLABLE CEUG}) missing from font(s) DejaVu Sans.
+  [앱][19:09:03] self.canvas.draw()
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:04] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:05] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:05] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:05] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:05] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:05] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:05] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:05] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:05] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:05] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:10] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:10] QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> Radical detected at (780.0, 727.44)
+  [앱][19:09:22] [CHIRALITY AUDIT LOG]
+  [앱][19:09:22] [RDKIT ATOM ANALYSIS]
+  [앱][19:09:22] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] >>> [FINAL RESULT] SMILES: C1=CCC=C1
+  [앱][19:09:22] [LEWIS DATA INJECTION LOG]
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> Radical detected at (780.0, 727.44)
+  [앱][19:09:22] [CHIRALITY AUDIT LOG]
+  [앱][19:09:22] [RDKIT ATOM ANALYSIS]
+  [앱][19:09:22] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] >>> [FINAL RESULT] SMILES: C1=CCC=C1
+  [앱][19:09:22] [LEWIS DATA INJECTION LOG]
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] [3D-FIX] �巡�� ���� �Ϸ�: 1�� ����, btn_3d Ȱ��ȭ
+  [앱][19:09:22] -> Radical detected at (780.0, 727.44)
+  [앱][19:09:22] [CHIRALITY AUDIT LOG]
+  [앱][19:09:22] [RDKIT ATOM ANALYSIS]
+  [앱][19:09:22] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] >>> [FINAL RESULT] SMILES: C1=CCC=C1
+  [앱][19:09:22] [LEWIS DATA INJECTION LOG]
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> Radical detected at (780.0, 727.44)
+  [앱][19:09:22] [CHIRALITY AUDIT LOG]
+  [앱][19:09:22] [RDKIT ATOM ANALYSIS]
+  [앱][19:09:22] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] >>> [FINAL RESULT] SMILES: C1=CCC=C1
+  [앱][19:09:22] [LEWIS DATA INJECTION LOG]
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] [3D-FIX] �巡�� ���� �Ϸ�: 1�� ����, btn_3d Ȱ��ȭ
+  [앱][19:09:22] -> Radical detected at (780.0, 727.44)
+  [앱][19:09:22] [CHIRALITY AUDIT LOG]
+  [앱][19:09:22] [RDKIT ATOM ANALYSIS]
+  [앱][19:09:22] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] >>> [FINAL RESULT] SMILES: C1=CCC=C1
+  [앱][19:09:22] [LEWIS DATA INJECTION LOG]
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> Radical detected at (780.0, 727.44)
+  [앱][19:09:22] [CHIRALITY AUDIT LOG]
+  [앱][19:09:22] [RDKIT ATOM ANALYSIS]
+  [앱][19:09:22] Atom C at (780.0, 658.16): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (760.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (840.0, 692.8): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (780.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] Atom C at (820.0, 727.44): Outer:4, Bonded:4, LP:0, Charge:0
+  [앱][19:09:22] >>> [FINAL RESULT] SMILES: C1=CCC=C1
+  [앱][19:09:22] [LEWIS DATA INJECTION LOG]
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 658.16) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (760.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (840.0, 692.8) (dist: 0.00) | H:1, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (780.0, 727.44) (dist: 0.00) | H:2, LP:0, Charge:0
+  [앱][19:09:22] -> SUCCESS: Matched Lewis Data at (820.0, 727.44) (dist: 0.00) | H:1, LP:0, Charge:0

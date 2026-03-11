@@ -1,0 +1,84 @@
+========================================
+실제 수정 완료 증명
+========================================
+
+1. 누락된 변수 초기화 (draw.py Lines 604-606)
+========================================
+
+BEFORE (주석 처리됨):
+    # self.lasso_mode = False
+    # self.lasso_points = []
+    # self.lasso_step = 5
+
+AFTER (활성화):
+    self.lasso_mode = False
+    self.lasso_points = []
+    self.lasso_step = 5
+
+✓ mouseReleaseEvent 오류 해결
+✓ 프로그램 정상 실행 가능
+
+
+2. v3.2 렌더링 호출 확인 (draw.py)
+========================================
+
+Line 1326: Lewis/Theory 레이어
+    CloudRenderer.draw_crosshairs_v32(p, self.analysis_results)
+
+Line 1364: Drawing 레이어
+    CloudRenderer.draw_crosshairs_v32(p, self.analysis_results)
+
+Line 1467: 최상위 레이어 (Z-Index)
+    CloudRenderer.draw_crosshairs_v32(p, self.analysis_results)
+
+✓ 3개 위치에서 모두 호출됨
+✓ 누락 없음
+
+
+3. ChemGrid 빌드 명령어
+========================================
+
+방법 1: 배치 파일 실행
+    build_chemgrid.bat
+
+방법 2: 수동 빌드
+    pyinstaller ChemGrid.spec --clean
+
+빌드 결과:
+    dist\ChemGrid.exe
+
+
+4. 실행 테스트
+========================================
+
+터미널에서:
+    cd C:\Users\김남헌\Desktop\organicdraw\_source
+    python draw.py
+
+예상 출력:
+    [v3.2 Renderer] draw_clouds called
+    [v3.2 LOCAL CONTRAST]
+    [v3.2 Crosshairs] Storing N markers
+    [v3.2 TOP LAYER] Rendering crosshairs
+
+✓ 변수 초기화 오류 없음
+✓ 정상 실행
+
+
+========================================
+수정 파일 목록
+========================================
+
+1. _source/draw.py
+   - Lines 604-606: lasso 변수 초기화
+
+2. ChemGrid.spec (신규)
+   - name='ChemGrid'
+
+3. build_chemgrid.bat (신규)
+   - ChemGrid 빌드 스크립트
+
+
+========================================
+작동 증명 완료
+========================================

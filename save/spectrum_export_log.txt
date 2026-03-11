@@ -1,0 +1,31 @@
+2026-03-04 22:56:25,192 - spectrum_pdf_exporter - INFO - Registered custom font: C:/Windows/Fonts/malgun.ttf
+2026-03-04 22:56:25,472 - spectrum_pdf_exporter - INFO - Generated graph: docs\exports\spectra_assets\fixed_test\batch_1_10\temp_assets\graph_IR_246482.png
+2026-03-04 22:56:25,482 - spectrum_pdf_exporter - ERROR - Error generating graph for NMR_1H: zero-size array to reduction operation maximum which has no identity
+2026-03-04 22:56:25,648 - spectrum_pdf_exporter - INFO - PDF Report generated successfully: docs\exports\spectra_assets\fixed_test\batch_1_10\Molecule 1 1chem_Report_20260304_225625.pdf
+2026-03-04 22:56:25,841 - spectrum_pdf_exporter - INFO - Generated graph: docs\exports\spectra_assets\fixed_test\batch_1_10\temp_assets\graph_IR_681151.png
+2026-03-04 22:56:25,850 - spectrum_pdf_exporter - ERROR - Error generating graph for NMR_1H: zero-size array to reduction operation maximum which has no identity
+2026-03-04 22:56:26,007 - spectrum_pdf_exporter - INFO - PDF Report generated successfully: docs\exports\spectra_assets\fixed_test\batch_1_10\Molecule 2 2chem_Report_20260304_225625.pdf
+2026-03-04 22:56:26,186 - spectrum_pdf_exporter - INFO - Generated graph: docs\exports\spectra_assets\fixed_test\batch_1_10\temp_assets\graph_IR_032858.png
+2026-03-04 22:56:26,198 - spectrum_pdf_exporter - ERROR - Error generating graph for NMR_1H: zero-size array to reduction operation maximum which has no identity
+2026-03-04 22:56:26,359 - spectrum_pdf_exporter - INFO - PDF Report generated successfully: docs\exports\spectra_assets\fixed_test\batch_1_10\Molecule 3 3chem_Report_20260304_225626.pdf
+2026-03-04 22:56:26,535 - spectrum_pdf_exporter - INFO - Generated graph: docs\exports\spectra_assets\fixed_test\batch_1_10\temp_assets\graph_IR_377473.png
+2026-03-04 22:56:26,545 - spectrum_pdf_exporter - ERROR - Error generating graph for NMR_1H: zero-size array to reduction operation maximum which has no identity
+2026-03-04 22:56:26,698 - spectrum_pdf_exporter - INFO - PDF Report generated successfully: docs\exports\spectra_assets\fixed_test\batch_1_10\Molecule 4 Pentane_Report_20260304_225626.pdf
+2026-03-04 22:56:26,875 - spectrum_pdf_exporter - INFO - Generated graph: docs\exports\spectra_assets\fixed_test\batch_1_10\temp_assets\graph_IR_717152.png
+2026-03-04 22:56:26,883 - spectrum_pdf_exporter - ERROR - Error generating graph for NMR_1H: zero-size array to reduction operation maximum which has no identity
+2026-03-04 22:56:27,036 - spectrum_pdf_exporter - INFO - PDF Report generated successfully: docs\exports\spectra_assets\fixed_test\batch_1_10\Molecule 5 S-Lactic Acid_Report_20260304_225626.pdf
+2026-03-04 22:56:27,212 - spectrum_pdf_exporter - INFO - Generated graph: docs\exports\spectra_assets\fixed_test\batch_1_10\temp_assets\graph_IR_055271.png
+2026-03-04 22:56:27,223 - spectrum_pdf_exporter - ERROR - Error generating graph for NMR_1H: zero-size array to reduction operation maximum which has no identity
+2026-03-04 22:56:27,385 - spectrum_pdf_exporter - INFO - PDF Report generated successfully: docs\exports\spectra_assets\fixed_test\batch_1_10\Molecule 6 Aspirin_Report_20260304_225627.pdf
+2026-03-04 22:56:27,567 - spectrum_pdf_exporter - INFO - Generated graph: docs\exports\spectra_assets\fixed_test\batch_1_10\temp_assets\graph_IR_408693.png
+2026-03-04 22:56:27,578 - spectrum_pdf_exporter - ERROR - Error generating graph for NMR_1H: zero-size array to reduction operation maximum which has no identity
+2026-03-04 22:56:27,747 - spectrum_pdf_exporter - INFO - PDF Report generated successfully: docs\exports\spectra_assets\fixed_test\batch_1_10\Molecule 7 D-Glucose_Report_20260304_225627.pdf
+2026-03-04 22:56:27,947 - spectrum_pdf_exporter - INFO - Generated graph: docs\exports\spectra_assets\fixed_test\batch_1_10\temp_assets\graph_IR_768388.png
+2026-03-04 22:56:27,958 - spectrum_pdf_exporter - ERROR - Error generating graph for NMR_1H: zero-size array to reduction operation maximum which has no identity
+2026-03-04 22:56:28,119 - spectrum_pdf_exporter - INFO - PDF Report generated successfully: docs\exports\spectra_assets\fixed_test\batch_1_10\Molecule 8 Caffeine_Report_20260304_225627.pdf
+2026-03-04 22:56:28,358 - spectrum_pdf_exporter - INFO - Generated graph: docs\exports\spectra_assets\fixed_test\batch_1_10\temp_assets\graph_IR_139266.png
+2026-03-04 22:56:28,368 - spectrum_pdf_exporter - ERROR - Error generating graph for NMR_1H: zero-size array to reduction operation maximum which has no identity
+2026-03-04 22:56:28,542 - spectrum_pdf_exporter - INFO - PDF Report generated successfully: docs\exports\spectra_assets\fixed_test\batch_1_10\Molecule 9 Heme B Phthalocyanine Analog_Report_20260304_225628.pdf
+2026-03-04 22:56:28,728 - spectrum_pdf_exporter - INFO - Generated graph: docs\exports\spectra_assets\fixed_test\batch_1_10\temp_assets\graph_IR_562242.png
+2026-03-04 22:56:28,743 - spectrum_pdf_exporter - ERROR - Error generating graph for NMR_1H: zero-size array to reduction operation maximum which has no identity
+2026-03-04 22:56:28,909 - spectrum_pdf_exporter - INFO - PDF Report generated successfully: docs\exports\spectra_assets\fixed_test\batch_1_10\Molecule 10 Hemoglobin Heme Analog_Report_20260304_225628.pdf

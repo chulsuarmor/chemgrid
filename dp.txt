@@ -1,0 +1,1 @@
+'rtlab.pdfgen import canvas\n    REPORTLAB_AVAILABLE = True\nexcept ImportError:\n    REPORTLAB_AVAILABLE = False\n\ntry:\n    import matplotlib.py'

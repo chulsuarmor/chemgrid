@@ -1,0 +1,2311 @@
+[
+  {
+    "timestamp": "2026-03-04T01:19:03.550155",
+    "level": 1,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "O",
+    "actual_smiles": "O",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 3
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:19:15.265555",
+    "level": 2,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CCO",
+    "actual_smiles": "CCO",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 3,
+        "start_y": 6,
+        "end_x": 6,
+        "end_y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 4,
+        "end_x": 5,
+        "end_y": 6
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:19:29.282092",
+    "level": 3,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CC(O)C",
+    "actual_smiles": "CC(O)C",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 5,
+        "end_x": 5,
+        "end_y": 5
+      },
+      {
+        "tool": "drag",
+        "start_x": 5,
+        "start_y": 5,
+        "end_x": 6,
+        "end_y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 5,
+        "start_y": 6,
+        "end_x": 5,
+        "end_y": 3
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:38:03.433117",
+    "level": 1,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "O",
+    "actual_smiles": "O",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:38:15.137755",
+    "level": 2,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CCO",
+    "actual_smiles": "CCO",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 5,
+        "end_x": 5,
+        "end_y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 6,
+        "end_x": 5,
+        "end_y": 4
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:38:29.128576",
+    "level": 3,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CC(O)C",
+    "actual_smiles": "CC(O)C",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 5,
+        "end_x": 5,
+        "end_y": 5
+      },
+      {
+        "tool": "drag",
+        "start_x": 5,
+        "start_y": 5,
+        "end_x": 6,
+        "end_y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 7,
+        "start_y": 3,
+        "end_x": 3,
+        "end_y": 5
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:38:38.396407",
+    "level": 4,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "[C]1C=CC=C1",
+    "actual_smiles": "[C]1C=CC=C1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 5
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "radical",
+        "value": "true"
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 3
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:38:45.360252",
+    "level": 5,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "C1CCCCC1",
+    "actual_smiles": "C1CCCCC1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 6
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 5
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:38:55.090374",
+    "level": 6,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "[C+]1=CC=CC=CC1",
+    "actual_smiles": "[C+]1=CC=CC=CC1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 7
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 4
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "charge",
+        "value": "+1"
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:39:02.514610",
+    "level": 7,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "c1ccc2ccccc2c1",
+    "actual_smiles": "c1ccc2ccccc2c1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 6
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:39:28.499250",
+    "level": 8,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "OCC(O)C(O)C(O)C(O)C=O",
+    "actual_smiles": "OCC(O)C(O)C(O)C(O)C=O",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 2,
+        "start_y": 5,
+        "end_x": 8,
+        "end_y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 2,
+        "start_y": 4,
+        "end_x": 3,
+        "end_y": 5
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 6,
+        "end_x": 3,
+        "end_y": 4
+      },
+      {
+        "tool": "drag",
+        "start_x": 3,
+        "start_y": 5,
+        "end_x": 4,
+        "end_y": 5
+      },
+      {
+        "tool": "drag",
+        "start_x": 5,
+        "start_y": 5,
+        "end_x": 5,
+        "end_y": 4
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 4,
+        "end_x": 7,
+        "end_y": 3
+      },
+      {
+        "tool": "drag",
+        "start_x": 8,
+        "start_y": 4,
+        "end_x": 6,
+        "end_y": 4
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 4
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "wedge"
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "dash"
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 6
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:39:46.786120",
+    "level": 9,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "Cn1cnc2c1c(=O)n(C)c(=O)n2C",
+    "actual_smiles": "Cn1cnc2c1c(=O)n(C)c(=O)n2C",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 6
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 5
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 6
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "N"
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 6
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 4,
+        "end_x": 3,
+        "end_y": 3
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 6,
+        "end_x": 7,
+        "end_y": 6
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 3
+      },
+      {
+        "tool": "click",
+        "x": 8,
+        "y": 6
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 7
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 9,
+        "y": 6
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:40:07.827950",
+    "level": 10,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CC1=C(CCC(O)=O)C2=Cc3c(CCC(O)=O)c(C)c(n3[Fe]n4c(C=C)c(C)c(cc1n2)c4=CC)",
+    "actual_smiles": "CC1=C(CCC(O)=O)C2=Cc3c(CCC(O)=O)c(C)c(n3[Fe]n4c(C=C)c(C)c(cc1n2)c4=CC)",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "Fe"
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "N"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 4
+      },
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 5
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 3
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 7
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 4
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 3,
+        "start_y": 4,
+        "end_x": 3,
+        "end_y": 3
+      },
+      {
+        "tool": "drag",
+        "start_x": 7,
+        "start_y": 4,
+        "end_x": 5,
+        "end_y": 4
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 6,
+        "end_x": 4,
+        "end_y": 7
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 6,
+        "end_x": 6,
+        "end_y": 6
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-03-04T01:41:55.886166",
+    "level": 1,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "O",
+    "actual_smiles": "O",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 6
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:42:07.623189",
+    "level": 2,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CCO",
+    "actual_smiles": "CCO",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 3,
+        "start_y": 4,
+        "end_x": 4,
+        "end_y": 6
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 5,
+        "start_y": 5,
+        "end_x": 6,
+        "end_y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:42:21.658045",
+    "level": 3,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CC(O)C",
+    "actual_smiles": "CC(O)C",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 5,
+        "end_x": 5,
+        "end_y": 5
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 4,
+        "end_x": 6,
+        "end_y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 5,
+        "start_y": 6,
+        "end_x": 4,
+        "end_y": 4
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:42:30.918778",
+    "level": 4,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "[C]1C=CC=C1",
+    "actual_smiles": "[C]1C=CC=C1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 6
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "radical",
+        "value": "true"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 4
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:42:37.875827",
+    "level": 5,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "C1CCCCC1",
+    "actual_smiles": "C1CCCCC1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 6
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:42:47.600527",
+    "level": 6,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "[C+]1=CC=CC=CC1",
+    "actual_smiles": "[C+]1=CC=CC=CC1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 7
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 6
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 6
+      },
+      {
+        "tool": "select",
+        "category": "charge",
+        "value": "+1"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:42:55.022585",
+    "level": 7,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "c1ccc2ccccc2c1",
+    "actual_smiles": "c1ccc2ccccc2c1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 6
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:43:20.958733",
+    "level": 8,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "OCC(O)C(O)C(O)C(O)C=O",
+    "actual_smiles": "OCC(O)C(O)C(O)C(O)C=O",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 3,
+        "start_y": 4,
+        "end_x": 9,
+        "end_y": 4
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 2,
+        "start_y": 4,
+        "end_x": 3,
+        "end_y": 3
+      },
+      {
+        "tool": "drag",
+        "start_x": 3,
+        "start_y": 5,
+        "end_x": 3,
+        "end_y": 4
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 5,
+        "end_x": 3,
+        "end_y": 6
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 4,
+        "end_x": 6,
+        "end_y": 5
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 5,
+        "end_x": 6,
+        "end_y": 4
+      },
+      {
+        "tool": "drag",
+        "start_x": 7,
+        "start_y": 5,
+        "end_x": 7,
+        "end_y": 4
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 8,
+        "y": 3
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "wedge"
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "dash"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 6
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:43:39.259460",
+    "level": 9,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "Cn1cnc2c1c(=O)n(C)c(=O)n2C",
+    "actual_smiles": "Cn1cnc2c1c(=O)n(C)c(=O)n2C",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 6
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 5
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "N"
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 6
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 3,
+        "start_y": 2,
+        "end_x": 2,
+        "end_y": 5
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 6,
+        "end_x": 7,
+        "end_y": 7
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 2,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 7
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 6
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 4
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:44:00.299575",
+    "level": 10,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CC1=C(CCC(O)=O)C2=Cc3c(CCC(O)=O)c(C)c(n3[Fe]n4c(C=C)c(C)c(cc1n2)c4=CC)",
+    "actual_smiles": "CC1=C(CCC(O)=O)C2=Cc3c(CCC(O)=O)c(C)c(n3[Fe]n4c(C=C)c(C)c(cc1n2)c4=CC)",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "Fe"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 4
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "N"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 6
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 5
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 3
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 7
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 4,
+        "end_x": 4,
+        "end_y": 3
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 4,
+        "end_x": 6,
+        "end_y": 3
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 6,
+        "end_x": 4,
+        "end_y": 7
+      },
+      {
+        "tool": "drag",
+        "start_x": 7,
+        "start_y": 6,
+        "end_x": 5,
+        "end_y": 8
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:47:57.084583",
+    "level": 1,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "O",
+    "actual_smiles": "O",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 6
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:48:08.830129",
+    "level": 2,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CCO",
+    "actual_smiles": "CCO",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 2,
+        "start_y": 5,
+        "end_x": 7,
+        "end_y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 5,
+        "end_x": 6,
+        "end_y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:48:22.864226",
+    "level": 3,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CC(O)C",
+    "actual_smiles": "CC(O)C",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 5,
+        "end_x": 4,
+        "end_y": 5
+      },
+      {
+        "tool": "drag",
+        "start_x": 5,
+        "start_y": 5,
+        "end_x": 5,
+        "end_y": 6
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 6,
+        "end_x": 6,
+        "end_y": 4
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:48:32.117844",
+    "level": 4,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "[C]1C=CC=C1",
+    "actual_smiles": "[C]1C=CC=C1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 5
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 6
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "radical",
+        "value": "true"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 4
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:48:39.076468",
+    "level": 5,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "C1CCCCC1",
+    "actual_smiles": "C1CCCCC1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 6
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:48:48.793324",
+    "level": 6,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "[C+]1=CC=CC=CC1",
+    "actual_smiles": "[C+]1=CC=CC=CC1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 7
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 6
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "charge",
+        "value": "+1"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 4
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:48:56.211808",
+    "level": 7,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "c1ccc2ccccc2c1",
+    "actual_smiles": "c1ccc2ccccc2c1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 6
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:49:22.207420",
+    "level": 8,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "OCC(O)C(O)C(O)C(O)C=O",
+    "actual_smiles": "OCC(O)C(O)C(O)C(O)C=O",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 1,
+        "start_y": 5,
+        "end_x": 9,
+        "end_y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 2,
+        "start_y": 3,
+        "end_x": 3,
+        "end_y": 2
+      },
+      {
+        "tool": "drag",
+        "start_x": 3,
+        "start_y": 5,
+        "end_x": 3,
+        "end_y": 4
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 5,
+        "end_x": 4,
+        "end_y": 6
+      },
+      {
+        "tool": "drag",
+        "start_x": 5,
+        "start_y": 5,
+        "end_x": 4,
+        "end_y": 3
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 5,
+        "end_x": 6,
+        "end_y": 4
+      },
+      {
+        "tool": "drag",
+        "start_x": 7,
+        "start_y": 5,
+        "end_x": 7,
+        "end_y": 4
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 4
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "wedge"
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 6
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "dash"
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:49:40.519276",
+    "level": 9,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "Cn1cnc2c1c(=O)n(C)c(=O)n2C",
+    "actual_smiles": "Cn1cnc2c1c(=O)n(C)c(=O)n2C",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 6
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 5
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 4
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "N"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 6
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 8,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 6
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 5,
+        "start_y": 4,
+        "end_x": 3,
+        "end_y": 3
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 6,
+        "end_x": 7,
+        "end_y": 7
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 3
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 7
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 8,
+        "y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T01:50:01.596405",
+    "level": 10,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CC1=C(CCC(O)=O)C2=Cc3c(CCC(O)=O)c(C)c(n3[Fe]n4c(C=C)c(C)c(cc1n2)c4=CC)",
+    "actual_smiles": "CC1=C(CCC(O)=O)C2=Cc3c(CCC(O)=O)c(C)c(n3[Fe]n4c(C=C)c(C)c(cc1n2)c4=CC)",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "Fe"
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "N"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 6
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 3
+      },
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 5
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 3
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 7
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 6
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 4,
+        "end_x": 5,
+        "end_y": 2
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 4,
+        "end_x": 5,
+        "end_y": 4
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 6,
+        "end_x": 4,
+        "end_y": 7
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 6,
+        "end_x": 6,
+        "end_y": 7
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T08:37:16.386418",
+    "level": 1,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "O",
+    "actual_smiles": "O",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T08:37:28.285116",
+    "level": 2,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CCO",
+    "actual_smiles": "CCO",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 5,
+        "end_x": 4,
+        "end_y": 4
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 5,
+        "start_y": 5,
+        "end_x": 8,
+        "end_y": 6
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T08:37:42.504954",
+    "level": 3,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CC(O)C",
+    "actual_smiles": "CC(O)C",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 5,
+        "end_x": 5,
+        "end_y": 5
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 4,
+        "end_x": 5,
+        "end_y": 4
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 6,
+        "end_x": 6,
+        "end_y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T08:37:52.002766",
+    "level": 4,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "[C]1C=CC=C1",
+    "actual_smiles": "[C]1C=CC=C1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 5
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "radical",
+        "value": "true"
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 3
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T08:37:59.188175",
+    "level": 5,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "C1CCCCC1",
+    "actual_smiles": "C1CCCCC1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 6
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T08:38:09.143317",
+    "level": 6,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "[C+]1=CC=CC=CC1",
+    "actual_smiles": "[C+]1=CC=CC=CC1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 7
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 8,
+        "y": 6
+      },
+      {
+        "tool": "select",
+        "category": "charge",
+        "value": "+1"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T08:38:16.806034",
+    "level": 7,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "c1ccc2ccccc2c1",
+    "actual_smiles": "c1ccc2ccccc2c1",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 6
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 6
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T08:38:42.986451",
+    "level": 8,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "OCC(O)C(O)C(O)C(O)C=O",
+    "actual_smiles": "OCC(O)C(O)C(O)C(O)C=O",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 2,
+        "start_y": 5,
+        "end_x": 8,
+        "end_y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 3,
+        "start_y": 6,
+        "end_x": 3,
+        "end_y": 4
+      },
+      {
+        "tool": "drag",
+        "start_x": 3,
+        "start_y": 5,
+        "end_x": 3,
+        "end_y": 4
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 5,
+        "end_x": 4,
+        "end_y": 6
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 6,
+        "end_x": 6,
+        "end_y": 4
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 5,
+        "end_x": 5,
+        "end_y": 5
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 5,
+        "end_x": 7,
+        "end_y": 4
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 4
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "wedge"
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "dash"
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 6
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T08:39:01.530399",
+    "level": 9,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "Cn1cnc2c1c(=O)n(C)c(=O)n2C",
+    "actual_smiles": "Cn1cnc2c1c(=O)n(C)c(=O)n2C",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 6
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "N"
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 3
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 6
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "O"
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 4,
+        "end_x": 3,
+        "end_y": 3
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 6,
+        "end_x": 7,
+        "end_y": 7
+      },
+      {
+        "tool": "select",
+        "category": "bond",
+        "value": "double"
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 2
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 8
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 6
+      },
+      {
+        "tool": "click",
+        "x": 7,
+        "y": 3
+      },
+      {
+        "tool": "click",
+        "x": 8,
+        "y": 5
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "timestamp": "2026-03-04T08:39:22.844496",
+    "level": 10,
+    "attempt": 3,
+    "success": true,
+    "target_smiles": "CC1=C(CCC(O)=O)C2=Cc3c(CCC(O)=O)c(C)c(n3[Fe]n4c(C=C)c(C)c(cc1n2)c4=CC)",
+    "actual_smiles": "CC1=C(CCC(O)=O)C2=Cc3c(CCC(O)=O)c(C)c(n3[Fe]n4c(C=C)c(C)c(cc1n2)c4=CC)",
+    "actions_used": [
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "Fe"
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "N"
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 6
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 6,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "ring",
+        "value": 5
+      },
+      {
+        "tool": "click",
+        "x": 4,
+        "y": 4
+      },
+      {
+        "tool": "click",
+        "x": 5,
+        "y": 7
+      },
+      {
+        "tool": "click",
+        "x": 3,
+        "y": 5
+      },
+      {
+        "tool": "click",
+        "x": 9,
+        "y": 5
+      },
+      {
+        "tool": "select",
+        "category": "element",
+        "value": "C"
+      },
+      {
+        "tool": "drag",
+        "start_x": 5,
+        "start_y": 4,
+        "end_x": 3,
+        "end_y": 3
+      },
+      {
+        "tool": "drag",
+        "start_x": 6,
+        "start_y": 3,
+        "end_x": 7,
+        "end_y": 4
+      },
+      {
+        "tool": "drag",
+        "start_x": 4,
+        "start_y": 6,
+        "end_x": 4,
+        "end_y": 7
+      },
+      {
+        "tool": "drag",
+        "start_x": 8,
+        "start_y": 5,
+        "end_x": 7,
+        "end_y": 7
+      }
+    ],
+    "reason": ""
+  }
+]

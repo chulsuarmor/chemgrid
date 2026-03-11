@@ -1,0 +1,9 @@
+# ChemDraw Pro Advanced Features - Additional Requirements
+# Install with: pip install -r requirements_advanced.txt
+
+reportlab>=3.6.0
+Pillow>=9.0.0
+pyinstaller>=5.0.0
+
+# For enhanced export features
+svgwrite>=1.4.0

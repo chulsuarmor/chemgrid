@@ -1,0 +1,8 @@
+rum.load_predicted(smiles)
+            except Exception as _e:
+                logger.debug(f"Predicted spectrum skipped: {_e}")
+            # Estimated vibration modes auto-load
+            self._load_estimated_vibrations(smiles)
+
+        # AI tab
+        orca_info = {}

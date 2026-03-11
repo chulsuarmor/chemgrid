@@ -1,0 +1,5 @@
+# 용량 큰 바이너리
+*.zip
+*.exe
+orca_extracted/
+AvogadroOrca4.1/

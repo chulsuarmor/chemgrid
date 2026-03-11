@@ -1,0 +1,77 @@
+{
+  "total_chem_files": 10,
+  "verified_pdfs": [
+    {
+      "file": "C:\\chemgrid\\_source\\lewis_structures\\pdf\\1_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "file_size_bytes": 21310,
+      "error": null
+    },
+    {
+      "file": "C:\\chemgrid\\_source\\lewis_structures\\pdf\\2_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "file_size_bytes": 17467,
+      "error": null
+    },
+    {
+      "file": "C:\\chemgrid\\_source\\lewis_structures\\pdf\\3_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "file_size_bytes": 7987,
+      "error": null
+    },
+    {
+      "file": "C:\\chemgrid\\_source\\lewis_structures\\pdf\\4_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "file_size_bytes": 7717,
+      "error": null
+    },
+    {
+      "file": "C:\\chemgrid\\_source\\lewis_structures\\pdf\\5_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "file_size_bytes": 7883,
+      "error": null
+    },
+    {
+      "file": "C:\\chemgrid\\_source\\lewis_structures\\pdf\\6_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "file_size_bytes": 7817,
+      "error": null
+    },
+    {
+      "file": "C:\\chemgrid\\_source\\lewis_structures\\pdf\\7_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "file_size_bytes": 8402,
+      "error": null
+    },
+    {
+      "file": "C:\\chemgrid\\_source\\lewis_structures\\pdf\\8_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "file_size_bytes": 7466,
+      "error": null
+    },
+    {
+      "file": "C:\\chemgrid\\_source\\lewis_structures\\pdf\\9_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "file_size_bytes": 7958,
+      "error": null
+    },
+    {
+      "file": "C:\\chemgrid\\_source\\lewis_structures\\pdf\\test1_lewis.pdf",
+      "exists": true,
+      "valid_pdf": true,
+      "file_size_bytes": 8268,
+      "error": null
+    }
+  ],
+  "missing_pdfs": [],
+  "invalid_pdfs": []
+}

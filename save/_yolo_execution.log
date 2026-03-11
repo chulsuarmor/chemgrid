@@ -1,0 +1,2446 @@
+C:\chemgrid\agents\10_testing_build\integrated\popup_3d.py:85: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai_lib
+[Phase D] RDKit not available, IUPAC naming disabled
+[main_window.py] Verification report module not available
+Export Directory: C:\chemgrid\docs\exports\Test_20260301_Final
+Generating 12 Spectrum Reports to: C:\chemgrid\docs\exports\Test_20260301_Final
+[TOOLBAR_V5] setup_toolbars loaded - 2-row layout with addToolBarBreak
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[MainWindow] Progress tracking and Discord reporting activated
+Processing: Benzene
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1CCCCC1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCCCC1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: c1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: c1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: c1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: c1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+Processing: Nitrobenzene
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1CCCCC1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCCCC1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: c1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (500.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: Cc1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (500.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom N at (500.0, 311.76): Outer:5, Bonded:3, LP:1, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: Nc1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (500.0, 311.76) (dist: 0.00) | H:2, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (560.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom N at (500.0, 311.76): Outer:5, Bonded:3, LP:1, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CNc1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (560.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (500.0, 311.76) (dist: 0.00) | H:1, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (560.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom N at (500.0, 311.76): Outer:5, Bonded:3, LP:1, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=Nc1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (560.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (500.0, 311.76) (dist: 0.00) | H:0, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom O at (560.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom N at (500.0, 311.76): Outer:5, Bonded:3, LP:1, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: O=Nc1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (560.0, 277.12) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (500.0, 311.76) (dist: 0.00) | H:0, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom O at (560.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom N at (500.0, 311.76): Outer:5, Bonded:3, LP:1, Charge:0
+ Atom O at (540.0, 311.76): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: O.O=Nc1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (560.0, 277.12) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (500.0, 311.76) (dist: 0.00) | H:0, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (540.0, 311.76) (dist: 0.00) | H:2, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom O at (560.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom N at (500.0, 311.76): Outer:5, Bonded:3, LP:1, Charge:0
+ Atom O at (540.0, 311.76): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: O.O=Nc1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (560.0, 277.12) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (500.0, 311.76) (dist: 0.00) | H:0, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (540.0, 311.76) (dist: 0.00) | H:2, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom O at (560.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom N at (500.0, 311.76): Outer:5, Bonded:3, LP:1, Charge:0
+ Atom O at (540.0, 311.76): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: O.O=Nc1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (560.0, 277.12) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (500.0, 311.76) (dist: 0.00) | H:0, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (540.0, 311.76) (dist: 0.00) | H:2, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom O at (560.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom N at (500.0, 311.76): Outer:5, Bonded:3, LP:1, Charge:0
+ Atom O at (540.0, 311.76): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: O.O=Nc1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (560.0, 277.12) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (500.0, 311.76) (dist: 0.00) | H:0, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (540.0, 311.76) (dist: 0.00) | H:2, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom O at (560.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom N at (500.0, 311.76): Outer:5, Bonded:3, LP:1, Charge:0
+ Atom O at (540.0, 311.76): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: O.O=Nc1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (560.0, 277.12) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (500.0, 311.76) (dist: 0.00) | H:0, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (540.0, 311.76) (dist: 0.00) | H:2, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom O at (560.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom N at (500.0, 311.76): Outer:5, Bonded:3, LP:1, Charge:0
+ Atom O at (540.0, 311.76): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: O.O=Nc1ccccc1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (560.0, 277.12) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (500.0, 311.76) (dist: 0.00) | H:0, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (540.0, 311.76) (dist: 0.00) | H:2, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+Processing: Cis-2-Butene
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+Processing: Norbornane
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.C=C
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.C=C
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[02:29:58] Explicit valence for atom # 3 C, 5, is greater than permitted
+[Phase D Error] [Phase D] RDKit not available
+[02:29:58] Explicit valence for atom # 3 C, 5, is greater than permitted
+[Phase D Error] [Phase D] RDKit not available
+[02:29:58] Explicit valence for atom # 0 C, 5, is greater than permitted
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+Processing: Cubane
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C=C
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C=CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC1=C=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:0, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+[ERROR] generate_smiles failure: Explicit valence for atom # 3 C, 5, is greater than permitted
+
+[LEWIS DATA INJECTION LOG]
+
+[CHIRALITY AUDIT LOG]
+[ERROR] generate_smiles failure: Explicit valence for atom # 3 C, 5, is greater than permitted
+
+[LEWIS DATA INJECTION LOG]
+
+[CHIRALITY AUDIT LOG]
+[ERROR] generate_smiles failure: Explicit valence for atom # 0 C, 5, is greater than permitted
+
+[LEWIS DATA INJECTION LOG]
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=C2CC=12
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:0, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:0, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=C2CC12
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:0, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=C2CC12
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:0, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=C2CC12
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:0, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=C2CC12
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:0, LP:0, Charge:0
+Processing: Glyceraldehyde
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS][Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom O at (400.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC.O
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (400.0, 277.12) (dist: 0.00) | H:2, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom O at (400.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC.O
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (400.0, 277.12) (dist: 0.00) | H:2, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom O at (400.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC.O
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (400.0, 277.12) (dist: 0.00) | H:2, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom O at (400.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC.O
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (400.0, 277.12) (dist: 0.00) | H:2, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom O at (400.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC.O
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (400.0, 277.12) (dist: 0.00) | H:2, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+Processing: Thiophene
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom S at (420.0, 311.76): Outer:6, Bonded:2, LP:2, Charge:0
+>>> [FINAL RESULT] SMILES: S
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:2, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom S at (420.0, 311.76): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CS
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:1, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom S at (420.0, 311.76): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=S
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom S at (420.0, 311.76): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=S.CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom S at (420.0, 311.76): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=S.CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom S at (420.0, 311.76): Outer:6, Bonded:4, LP:1, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=[SH]CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:1, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom S at (420.0, 311.76): Outer:6, Bonded:4, LP:1, Charge:0[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=[SH]CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:1, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom S at (420.0, 311.76): Outer:6, Bonded:4, LP:1, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=[SH]/C=C\C
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:1, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom S at (420.0, 311.76): Outer:6, Bonded:4, LP:1, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=[SH]/C=C\C
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:1, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom S at (420.0, 311.76): Outer:6, Bonded:4, LP:1, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=[SH]/C=C\C
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:1, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (380.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom S at (420.0, 311.76): Outer:6, Bonded:4, LP:1, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (400.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=[SH]/C=C\C
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (380.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:1, LP:1, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (400.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+Processing: Tropylium
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=CCCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCCCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=CCCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C/C=C\CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C/C=C\CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C/C=C\CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C/C=C\CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C/C=C\CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+Processing: Cyclopentadienyl
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1CCCC1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCCC1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+Processing: Ospirane
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (400.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (400.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (400.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (400.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (400.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1CC1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (400.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom O at (400.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1CO1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (400.0, 277.12) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom O at (400.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1CO1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (400.0, 277.12) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom O at (400.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1CO1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (400.0, 277.12) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom O at (400.0, 277.12): Outer:6, Bonded:2, LP:2, Charge:0
+ Atom C at (380.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (420.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1CO1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (400.0, 277.12) (dist: 0.00) | H:0, LP:2, Charge:0
+ -> SUCCESS: Matched Lewis Data at (380.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (420.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+Processing: Cyclopentadienyl_Anion
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1CCCC1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCCC1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C1=CCC=C1
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+Processing: Tropylium_Cation
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C.CCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=CCCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: CCCCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=CCCCCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C/C=C\CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C/C=C\CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0[Phase D Error] [Phase D] RDKit not available
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+[Phase D Error] [Phase D] RDKit not available
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+Warning: PyMuPDF (fitz) not available. Text verification will be skipped.
+Verifying exports in: C:\chemgrid\docs\exports\Test_20260301_Final
+Found 36 files.
+[OK] All expected files present.
+
+Checking for duplicate content in spectrum reports...
+[OK] No duplicate reports found. Content appears unique.
+
+Verification Summary: PASS
+
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C/C=C\CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C/C=C\CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+
+[CHIRALITY AUDIT LOG]
+
+[RDKIT ATOM ANALYSIS]
+ Atom C at (420.0, 242.48): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 277.12): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (340.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (460.0, 311.76): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (360.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+ Atom C at (440.0, 346.4): Outer:4, Bonded:4, LP:0, Charge:0
+>>> [FINAL RESULT] SMILES: C=C/C=C\CCC
+
+[LEWIS DATA INJECTION LOG]
+ -> SUCCESS: Matched Lewis Data at (420.0, 242.48) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 277.12) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 277.12) (dist: 0.00) | H:3, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (340.0, 311.76) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (460.0, 311.76) (dist: 0.00) | H:2, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (360.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+ -> SUCCESS: Matched Lewis Data at (440.0, 346.4) (dist: 0.00) | H:1, LP:0, Charge:0
+All drawing exports completed.
+Running verification...
+Warning: PyMuPDF (fitz) not available. Text verification will be skipped.
+Verifying exports in: C:\chemgrid\docs\exports\Test_20260301_Final
+Found 36 files.
+[OK] All expected files present.
+
+Checking for duplicate content in spectrum reports...
+[OK] No duplicate reports found. Content appears unique.
+
+Verification Summary: PASS

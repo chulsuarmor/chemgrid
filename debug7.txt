@@ -1,0 +1,2 @@
+%CONDA_PYTHON% draw.py
+if %ERRORLEVEL% NEQ 0
