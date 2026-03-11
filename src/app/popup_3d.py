@@ -2062,6 +2062,14 @@ class Molecule3DViewer(QOpenGLWidget):
         """[PROTEIN-3D] OpenGL 단백질 Cα 백본 렌더링"""
         if not self._protein_ca or not OPENGL_AVAILABLE:
             return
+        try:
+            self._draw_protein_impl()
+        except Exception as e:
+            logger.error(f"Protein render error: {e}")
+            self._protein_visible = False  # 재크래시 방지
+
+    def _draw_protein_impl(self):
+        """실제 단백질 렌더링 구현"""
         # Chain colors
         chain_colors = {
             'A': (0.3, 0.6, 0.9), 'B': (0.9, 0.5, 0.3),
@@ -4856,7 +4864,7 @@ class DockingEnergyPanel(QWidget):
                 extra = "\n\n📊 상위 포즈 결합 에너지:\n"
                 for i, pose in enumerate(dock_result.poses[:5]):
                     extra += f"  Pose {i+1}: {pose.affinity_kcal:.2f} kcal/mol\n"
-                self.dock_result.appendPlainText(extra)
+                self.dock_result.append(extra)
         else:
             self.dock_result.setPlainText("⚠️ Vina 도킹 완료되었으나 포즈가 생성되지 않았습니다.")
 
@@ -5006,32 +5014,36 @@ class DockingEnergyPanel(QWidget):
         """[PROTEIN-3D] 도킹 결과를 3D 뷰어에 표시 — 단백질 백본 + 리간드 접근 애니메이션"""
         if not self._receptor_atoms:
             return
-        # Molecule3DPopup의 viewer에 접근 (부모 탐색)
-        popup = self.parent()
-        while popup and not isinstance(popup, Molecule3DPopup):
-            popup = popup.parent()
-        if popup is None or not hasattr(popup, 'viewer'):
-            self.dock_result.appendPlainText("\n⚠️ 3D 뷰어를 찾을 수 없습니다.")
-            return
-        viewer = popup.viewer
-        if not isinstance(viewer, Molecule3DViewer):
-            self.dock_result.appendPlainText("\n⚠️ OpenGL 뷰어가 필요합니다.")
-            return
+        try:
+            # Molecule3DPopup의 viewer에 접근 (부모 탐색)
+            popup = self.parent()
+            while popup and not isinstance(popup, Molecule3DPopup):
+                popup = popup.parent()
+            if popup is None or not hasattr(popup, 'viewer'):
+                self.dock_result.append("\n⚠️ 3D 뷰어를 찾을 수 없습니다.")
+                return
+            viewer = popup.viewer
+            if not isinstance(viewer, Molecule3DViewer):
+                self.dock_result.append("\n⚠️ OpenGL 뷰어가 필요합니다.")
+                return
 
-        # 결합 부위 중심 계산 (Cα 무게중심)
-        xs = [a[1] for a in self._receptor_atoms]
-        ys = [a[2] for a in self._receptor_atoms]
-        zs = [a[3] for a in self._receptor_atoms]
-        binding_center = (sum(xs)/len(xs), sum(ys)/len(ys), sum(zs)/len(zs))
+            # 결합 부위 중심 계산 (Cα 무게중심)
+            xs = [a[1] for a in self._receptor_atoms]
+            ys = [a[2] for a in self._receptor_atoms]
+            zs = [a[3] for a in self._receptor_atoms]
+            binding_center = (sum(xs)/len(xs), sum(ys)/len(ys), sum(zs)/len(zs))
 
-        # 뷰어에 단백질 데이터 전달
-        viewer.set_protein_data(self._receptor_atoms, binding_site=binding_center)
+            # 뷰어에 단백질 데이터 전달
+            viewer.set_protein_data(self._receptor_atoms, binding_site=binding_center)
 
-        # 리간드 접근 애니메이션 시작
-        viewer.start_dock_approach(start_offset=(40.0, 0.0, 0.0))
+            # 리간드 접근 애니메이션 시작
+            viewer.start_dock_approach(start_offset=(40.0, 0.0, 0.0))
 
-        self.dock_result.appendPlainText(
-            "\n🎬 3D 도킹 시각화 시작 — 뷰어에서 단백질+리간드 확인")
+            self.dock_result.append(
+                "\n🎬 3D 도킹 시각화 시작 — 뷰어에서 단백질+리간드 확인")
+        except Exception as e:
+            logger.error(f"3D 도킹 시각화 오류: {e}")
+            self.dock_result.append(f"\n⚠️ 3D 시각화 오류: {e}")
 
     def set_molecule_smiles(self, smiles: str):
         self._smiles = smiles

@@ -539,7 +539,9 @@ class MainWindow(QMainWindow):
             QApplication.processEvents()
             smiles = self._lookup_smiles_for_name(name)
             if smiles:
-                self._draw_smiles_on_canvas(smiles, name)
+                # ★ 기존 분자가 캔버스에 있으면 append 모드로 겹치지 않게 배치
+                has_existing = bool(self.cv.atoms)
+                self._draw_smiles_on_canvas(smiles, name, append=has_existing)
                 self.mol_name_input.clear()
                 self.mol_name_input.setPlaceholderText(f"✅ '{name}' → {smiles[:40]}")
             else:
@@ -873,7 +875,7 @@ class MainWindow(QMainWindow):
 
         return ""
 
-    def _draw_smiles_on_canvas(self, smiles: str, mol_name: str = ""):
+    def _draw_smiles_on_canvas(self, smiles: str, mol_name: str = "", append: bool = False):
         """RDKit 2D 좌표를 캔버스 원자/결합 데이터로 변환하여 그리기
 
         [BUG-02 수정] 좌표계 오류 + hex grid 스냅 + analysis_results 갱신
@@ -881,6 +883,9 @@ class MainWindow(QMainWindow):
         - 수정 후: logical_center = (width/2 - pan_offset) / scale_factor
         - 스냅 방식: 직교 30px 단위 → canvas.get_closest_pt() (hex grid)
         - 수정 후: analysis_results 갱신 → Theory 레이어에서 구조 표시 가능
+
+        Args:
+            append: True이면 기존 분자를 지우지 않고 빈 공간에 새 분자 추가
         """
         import sys
         try:
@@ -896,8 +901,6 @@ class MainWindow(QMainWindow):
             mol = Chem.RemoveHs(mol)
             AllChem.Compute2DCoords(mol)
             # ★ [BUG-04-DRAW FIX] Kekulize: 방향족 결합을 교차 단일/이중결합으로 변환
-            # 수정 전: 모든 방향족 결합 order=1 → benzene이 cyclohexane처럼 보임
-            # 수정 후: Kekulé 형식으로 변환 → benzene 육각형에 교차 이중결합 표시
             _kekulized = False
             try:
                 Chem.Kekulize(mol, clearAromaticFlags=False)
@@ -910,10 +913,10 @@ class MainWindow(QMainWindow):
             ys = [conf.GetAtomPosition(i).y for i in range(mol.GetNumAtoms())]
             cx_mol = (max(xs) + min(xs)) / 2
             cy_mol = (max(ys) + min(ys)) / 2
+            mol_w = (max(xs) - min(xs))  # RDKit 단위 폭
+            mol_h = (max(ys) - min(ys))  # RDKit 단위 높이
 
             # ✅ [BUG-02A 수정] 올바른 논리 좌표 계산
-            # to_logical(pos) = (pos - pan_offset) / scale_factor
-            # 스크린 중심 = (width/2, height/2) → 논리 좌표:
             sf = getattr(self.cv, 'scale_factor', 1.0)
             pan_x = self.cv.pan_offset.x()
             pan_y = self.cv.pan_offset.y()
@@ -924,11 +927,27 @@ class MainWindow(QMainWindow):
             scale = 26.7
 
             self.cv.save_state()
-            # ★ [BUG-A FIX] 새 분자 그리기 전 캔버스 초기화 (이전 분자 누적 방지)
-            # 수정 전: atoms/bonds를 clear하지 않아 benzene 입력 후 tropylium 입력 시 두 분자가 겹침
-            # 수정 후: 항상 캔버스를 초기화한 뒤 새 분자를 그림
-            self.cv.atoms.clear()
-            self.cv.bonds.clear()
+
+            # ★ 기존 분자가 있고 append 모드이면 빈 공간에 배치
+            if append and self.cv.atoms:
+                # 기존 원자들의 bounding box 계산
+                existing_xs = [k[0] for k in self.cv.atoms.keys()]
+                existing_ys = [k[1] for k in self.cv.atoms.keys()]
+                ex_max_x = max(existing_xs)
+                ex_min_y = min(existing_ys)
+                ex_max_y = max(existing_ys)
+                ex_center_y = (ex_min_y + ex_max_y) / 2
+
+                # 새 분자 크기 (논리 픽셀)
+                new_mol_half_w = mol_w * scale / 2
+
+                # 기존 분자 오른쪽 + 여유 간격(120px)에 새 분자 중심 배치
+                cx_logical = ex_max_x + 120 + new_mol_half_w
+                cy_logical = ex_center_y
+            elif not append:
+                # 기존 동작: 캔버스 초기화 후 중앙에 그리기
+                self.cv.atoms.clear()
+                self.cv.bonds.clear()
 
             # ✅ [BUG-02B 수정] hex grid 스냅 사용
             idx_to_key = {}
@@ -1238,12 +1257,12 @@ class MainWindow(QMainWindow):
             return 0
         try:
             # analyzer의 _get_molecular_islands 사용
-            from analyzer import ChemAnalyzer
-            analyzer = ChemAnalyzer()
+            from analyzer import ChemicalAnalyzer
+            analyzer = ChemicalAnalyzer()
             norm_keys = list(self.cv.atoms.keys())
             # adjacency from bonds
             adj = {}
-            for key, atom_data in self.cv.atoms.items():
+            for key in self.cv.atoms:
                 adj[key] = []
             for key, bond_data in getattr(self.cv, 'bonds', {}).items():
                 k1, k2 = key
@@ -1261,9 +1280,9 @@ class MainWindow(QMainWindow):
         """반응 분석 팝업 열기"""
         try:
             from popup_reaction import ReactionPopup
-            from analyzer import ChemAnalyzer
+            from analyzer import ChemicalAnalyzer
 
-            analyzer = ChemAnalyzer()
+            analyzer = ChemicalAnalyzer()
             norm_keys = list(self.cv.atoms.keys())
             adj = {}
             for key in self.cv.atoms:
