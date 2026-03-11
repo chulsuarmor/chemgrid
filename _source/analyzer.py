@@ -1,6 +1,11 @@
-# analyzer.py (v6.00 - RDKit Integration)
+# analyzer.py (v6.11 - Procrustes Alignment for Theory Coords)
 import math
 from PyQt6.QtCore import QPointF # [추가] QPointF NameError 해결
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
 try:
     from rdkit import Chem
     from rdkit.Chem import rdDepictor
@@ -17,7 +22,7 @@ class ChemicalAnalyzer:
         self.physics = PhysicsEngine()
         self.resonance = ResonanceEngine()
 
-    def analyze(self, atoms, bonds):
+    def analyze(self, atoms, bonds, smiles=None):
         # [범용 보정] 3.chem 처럼 중심 탄소가 누락된 경우를 대비해 결합 좌표를 기반으로 원자를 복구합니다. 
         full_atoms = atoms.copy()
         for k1, k2 in bonds.keys():
@@ -32,6 +37,15 @@ class ChemicalAnalyzer:
         if not atoms: return {"charges": {}, "islands": [], "aromatic": set(), "atoms": {}}
         
         norm_atoms = { (round(k[0], 2), round(k[1], 2)): v for k, v in atoms.items() }
+        
+        # [Fix] Scan for user-drawn radicals in 'attach'
+        for k, v in norm_atoms.items():
+            if "attach" in v:
+                for d, sym in v["attach"].items():
+                    if sym == "·" or sym == ".": # Check both dot characters
+                        v["is_radical"] = True
+                        print(f" -> Radical detected at {k}")
+
         norm_keys = list(norm_atoms.keys())
         
         global_charges = {k: 0.0 for k in norm_keys}
@@ -58,22 +72,79 @@ class ChemicalAnalyzer:
                 for node, delta in res_deltas.items():
                     mol_charges[node] += delta
                 
-                # 치환기 벡터 효과
+                # 치환기 벡터 효과 (v4.0: ortho/para/meta 위치별 차별화)
                 for node in pi_isl:
                     for neighbor, _ in mol_adj.get(node, []):
                         if neighbor not in pi_isl:
                             score = self.physics.calculate_substituent_score(neighbor, pi_isl, norm_atoms, mol_adj)
-                            pull_force = (score * 0.75) / len(pi_isl)
+                            base_force = (score * 0.75) / len(pi_isl)
+                            topo_dist = self._ring_topology_distance(node, pi_isl, mol_adj)
                             for target in pi_isl:
-                                mol_charges[target] += pull_force
-                                mol_charges[neighbor] -= pull_force * 0.2
-            
-            # [analyzer.py] Line 70 부근 (analyze 함수 마지막)
+                                dist = topo_dist.get(target, 0)
+                                if dist == 0:
+                                    weight = 1.5   # ipso
+                                elif dist % 2 == 1:
+                                    weight = 1.3   # ortho(1), para(3)
+                                else:
+                                    weight = 0.4   # meta(2)
+                                mol_charges[target] += base_force * weight
+                                mol_charges[neighbor] -= base_force * weight * 0.2
+
+                # [Fix v2] 형식전하 → π계 전자분포 반영 (사이클로펜타다이엔일 음이온 등)
+                for node in pi_isl:
+                    _cf2 = norm_atoms.get(node, {}).get("charge", "")
+                    _ac2 = sum(
+                        (1 if s == "+" else (-1 if s == "-" else 0))
+                        for d, s in norm_atoms.get(node, {}).get("attach", {}).items()
+                        if d != -1
+                    )
+                    _ion = (1 if _cf2 == "+" else (-1 if _cf2 == "-" else 0)) + _ac2
+                    if _ion != 0:
+                        # [v4.0 Fix] 부호 반전 수정: 음이온(-) → 음전하(RED), 양이온(+) → 양전하(BLUE)
+                        _spread = (_ion * 0.25) / max(len(pi_isl), 1)
+                        for target in pi_isl:
+                            mol_charges[target] += _spread
+
+            # [v4.0] 분자 전체 형식전하 오프셋: 이온성 분자의 전체 ESP 보정
+            # 음이온(-1) → 모든 원자에 음전하 분배, 양이온(+1) → 양전하 분배
+            # 강도: 형식전하 1단위 → 원자당 ~0.5 전하 오프셋 (강한 ESP 전환 필요)
+            net_formal_charge = 0
+            for node in mol_charges:
+                _at = norm_atoms.get(node, {})
+                _cf = _at.get("charge", "")
+                net_formal_charge += (1 if _cf == "+" else (-1 if _cf == "-" else 0))
+                net_formal_charge += sum(
+                    (1 if s == "+" else (-1 if s == "-" else 0))
+                    for d, s in _at.get("attach", {}).items() if d != -1
+                )
+            if net_formal_charge != 0 and len(mol_charges) > 0:
+                offset = (net_formal_charge * 2.5) / len(mol_charges)
+                for k in mol_charges:
+                    mol_charges[k] += offset
+
             for k, q in mol_charges.items(): global_charges[k] = q
+
+        # [Fix v3: 2026-03-10] all_aromatic 채우기 — π-island 링 위상 검사
+        # 방법: π-island 서브그래프에서 edge_count >= node_count 이면 고리(방향족)
+        # 근거: 링 시스템은 모든 원자가 ≥2개의 이웃을 갖고, edge_count = node_count (단순 링)
+        for pi_isl in total_pi_islands:
+            if len(pi_isl) < 4:  # 4원자 미만은 링 방향족 없음
+                continue
+            pi_set = set(pi_isl)
+            edge_count = sum(
+                sum(1 for item in full_adj.get(nd, []) if (item[0] if isinstance(item, (tuple, list)) else item) in pi_set)
+                for nd in pi_isl
+            ) // 2
+            if edge_count >= len(pi_isl):
+                all_aromatic.update(pi_isl)
+                print(f"[AROMATIC FIX] Ring π-island detected: {len(pi_isl)} atoms added to all_aromatic")
 
         # [신규] 시각화를 위한 입체 중심(R/S) 분석 및 전달 데이터 확장
         # generate_smiles의 입체 인식 로직을 활용하여 결과를 추출합니다.
         smiles_str, stereo_labels, lewis_data, theory_data = self.generate_smiles(atoms, bonds)
+        # [BUG-3 Fix] generate_smiles 실패 시 외부 smiles 사용 (cp-, tropylium 등 이온성 방향족)
+        if not smiles_str and smiles:
+            smiles_str = smiles
         
         print(f"\n[LEWIS DATA INJECTION LOG]")
         # [해결] 단순 키 매칭이 아닌 거리 기반(8px 이내) 매칭으로 무결성 확보
@@ -115,7 +186,24 @@ class ChemicalAnalyzer:
             "theory_data": theory_data #
         }
 
+    def _ring_topology_distance(self, start, pi_island, adj):
+        """BFS로 ring 내 위상 거리 계산 (ortho=1, meta=2, para=3)"""
+        distances = {start: 0}
+        queue = [start]
+        while queue:
+            curr = queue.pop(0)
+            for neighbor, _ in adj.get(curr, []):
+                if neighbor in pi_island and neighbor not in distances:
+                    distances[neighbor] = distances[curr] + 1
+                    queue.append(neighbor)
+        return distances
+
     def generate_smiles(self, atoms, bonds):
+        # [가드] RDKit 미설치 시 빈 데이터 반환 (graceful fallback)
+        if not RDKIT_AVAILABLE:
+            print("[WARNING] RDKit not available — SMILES generation skipped")
+            return "", {}, {}, {"coords": {}, "bonds": []}
+
         # [STAGE 1] 원자 및 결합 복구 (ID 기반 무결성)
         # [해결] 반올림을 2자리(0.01)로 통일하여 t_map 매칭 실패 원천 차단
         def get_pos(p): return (round(p.x(), 2), round(p.y(), 2)) if hasattr(p, 'x') else (round(p[0], 2), round(p[1], 2))
@@ -127,25 +215,32 @@ class ChemicalAnalyzer:
             pos = get_pos(k); data = atoms[k]
             atom = Chem.Atom(data.get("main") or "C")
 
-            # [TASK 2] 전하 보존: attach 딕셔너리에서 +/- 기호 개수 세기
+            # [Fix v2] 전하 보존: 'charge' 필드 우선, attach는 d==-1 lewis주입 제외 보조
             formal_charge = 0
-            for d, sym in data.get("attach", {}).items():
-                if sym == "+":
-                    formal_charge += 1
-                elif sym == "-":
-                    formal_charge -= 1
-
+            _cf = data.get("charge", "")
+            if _cf == "+":
+                formal_charge = 1
+            elif _cf == "-":
+                formal_charge = -1
+            else:
+                for _d, _sym in data.get("attach", {}).items():
+                    if _d == -1:
+                        continue
+                    if _sym == "+":
+                        formal_charge += 1
+                    elif _sym == "-":
+                        formal_charge -= 1
             atom.SetFormalCharge(formal_charge)
+
+            # [Fix v2] 라디칼 전자 반영 (attach에 "·" 기호)
+            _rad = sum(1 for _d, _sym in data.get("attach", {}).items()
+                       if _sym == "·" and _d != -1)
+            if _rad > 0:
+                atom.SetNumRadicalElectrons(_rad)
+
             idx = mol.AddAtom(atom)
             node_to_idx[pos] = idx; idx_to_coord[idx] = list(pos) + [0.0]
-
-            # 2. 'attach' 내의 수소(H)를 실제 원자로 승격 및 결합
-            for d, sym in data.get("attach", {}).items():
-                if sym == "H":
-                    h_idx = mol.AddAtom(Chem.Atom("H"))
-                    mol.AddBond(idx, h_idx, Chem.rdchem.BondType.SINGLE)
-                    ang = math.radians(d * 60)
-                    idx_to_coord[h_idx] = [pos[0] + math.cos(ang)*20, pos[1] + math.sin(ang)*20, 0.0]
+            # [Fix v2] attach H는 implicit H로 처리 (명시 원자 추가 제거 → 왜곡 방지)
 
         # [STAGE 2] 결합 주입 및 '역방향 입체 논리' 적용
         for (k1, k2), v in bonds.items():
@@ -207,23 +302,12 @@ class ChemicalAnalyzer:
             smiles = Chem.MolToSmiles(out_mol, isomericSmiles=True)
             
             # [추가] 루이스 구조용 H 및 비공유 전자쌍 데이터 생성
+            # [M4 수정] 중복 루프 통합 — 단일 루프로 lewis_map 생성
             lewis_map = {}
             print(f"\n[RDKIT ATOM ANALYSIS]")
             for atom in final_mol.GetAtoms():
                 if atom.GetSymbol() == "H": continue
                 pos = idx_to_coord[atom.GetIdx()]
-                
-                # 가전자(Default Valence) - (명시적 결합 + 암시적 결합) - 전하
-                atomic_num = atom.GetAtomicNum()
-                # 산소(8) -> 6, 질소(7) -> 5, 탄소(6) -> 4 등 실제 가전자수 획득
-                outer_elecs = Chem.GetPeriodicTable().GetNOuterElecs(atomic_num)
-                bonds_val = atom.GetTotalValence()
-                lp = max(0, (outer_elecs - bonds_val - atom.GetFormalCharge()) // 2)
-                
-            for atom in final_mol.GetAtoms():
-                if atom.GetSymbol() == "H": continue
-                pos = idx_to_coord[atom.GetIdx()]
-                # [해결] pt_key를 먼저 정의하여 참조 오류 방지
                 pt_key = (round(pos[0], 2), round(pos[1], 2))
 
                 outer_elecs = Chem.GetPeriodicTable().GetNOuterElecs(atom.GetAtomicNum())
@@ -239,7 +323,7 @@ class ChemicalAnalyzer:
                 }
                 print(f" Atom {atom.GetSymbol()} at {pt_key}: Outer:{outer_elecs}, Bonded:{bonds_val}, LP:{lp}, Charge:{formal_charge}")
 
-            # [Step 3 개선] MMFF94/2D 최적화 좌표 산출 - 분자별 독립 배치
+            # [Step 3 개선] Procrustes 정렬 기반 이론적 좌표 산출 (v6.11)
             theory_data = {"coords": {}, "bonds": []}
             try:
                 temp_mol = Chem.Mol(final_mol)
@@ -252,28 +336,36 @@ class ChemicalAnalyzer:
                 
                 theory_map = {}
                 
-                # 2. 각 분자 조각마다 독립적으로 중심점 계산 및 배치
+                # 2. 각 분자 조각마다 Procrustes 정렬로 방향/스케일 보존
                 for frag_atoms in mol_frags:
                     if not frag_atoms:
                         continue
                     
-                    # 2-1. 원본 좌표의 중심점 (그리기 레이어에서의 배치)
-                    orig_pts = [idx_to_coord[i][:2] for i in frag_atoms]
-                    orig_center = QPointF(sum(p[0] for p in orig_pts)/len(orig_pts),
-                                         sum(p[1] for p in orig_pts)/len(orig_pts))
+                    # 2-1. 원본 좌표 수집 (screen 좌표계)
+                    orig_pts = [(idx_to_coord[i][0], idx_to_coord[i][1]) for i in frag_atoms]
                     
-                    # 2-2. RDKit 최적화 좌표의 중심점
-                    rdkit_pts = [conf.GetAtomPosition(i) for i in frag_atoms]
-                    rdkit_cx = sum(p.x for p in rdkit_pts) / len(rdkit_pts)
-                    rdkit_cy = sum(p.y for p in rdkit_pts) / len(rdkit_pts)
+                    # 2-2. RDKit 좌표 수집 (y축 반전하여 screen 좌표계로 변환)
+                    rdkit_pts = [(conf.GetAtomPosition(i).x, -conf.GetAtomPosition(i).y) for i in frag_atoms]
                     
-                    # 2-3. 각 원자를 원본 중심 기준으로 재배치
-                    for i in frag_atoms:
-                        pos = conf.GetAtomPosition(i)
+                    # 2-3. Procrustes 정렬 (회전 + 스케일 + 평행이동)
+                    if NUMPY_AVAILABLE and len(frag_atoms) >= 2:
+                        aligned = self._align_to_original(orig_pts, rdkit_pts)
+                    else:
+                        # numpy 미설치 fallback: 평행이동만 수행 (기존 동작)
+                        orig_cx = sum(p[0] for p in orig_pts) / len(orig_pts)
+                        orig_cy = sum(p[1] for p in orig_pts) / len(orig_pts)
+                        rdk_cx = sum(p[0] for p in rdkit_pts) / len(rdkit_pts)
+                        rdk_cy = sum(p[1] for p in rdkit_pts) / len(rdkit_pts)
+                        # fallback에서는 원본 결합길이 기반 동적 스케일 사용
+                        _fb_scale = self._compute_dynamic_scale(orig_pts, rdkit_pts)
+                        aligned = [(orig_cx + (rx - rdk_cx) * _fb_scale, 
+                                    orig_cy + (ry - rdk_cy) * _fb_scale) for rx, ry in rdkit_pts]
+                    
+                    # 2-4. 정렬된 좌표를 theory_data에 저장
+                    for idx_in_frag, i in enumerate(frag_atoms):
                         orig_pt = (round(idx_to_coord[i][0], 2), round(idx_to_coord[i][1], 2))
-                        # 최적화된 형태(정다각형)를 유지하되, 원본 위치로 평행이동
-                        new_pos = QPointF(orig_center.x() + (pos.x - rdkit_cx) * 45.0, 
-                                         orig_center.y() - (pos.y - rdkit_cy) * 45.0)
+                        ax, ay = aligned[idx_in_frag]
+                        new_pos = QPointF(round(ax, 2), round(ay, 2))
                         theory_data["coords"][i] = new_pos
                         theory_map[orig_pt] = new_pos
 
@@ -292,6 +384,89 @@ class ChemicalAnalyzer:
             # [해결] 짝이 맞지 않던 try-except 구문 완결 및 빈 데이터 반환
             print(f"[ERROR] generate_smiles failure: {e}")
             return "", {}, {}, {"coords": {}, "bonds": []}
+
+    def _align_to_original(self, orig_coords, rdkit_coords):
+        """Procrustes 정렬: RDKit 좌표를 원본 그리기 좌표의 방향/스케일에 맞춤 (SVD 기반)
+        
+        Args:
+            orig_coords: list of (x, y) — 원본 그리기 좌표 (target)
+            rdkit_coords: list of (x, y) — RDKit 생성 좌표 (source)
+        
+        Returns:
+            list of [x, y] — 정렬된 좌표
+        """
+        if len(orig_coords) < 2 or len(rdkit_coords) < 2:
+            return rdkit_coords
+        
+        P = np.array(orig_coords, dtype=float)   # 원본 (target)
+        Q = np.array(rdkit_coords, dtype=float)   # RDKit (source)
+        
+        # 1. 중심점 계산
+        P_center = P.mean(axis=0)
+        Q_center = Q.mean(axis=0)
+        
+        # 2. 중심을 원점으로 이동
+        P_centered = P - P_center
+        Q_centered = Q - Q_center
+        
+        # 3. 스케일 계산 (원본 스케일 유지)
+        P_scale = np.sqrt((P_centered ** 2).sum() / len(P))
+        Q_scale = np.sqrt((Q_centered ** 2).sum() / len(Q))
+        
+        if Q_scale < 1e-10:
+            return rdkit_coords
+        
+        scale = P_scale / Q_scale
+        Q_scaled = Q_centered * scale
+        
+        # 4. 최적 회전 행렬 계산 (SVD)
+        H = Q_scaled.T @ P_centered
+        U, S, Vt = np.linalg.svd(H)
+        
+        # 반전 방지 (거울상 허용 안 함)
+        d = np.linalg.det(Vt.T @ U.T)
+        sign_matrix = np.eye(2)
+        sign_matrix[1, 1] = np.sign(d)
+        
+        R = Vt.T @ sign_matrix @ U.T  # 회전 행렬
+        
+        # 5. 변환 적용: 스케일된 좌표 회전 → 원본 중심으로 이동
+        aligned = (Q_scaled @ R.T) + P_center
+        
+        return aligned.tolist()
+
+    @staticmethod
+    def _compute_dynamic_scale(orig_pts, rdkit_pts):
+        """원본/RDKit 좌표 간 평균 결합길이 비율로 동적 스케일 계산 (numpy 미설치 fallback)
+        
+        Args:
+            orig_pts: list of (x, y) — 원본 좌표
+            rdkit_pts: list of (x, y) — RDKit 좌표
+        
+        Returns:
+            float — 스케일 팩터 (기본값 45.0)
+        """
+        if len(orig_pts) < 2 or len(rdkit_pts) < 2:
+            return 45.0
+        
+        # 원본 좌표 쌍 간 평균 거리
+        orig_dists = []
+        rdk_dists = []
+        for i in range(len(orig_pts)):
+            for j in range(i + 1, len(orig_pts)):
+                od = math.hypot(orig_pts[i][0] - orig_pts[j][0], orig_pts[i][1] - orig_pts[j][1])
+                rd = math.hypot(rdkit_pts[i][0] - rdkit_pts[j][0], rdkit_pts[i][1] - rdkit_pts[j][1])
+                if rd > 1e-10:
+                    orig_dists.append(od)
+                    rdk_dists.append(rd)
+        
+        if not rdk_dists:
+            return 45.0
+        
+        avg_orig = sum(orig_dists) / len(orig_dists)
+        avg_rdk = sum(rdk_dists) / len(rdk_dists)
+        
+        return avg_orig / avg_rdk if avg_rdk > 1e-10 else 45.0
 
     def _get_adj(self, atoms, bonds):
         adj = {k: [] for k in atoms.keys()}

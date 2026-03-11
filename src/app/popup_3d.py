@@ -124,6 +124,21 @@ try:
 except ImportError:
     logger.warning("google.generativeai not available — AI analysis disabled")
 
+# [VINA-WIRE] AutoDock Vina 백엔드 import
+VINA_BACKEND_AVAILABLE = False
+try:
+    from docking_interface import (
+        VinaDockingThread, DockingConfig,
+        PDBParser as VinaPDBParser, PDBDownloader,
+        LigandPreparer, ReceptorPreparer,
+        DOCKING_AVAILABLE as _VINA_DOCKING_OK,
+    )
+    from docking_data import (
+        ReceptorData, LigandData, DockingResult, DockingPose,
+    )
+    VINA_BACKEND_AVAILABLE = _VINA_DOCKING_OK
+except ImportError:
+    logger.info("docking_interface not available — using empirical scoring only")
 
 # ============================================================
 # Section 1: CPK Color & Radius Data
@@ -1947,6 +1962,17 @@ class Molecule3DViewer(QOpenGLWidget):
         self._vib_amplitude = 1.5
         self._vib_active = False
 
+        # [PROTEIN-3D] 단백질 렌더링 데이터
+        self._protein_ca = None      # List[(res, x, y, z, chain)] — Cα backbone
+        self._protein_center = None  # (cx, cy, cz)
+        self._protein_visible = False
+        self._dock_approach_phase = -1.0  # <0 = no animation, 0~1 = approach
+        self._dock_approach_timer = QTimer(self)
+        self._dock_approach_timer.timeout.connect(self._dock_approach_tick)
+        self._ligand_offset = (0.0, 0.0, 0.0)  # approach 시 리간드 이동 오프셋
+        self._binding_site_center = None  # 결합 부위 중심
+        self._interaction_lines = []  # [(x1,y1,z1,x2,y2,z2,type)] 상호작용 선
+
         # Measurement
         self._selected_atoms = []  # list of keys for measurement
         self._measure_mode = False
@@ -1986,6 +2012,113 @@ class Molecule3DViewer(QOpenGLWidget):
         self._vib_phase += 0.1
         self.vib_scale = math.sin(self._vib_phase) * self._vib_amplitude
         self.update()
+
+    def set_protein_data(self, ca_atoms, binding_site=None):
+        """[PROTEIN-3D] 단백질 Cα 백본 데이터 설정
+        ca_atoms: List[(residue_name, x, y, z, chain)]
+        binding_site: (cx, cy, cz) — 결합 부위 중심
+        """
+        self._protein_ca = ca_atoms
+        if ca_atoms:
+            xs = [a[1] for a in ca_atoms]
+            ys = [a[2] for a in ca_atoms]
+            zs = [a[3] for a in ca_atoms]
+            self._protein_center = (
+                sum(xs)/len(xs), sum(ys)/len(ys), sum(zs)/len(zs))
+            # 단백질+리간드 모두 볼 수 있도록 view scale 조정
+            max_range = max(max(xs)-min(xs), max(ys)-min(ys), max(zs)-min(zs))
+            self._view_scale = 15.0 / (max_range + 1.0)
+            self._center = self._protein_center
+        self._binding_site_center = binding_site
+        self._protein_visible = True
+        self.update()
+
+    def set_protein_visible(self, visible: bool):
+        self._protein_visible = visible
+        self.update()
+
+    def start_dock_approach(self, start_offset=(40.0, 0.0, 0.0)):
+        """[PROTEIN-3D] 리간드 접근 애니메이션 시작"""
+        self._ligand_offset = start_offset
+        self._dock_approach_phase = 0.0
+        self._dock_approach_timer.start(33)  # ~30 fps
+
+    def _dock_approach_tick(self):
+        """도킹 접근 애니메이션 프레임"""
+        self._dock_approach_phase += 0.015
+        if self._dock_approach_phase >= 1.0:
+            self._dock_approach_phase = -1.0  # 완료
+            self._ligand_offset = (0.0, 0.0, 0.0)
+            self._dock_approach_timer.stop()
+        else:
+            # ease-in-out
+            t = self._dock_approach_phase
+            ease = t * t * (3.0 - 2.0 * t)
+            ox, oy, oz = 40.0 * (1.0 - ease), 0.0, 0.0
+            self._ligand_offset = (ox, oy, oz)
+        self.update()
+
+    def _draw_protein(self):
+        """[PROTEIN-3D] OpenGL 단백질 Cα 백본 렌더링"""
+        if not self._protein_ca or not OPENGL_AVAILABLE:
+            return
+        # Chain colors
+        chain_colors = {
+            'A': (0.3, 0.6, 0.9), 'B': (0.9, 0.5, 0.3),
+            'C': (0.4, 0.8, 0.4), 'D': (0.8, 0.4, 0.8),
+            'E': (0.9, 0.9, 0.3), 'F': (0.3, 0.8, 0.8),
+        }
+        default_color = (0.5, 0.5, 0.6)
+
+        # 1) Cα backbone as connected tube (GL_LINE_STRIP per chain)
+        glDisable(GL_LIGHTING)
+        glLineWidth(2.0)
+
+        # Group by chain
+        chains = {}
+        for res, x, y, z, ch in self._protein_ca:
+            chains.setdefault(ch, []).append((x, y, z, res))
+
+        for ch, atoms in chains.items():
+            color = chain_colors.get(ch, default_color)
+            glColor3f(*color)
+            glBegin(GL_LINE_STRIP)
+            for x, y, z, _ in atoms:
+                glVertex3f(x, y, z)
+            glEnd()
+
+        # 2) 결합 부위 표시 (반투명 구)
+        if self._binding_site_center:
+            bx, by, bz = self._binding_site_center
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glColor4f(1.0, 0.8, 0.2, 0.15)  # 반투명 황색
+            glPushMatrix()
+            glTranslatef(bx, by, bz)
+            quad = gluNewQuadric()
+            gluSphere(quad, 8.0, 16, 16)  # 결합 부위 반경 ~8Å
+            gluDeleteQuadric(quad)
+            glPopMatrix()
+            glDisable(GL_BLEND)
+
+        # 3) 결합 부위 주변 잔기 (sticks)
+        if self._binding_site_center:
+            bx, by, bz = self._binding_site_center
+            glEnable(GL_LIGHTING)
+            for res, x, y, z, ch in self._protein_ca:
+                dist = math.sqrt((x-bx)**2 + (y-by)**2 + (z-bz)**2)
+                if dist < 12.0:  # 결합 부위 12Å 이내
+                    color = chain_colors.get(ch, default_color)
+                    glColor3f(*[c * 1.3 for c in color])
+                    glPushMatrix()
+                    glTranslatef(x, y, z)
+                    quad = gluNewQuadric()
+                    gluSphere(quad, 0.5, 8, 8)
+                    gluDeleteQuadric(quad)
+                    glPopMatrix()
+
+        glEnable(GL_LIGHTING)
+        glLineWidth(1.0)
 
     def set_measure_mode(self, on: bool):
         self._measure_mode = on
@@ -2032,7 +2165,17 @@ class Molecule3DViewer(QOpenGLWidget):
         cx, cy, cz = self._center
         glTranslatef(-cx, -cy, -cz)
 
+        # [PROTEIN-3D] 단백질 백본 먼저 렌더링 (배경)
+        if self._protein_visible and self._protein_ca:
+            self._draw_protein()
+
         if self.mol_data:
+            # [PROTEIN-3D] 도킹 접근 애니메이션 시 리간드 오프셋
+            if self._dock_approach_phase >= 0:
+                glPushMatrix()
+                ox, oy, oz = self._ligand_offset
+                glTranslatef(ox, oy, oz)
+
             vv = self.vib_vectors if self._vib_active else None
             vs = self.vib_scale if self._vib_active else 0.0
             small = (self.orbital_mode != 'none')
@@ -2045,6 +2188,9 @@ class Molecule3DViewer(QOpenGLWidget):
                 self._pi.render(self.mol_data)
             elif self.orbital_mode in ('hybrid', 'd_orbital', 'f_orbital', 'all'):
                 self._adv.render(self.mol_data, orbital_mode=self.orbital_mode)
+
+            if self._dock_approach_phase >= 0:
+                glPopMatrix()
 
     def mousePressEvent(self, e):
         if e.button() == Qt.MouseButton.LeftButton:
@@ -3541,15 +3687,64 @@ class VibrationPanel(QWidget):
         super().__init__(parent)
         self._init_ui()
 
+    # Signal: ORCA 파일 로드 요청 (부모에서 연결)
+    orca_load_requested = pyqtSignal()
+
     def _init_ui(self):
         layout = QVBoxLayout()
         layout.setContentsMargins(8, 8, 8, 8)
 
+        # [VIB-UX] ORCA 데이터 없을 때 안내 위젯
+        self.no_data_widget = QWidget()
+        nd_layout = QVBoxLayout()
+        nd_layout.setContentsMargins(12, 20, 12, 20)
+        nd_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        nd_icon = QLabel("🎵")
+        nd_icon.setStyleSheet("font-size: 36pt;")
+        nd_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        nd_layout.addWidget(nd_icon)
+
+        nd_title = QLabel("진동 모드 데이터 없음")
+        nd_title.setStyleSheet("font-size: 12pt; font-weight: bold; color: #ddd;")
+        nd_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        nd_layout.addWidget(nd_title)
+
+        nd_desc = QLabel(
+            "진동 모드 애니메이션을 보려면 ORCA 양자화학 계산 결과(.out)가 필요합니다.\n"
+            "ORCA에서 Frequency 계산을 수행한 후 결과 파일을 로드하세요."
+        )
+        nd_desc.setStyleSheet("color: #999; font-size: 9pt;")
+        nd_desc.setWordWrap(True)
+        nd_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        nd_layout.addWidget(nd_desc)
+
+        nd_layout.addSpacing(10)
+
+        btn_load_orca = QPushButton("📂 ORCA 파일 로드")
+        btn_load_orca.setStyleSheet("""
+            QPushButton {
+                background: #2d5aa0; color: white; border: none;
+                padding: 8px 20px; border-radius: 4px; font-size: 10pt;
+            }
+            QPushButton:hover { background: #3a6ec0; }
+        """)
+        btn_load_orca.clicked.connect(self.orca_load_requested.emit)
+        nd_layout.addWidget(btn_load_orca, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.no_data_widget.setLayout(nd_layout)
+        layout.addWidget(self.no_data_widget)
+
+        # [VIB-UX] 모드 데이터 있을 때 표시되는 위젯
+        self.data_widget = QWidget()
+        data_layout = QVBoxLayout()
+        data_layout.setContentsMargins(0, 0, 0, 0)
+
         # Mode list
-        layout.addWidget(QLabel("진동 모드 선택:"))
+        data_layout.addWidget(QLabel("진동 모드 선택:"))
         self.mode_list = QListWidget()
         self.mode_list.currentRowChanged.connect(self._on_mode_changed)
-        layout.addWidget(self.mode_list)
+        data_layout.addWidget(self.mode_list)
 
         # Animation controls
         ctrl = QHBoxLayout()
@@ -3564,12 +3759,16 @@ class VibrationPanel(QWidget):
         self.amp_slider.setMaximum(300)
         self.amp_slider.setValue(100)
         ctrl.addWidget(self.amp_slider)
-        layout.addLayout(ctrl)
+        data_layout.addLayout(ctrl)
 
         # Info
         self.info_label = QLabel("ORCA 데이터에서 진동 모드를 로드하세요")
         self.info_label.setStyleSheet("color: #888; font-size: 9pt;")
-        layout.addWidget(self.info_label)
+        data_layout.addWidget(self.info_label)
+
+        self.data_widget.setLayout(data_layout)
+        self.data_widget.setVisible(False)  # 초기에는 숨김
+        layout.addWidget(self.data_widget)
 
         self.setLayout(layout)
 
@@ -3584,6 +3783,9 @@ class VibrationPanel(QWidget):
             item = QListWidgetItem(f"{tag}Mode {i+1}: {freq:.1f} cm⁻¹{inten_str}")
             self.mode_list.addItem(item)
         self.info_label.setText(f"{len(frequencies)}개 진동 모드 로드됨")
+        # [VIB-UX] 데이터 로드 시 no_data 숨기고 data 표시
+        self.no_data_widget.setVisible(False)
+        self.data_widget.setVisible(True)
 
     def _on_mode_changed(self, row):
         if row >= 0:
@@ -3853,6 +4055,101 @@ class AIAnalysisPanel(QWidget):
                 if n_ar > 0:
                     lines.append(f"• UV-Vis: 방향족 π→π* ~254 nm 흡수 예상")
                 return "\n".join(lines)
+            elif section_key == "application":
+                # [AI-FIX] 응용 및 주의 — Lipinski Rule of Five + 구조 경고
+                mw = Descriptors.MolWt(mol)
+                logp = Descriptors.MolLogP(mol)
+                n_donors = Descriptors.NumHDonors(mol)
+                n_accept = Descriptors.NumHAcceptors(mol)
+                n_rot = Descriptors.NumRotatableBonds(mol)
+                tpsa = Descriptors.TPSA(mol)
+                lines = []
+                # Lipinski 약물유사성
+                lipinski_pass = (mw <= 500 and logp <= 5 and n_donors <= 5 and n_accept <= 10)
+                lipinski_score = sum([mw <= 500, logp <= 5, n_donors <= 5, n_accept <= 10])
+                lines.append(f"• Lipinski Rule of Five: {lipinski_score}/4 통과 {'✅' if lipinski_pass else '⚠️'}")
+                if lipinski_pass:
+                    lines.append("  → 경구 투여 약물 후보로 적합한 물리화학적 특성")
+                else:
+                    violations = []
+                    if mw > 500: violations.append(f"MW {mw:.0f}>500")
+                    if logp > 5: violations.append(f"LogP {logp:.1f}>5")
+                    if n_donors > 5: violations.append(f"HBD {n_donors}>5")
+                    if n_accept > 10: violations.append(f"HBA {n_accept}>10")
+                    lines.append(f"  → 위반: {', '.join(violations)}")
+                # TPSA (혈뇌장벽)
+                lines.append(f"• TPSA: {tpsa:.1f} Å² — {'BBB 투과 가능 (CNS 약물 후보)' if tpsa < 90 else '경구 흡수 가능' if tpsa < 140 else '낮은 경구 흡수 예상'}")
+                # 회전 가능 결합
+                if n_rot > 10:
+                    lines.append(f"• ⚠️ 회전 가능 결합 {n_rot}개 — 유연성 과다, 결합 엔트로피 불리")
+                # 구조 경고 (PAINS-like)
+                alerts = []
+                if mol.HasSubstructMatch(Chem.MolFromSmarts("[N+](=O)[O-]")):
+                    alerts.append("니트로기 (독성/돌연변이 유발 위험)")
+                if mol.HasSubstructMatch(Chem.MolFromSmarts("[F,Cl,Br,I]")):
+                    alerts.append("할로겐 함유 (대사 안정성 주의)")
+                if mol.HasSubstructMatch(Chem.MolFromSmarts("c1ccc2c(c1)ccc1ccccc12")):
+                    alerts.append("다환 방향족 (발암 가능성)")
+                if mol.HasSubstructMatch(Chem.MolFromSmarts("[SX2]")):
+                    alerts.append("티오에테르 (산화적 대사 주의)")
+                if alerts:
+                    lines.append("• ⚠️ 구조 경고:")
+                    for a in alerts:
+                        lines.append(f"  - {a}")
+                else:
+                    lines.append("• ✅ 주요 구조 경고 없음")
+                # 용도 추정
+                n_ar = rdMolDescriptors.CalcNumAromaticRings(mol)
+                if n_ar >= 2 and mw > 250:
+                    lines.append("• 💊 방향족 다환 구조 → 키나아제 억제제/항암제 스캐폴드 가능성")
+                elif any(a.GetAtomicNum() == 7 for a in mol.GetAtoms()) and n_donors >= 2:
+                    lines.append("• 💊 질소 함유 + H-bond 공여 → CNS/신경계 약물 스캐폴드 가능성")
+                elif logp < 0:
+                    lines.append("• 💧 높은 친수성 → 수용성 약물/프로드럭 후보")
+                return "\n".join(lines)
+            elif section_key == "facts":
+                # [AI-FIX] 화학적 사실 — SMILES 패턴 매칭으로 알려진 화합물군 식별
+                mw = Descriptors.MolWt(mol)
+                lines = []
+                # 알려진 구조 패턴 매칭
+                known_patterns = [
+                    ("c1ccccc1C(=O)O", "벤조산 유도체", "벤조산은 식품 방부제(E210)로 사용되며, 아스피린의 모체 구조입니다."),
+                    ("c1ccccc1O", "페놀 유도체", "페놀 구조는 항산화/항균 활성의 핵심이며, 타이레놀(아세트아미노펜)에도 포함됩니다."),
+                    ("CC(=O)O", "아세트산 유도체", "아세트산은 식초의 주성분(3-5%)이며, 생체 내 아세틸-CoA의 전구체입니다."),
+                    ("CCO", "알코올 유도체", "에탄올(C₂H₅OH)은 가장 널리 소비되는 알코올이며, 효모 발효의 주산물입니다."),
+                    ("c1ccncc1", "피리딘 유도체", "피리딘 고리는 비타민 B3(나이아신), 항결핵제 이소니아지드의 핵심 구조입니다."),
+                    ("C1CCCCC1", "사이클로헥세인 유도체", "의자/보트 배좌가 대표적이며, 당(Sugar)의 기본 골격입니다."),
+                    ("c1ccc2[nH]ccc2c1", "인돌 유도체", "인돌은 세로토닌, 트립토판, 멜라토닌의 핵심 골격으로, 신경전달에 중요합니다."),
+                    ("c1ccc(-c2ccccc2)cc1", "비페닐 구조", "비페닐은 LCD 액정, 열매체, 의약품 스캐폴드로 널리 활용됩니다."),
+                ]
+                matched = False
+                for smarts, name, fact in known_patterns:
+                    pat = Chem.MolFromSmarts(smarts)
+                    if pat and mol.HasSubstructMatch(pat):
+                        lines.append(f"• 🔍 {name} 계열 화합물")
+                        lines.append(f"  {fact}")
+                        matched = True
+                        break
+                # 원소 조성 기반 사실
+                atom_nums = set(a.GetAtomicNum() for a in mol.GetAtoms())
+                if 16 in atom_nums:  # S
+                    lines.append("• 🧪 황(S) 함유 — 시스테인/메티오닌의 핵심 원소, 이황화결합 형성")
+                if 15 in atom_nums:  # P
+                    lines.append("• 🧪 인(P) 함유 — DNA/ATP의 필수 원소, 유기인 화합물은 농약/신경작용제")
+                if 9 in atom_nums:  # F
+                    lines.append("• 🧪 불소(F) 함유 — C-F 결합은 가장 강한 단일결합 중 하나 (485 kJ/mol)")
+                # 분자량 기반 정보
+                n_heavy = mol.GetNumHeavyAtoms()
+                n_rings = rdMolDescriptors.CalcNumRings(mol)
+                lines.append(f"• 📊 중원자 {n_heavy}개, 고리 {n_rings}개, 분자량 {mw:.1f} g/mol")
+                if n_rings >= 4:
+                    lines.append("• 🔬 다환 구조 — 스테로이드/테르페노이드 골격과 유사")
+                elif n_heavy <= 5:
+                    lines.append("• 🔬 소분자 — 용매/시약/대사 중간체로 흔히 사용")
+                if not matched and not lines:
+                    lines.append(f"• 분자식 기반 분석 (SMILES: {smiles})")
+                    lines.append("  Gemini API를 설정하면 더 상세한 화학적 사실을 확인할 수 있습니다.")
+                return "\n".join(lines)
             else:
                 return f"(분자: {smiles}) — Gemini API를 설정하면 상세 분석 가능합니다."
         except Exception as e:
@@ -4106,6 +4403,7 @@ class DockingEnergyPanel(QWidget):
 
     # 프리셋 수용체 목록
     PRESET_RECEPTORS = [
+        # ── 기존 8종 ──
         ("GABA-A (α1β2γ2)",   "6X3S", "GABA 수용체 — 벤조디아제핀 결합 부위"),
         ("ACE2 (COVID-19)",    "6M0J", "SARS-CoV-2 스파이크 단백질 수용체"),
         ("COX-2 (NSAIDs)",     "5IKT", "프로스타글란딘 합성효소 — 소염진통제"),
@@ -4114,6 +4412,19 @@ class DockingEnergyPanel(QWidget):
         ("Beta-2 (천식)",      "3NY8", "β2 아드레날린 수용체 — 기관지 확장"),
         ("HIV Protease",       "3OXC", "HIV 단백질분해효소 — 항바이러스"),
         ("Acetylcholinesterase","4EY7", "아세틸콜린에스터라아제 — 알츠하이머"),
+        # ── 추가 12종 ──
+        ("Dopamine D2",        "6CM4", "도파민 D2 수용체 — 항정신병/파킨슨"),
+        ("Serotonin 5-HT2A",  "6WHA", "세로토닌 수용체 — 항우울제/항정신병"),
+        ("Mu-Opioid (μOR)",   "5C1M", "뮤-오피오이드 수용체 — 진통제 표적"),
+        ("HMG-CoA Reductase",  "1HWK", "콜레스테롤 합성효소 — 스타틴 표적"),
+        ("PDE5 (발기부전)",    "1UDT", "포스포디에스터라아제5 — 실데나필 표적"),
+        ("CDK2 (세포주기)",    "1FIN", "사이클린의존 키나아제2 — 항암 표적"),
+        ("BRAF V600E",         "4RZV", "BRAF 돌연변이 키나아제 — 흑색종 항암"),
+        ("Tubulin (미세소관)",  "1SA0", "튜불린 — 항암제(탁솔/빈카) 표적"),
+        ("DNA Gyrase",         "5BTC", "DNA 자이레이스 — 항생제(퀴놀론) 표적"),
+        ("Neuraminidase (독감)","3TI6", "뉴라미니다아제 — 타미플루 표적"),
+        ("DPP-4 (당뇨)",       "2ONC", "디펩티딜펩티다아제4 — 글립틴 표적"),
+        ("PPARγ (대사증후군)",  "2PRG", "핵수용체 — 티아졸리딘디온(TZD) 표적"),
     ]
 
     # 결합 에너지 임계값
@@ -4131,6 +4442,8 @@ class DockingEnergyPanel(QWidget):
         self._current_pdb_id: str = ""
         self._receptor_atoms: List = []       # [(sym, x, y, z)] Cα 백본
         self._docking_energy: Optional[float] = None
+        self._vina_result = None              # [VINA-WIRE] Vina 도킹 결과 보관
+        self._vina_thread = None              # [VINA-WIRE] Vina 스레드 참조
         self._init_ui()
 
     def _init_ui(self):
@@ -4230,6 +4543,20 @@ class DockingEnergyPanel(QWidget):
             "QPushButton:disabled { background:#333; color:#666; }")
         self.btn_dock.clicked.connect(self._run_docking)
         dock_btn_row.addWidget(self.btn_dock)
+
+        # [PROTEIN-3D] 3D 도킹 시각화 버튼
+        self.btn_dock_3d = QPushButton("🎬 3D 도킹 시각화")
+        self.btn_dock_3d.setEnabled(False)
+        self.btn_dock_3d.setStyleSheet(
+            "QPushButton { background:#1565C0; color:#90CAF9; border:1px solid #1976D2; "
+            "border-radius:3px; padding:5px 14px; font-size:10pt; font-weight:bold; }"
+            "QPushButton:hover { background:#1976D2; }"
+            "QPushButton:disabled { background:#333; color:#666; }")
+        self.btn_dock_3d.setToolTip(
+            "도킹 결과를 3D 뷰어에서 시각화합니다.\n"
+            "단백질 백본 + 리간드 접근 애니메이션을 표시합니다.")
+        self.btn_dock_3d.clicked.connect(self._show_dock_3d)
+        dock_btn_row.addWidget(self.btn_dock_3d)
         dock_btn_row.addStretch()
         dock_layout.addLayout(dock_btn_row)
 
@@ -4418,7 +4745,7 @@ class DockingEnergyPanel(QWidget):
 
     # ── 경험적 도킹 시뮬레이션 ─────────────────────────────────────────
     def _run_docking(self):
-        """경험적 결합 에너지 예측 (Vina 점수함수 근사, 실제 AutoDock 없이)"""
+        """도킹 실행: Vina 우선, 미설치 시 경험적 근사 폴백"""
         if not self._smiles:
             self.dock_result.setPlainText("⚠️ 리간드(분자) SMILES 없음 — 분자를 먼저 로드하세요")
             return
@@ -4430,10 +4757,118 @@ class DockingEnergyPanel(QWidget):
         self.dock_result.setPlainText("🔄 도킹 시뮬레이션 중...")
         QApplication.processEvents()
 
+        # [VINA-WIRE] 실제 Vina 사용 가능하면 시도
+        if VINA_BACKEND_AVAILABLE and self._current_pdb_id:
+            try:
+                self._run_vina_real()
+                return  # Vina 비동기 실행 → 완료 시 콜백에서 결과 표시
+            except Exception as e:
+                logger.warning(f"Vina failed, falling back to empirical: {e}")
+                self.dock_result.setPlainText("🔄 Vina 실패 → 경험적 근사치 계산 중...")
+                QApplication.processEvents()
+
+        # 경험적 근사 폴백
         try:
             energy = self._empirical_docking_score()
             self._docking_energy = energy
-            self._show_docking_result(energy)
+            self._show_docking_result(energy, method="경험적 근사")
+        except Exception as e:
+            self.dock_result.setPlainText(f"⚠️ 도킹 오류: {e}")
+        finally:
+            self.btn_dock.setEnabled(True)
+
+    def _run_vina_real(self):
+        """[VINA-WIRE] 실제 AutoDock Vina 실행 (비동기)"""
+        import tempfile
+        work_dir = Path(tempfile.mkdtemp(prefix="chemgrid_vina_"))
+
+        # 1) 리간드 준비
+        ligand = LigandPreparer.smiles_to_3d(self._smiles)
+        if ligand is None:
+            raise RuntimeError("리간드 3D 좌표 생성 실패")
+        lig_pdbqt = LigandPreparer.prepare_pdbqt(ligand, work_dir)
+        if lig_pdbqt is None:
+            raise RuntimeError("리간드 PDBQT 변환 실패")
+
+        # 2) 수용체 PDB 다운로드 및 준비
+        receptor = ReceptorData(pdb_id=self._current_pdb_id)
+        # PDB 파일이 이미 있으면 재사용
+        pdb_cache = work_dir / f"{self._current_pdb_id}.pdb"
+        if not pdb_cache.exists():
+            import requests as _req
+            url = f"https://files.rcsb.org/download/{self._current_pdb_id}.pdb"
+            resp = _req.get(url, timeout=30)
+            resp.raise_for_status()
+            pdb_cache.write_text(resp.text, encoding='utf-8')
+
+        receptor.filepath = pdb_cache
+        parser = VinaPDBParser()
+        receptor = parser.parse(str(pdb_cache))
+
+        rec_pdbqt = ReceptorPreparer.prepare_pdbqt(receptor, work_dir)
+        if rec_pdbqt is None:
+            raise RuntimeError("수용체 PDBQT 변환 실패")
+
+        # 3) 결합 부위 자동 탐지
+        center, size = ReceptorPreparer.detect_binding_site(receptor)
+
+        config = DockingConfig(
+            center=center,
+            size=size,
+            exhaustiveness=8,
+            num_modes=5,
+        )
+
+        # 4) Vina 비동기 실행
+        self.dock_result.setPlainText(
+            f"🔄 AutoDock Vina 도킹 중...\n"
+            f"수용체: {self._current_pdb_id}\n"
+            f"결합 부위: ({center[0]:.1f}, {center[1]:.1f}, {center[2]:.1f})\n"
+            f"박스 크기: {size[0]:.0f}×{size[1]:.0f}×{size[2]:.0f} Å"
+        )
+        QApplication.processEvents()
+
+        self._vina_thread = VinaDockingThread(
+            receptor_pdbqt=rec_pdbqt,
+            ligand_pdbqt=lig_pdbqt,
+            config=config,
+            work_dir=work_dir,
+            receptor=receptor,
+            ligand=ligand,
+            parent=self,
+        )
+        self._vina_thread.progress.connect(
+            lambda msg: self.dock_result.setPlainText(f"🔄 {msg}"))
+        self._vina_thread.result.connect(self._on_vina_result)
+        self._vina_thread.error.connect(self._on_vina_error)
+        self._vina_thread.start()
+
+    def _on_vina_result(self, dock_result):
+        """[VINA-WIRE] Vina 도킹 완료 콜백"""
+        self.btn_dock.setEnabled(True)
+        if dock_result.poses:
+            best = dock_result.poses[0]
+            self._docking_energy = best.affinity_kcal
+            self._vina_result = dock_result  # 3D 시각화용 보관
+            self._show_docking_result(best.affinity_kcal, method="AutoDock Vina")
+            # 추가 포즈 정보
+            if len(dock_result.poses) > 1:
+                extra = "\n\n📊 상위 포즈 결합 에너지:\n"
+                for i, pose in enumerate(dock_result.poses[:5]):
+                    extra += f"  Pose {i+1}: {pose.affinity_kcal:.2f} kcal/mol\n"
+                self.dock_result.appendPlainText(extra)
+        else:
+            self.dock_result.setPlainText("⚠️ Vina 도킹 완료되었으나 포즈가 생성되지 않았습니다.")
+
+    def _on_vina_error(self, error_msg):
+        """[VINA-WIRE] Vina 오류 → 경험적 근사 폴백"""
+        logger.warning(f"Vina error: {error_msg}")
+        self.dock_result.setPlainText(f"⚠️ Vina 오류: {error_msg}\n\n🔄 경험적 근사치로 대체 계산 중...")
+        QApplication.processEvents()
+        try:
+            energy = self._empirical_docking_score()
+            self._docking_energy = energy
+            self._show_docking_result(energy, method="경험적 근사 (Vina 실패)")
         except Exception as e:
             self.dock_result.setPlainText(f"⚠️ 도킹 오류: {e}")
         finally:
@@ -4469,6 +4904,21 @@ class DockingEnergyPanel(QWidget):
             "5IKT": {"hb_w": -0.8, "hydro_w": -0.7, "baseline": -5.5},   # COX-2 (소수성)
             "3U69": {"hb_w": -1.0, "hydro_w": -0.4, "baseline": -4.0},   # Thrombin
             "1IVO": {"hb_w": -0.6, "hydro_w": -0.8, "baseline": -5.2},   # EGFR
+            "3NY8": {"hb_w": -0.7, "hydro_w": -0.7, "baseline": -4.8},   # Beta-2
+            "3OXC": {"hb_w": -0.9, "hydro_w": -0.5, "baseline": -5.0},   # HIV Protease
+            "4EY7": {"hb_w": -0.8, "hydro_w": -0.6, "baseline": -5.5},   # AChE
+            "6CM4": {"hb_w": -0.7, "hydro_w": -0.8, "baseline": -5.0},   # Dopamine D2 (소수성 포켓)
+            "6WHA": {"hb_w": -0.8, "hydro_w": -0.7, "baseline": -4.8},   # 5-HT2A
+            "5C1M": {"hb_w": -0.9, "hydro_w": -0.6, "baseline": -5.2},   # Mu-Opioid (극성)
+            "1HWK": {"hb_w": -0.7, "hydro_w": -0.8, "baseline": -6.0},   # HMG-CoA (스타틴)
+            "1UDT": {"hb_w": -0.6, "hydro_w": -0.9, "baseline": -5.5},   # PDE5 (소수성)
+            "1FIN": {"hb_w": -0.8, "hydro_w": -0.7, "baseline": -5.0},   # CDK2
+            "4RZV": {"hb_w": -0.6, "hydro_w": -0.9, "baseline": -5.8},   # BRAF (소수성)
+            "1SA0": {"hb_w": -0.7, "hydro_w": -0.8, "baseline": -5.3},   # Tubulin
+            "5BTC": {"hb_w": -0.9, "hydro_w": -0.5, "baseline": -4.5},   # DNA Gyrase (극성)
+            "3TI6": {"hb_w": -1.0, "hydro_w": -0.4, "baseline": -5.0},   # Neuraminidase (극성)
+            "2ONC": {"hb_w": -0.8, "hydro_w": -0.6, "baseline": -4.8},   # DPP-4
+            "2PRG": {"hb_w": -0.7, "hydro_w": -0.8, "baseline": -5.5},   # PPARγ
         }
         f = pdb_factors.get(self._current_pdb_id,
                             {"hb_w": -0.8, "hydro_w": -0.6, "baseline": -4.5})
@@ -4488,7 +4938,7 @@ class DockingEnergyPanel(QWidget):
 
         return round(score, 2)
 
-    def _show_docking_result(self, energy: float):
+    def _show_docking_result(self, energy: float, method: str = "경험적 근사"):
         """도킹 결과 표시"""
         # 등급 판정
         grade_label, grade_color, grade_ki = "비결합", "#95a5a6", ""
@@ -4500,6 +4950,7 @@ class DockingEnergyPanel(QWidget):
         # 결과 텍스트
         lines = [
             f"═══════ 도킹 결과 ({self._current_pdb_id}) ═══════",
+            f"계산 방법:  {method}",
             f"예측 결합 에너지:  ΔG = {energy:+.2f} kcal/mol",
             f"결합 등급:  {grade_label}  ({grade_ki})",
             f"─────────────────────────────────",
@@ -4512,6 +4963,12 @@ class DockingEnergyPanel(QWidget):
             "6X3S": [("Diazepam", -10.5), ("Zolpidem", -11.2)],
             "6M0J": [("Remdesivir", -9.8)],
             "5IKT": [("Celecoxib", -10.2), ("Ibuprofen", -7.8)],
+            "6CM4": [("Haloperidol", -9.2), ("Risperidone", -10.8)],
+            "6WHA": [("Ketanserin", -9.5)],
+            "5C1M": [("Morphine", -9.0), ("Fentanyl", -11.5)],
+            "1HWK": [("Atorvastatin", -11.0), ("Rosuvastatin", -10.5)],
+            "1UDT": [("Sildenafil", -10.2), ("Tadalafil", -10.8)],
+            "3TI6": [("Oseltamivir", -9.8), ("Zanamivir", -10.1)],
         }
         refs = preset_drug_map.get(self._current_pdb_id, [])
         if refs:
@@ -4522,7 +4979,10 @@ class DockingEnergyPanel(QWidget):
                 lines.append(f"  vs {drug}: {diff:+.1f} kcal/mol ({sign})")
 
         lines.append("─────────────────────────────────")
-        lines.append("⚠️ 경험적 근사값 — 실제 도킹은 AutoDock Vina 권장")
+        if "Vina" in method:
+            lines.append("✅ AutoDock Vina 실제 도킹 결과")
+        else:
+            lines.append("⚠️ 경험적 근사값 — AutoDock Vina 설치 시 실제 도킹 가능")
 
         self.dock_result.setPlainText("\n".join(lines))
 
@@ -4538,6 +4998,40 @@ class DockingEnergyPanel(QWidget):
         if hasattr(self, 'viz_widget'):
             self.viz_widget.update_docking(
                 self._receptor_atoms, self._smiles, energy, grade_color)
+
+        # [PROTEIN-3D] 3D 시각화 버튼 활성화
+        self.btn_dock_3d.setEnabled(True)
+
+    def _show_dock_3d(self):
+        """[PROTEIN-3D] 도킹 결과를 3D 뷰어에 표시 — 단백질 백본 + 리간드 접근 애니메이션"""
+        if not self._receptor_atoms:
+            return
+        # Molecule3DPopup의 viewer에 접근 (부모 탐색)
+        popup = self.parent()
+        while popup and not isinstance(popup, Molecule3DPopup):
+            popup = popup.parent()
+        if popup is None or not hasattr(popup, 'viewer'):
+            self.dock_result.appendPlainText("\n⚠️ 3D 뷰어를 찾을 수 없습니다.")
+            return
+        viewer = popup.viewer
+        if not isinstance(viewer, Molecule3DViewer):
+            self.dock_result.appendPlainText("\n⚠️ OpenGL 뷰어가 필요합니다.")
+            return
+
+        # 결합 부위 중심 계산 (Cα 무게중심)
+        xs = [a[1] for a in self._receptor_atoms]
+        ys = [a[2] for a in self._receptor_atoms]
+        zs = [a[3] for a in self._receptor_atoms]
+        binding_center = (sum(xs)/len(xs), sum(ys)/len(ys), sum(zs)/len(zs))
+
+        # 뷰어에 단백질 데이터 전달
+        viewer.set_protein_data(self._receptor_atoms, binding_site=binding_center)
+
+        # 리간드 접근 애니메이션 시작
+        viewer.start_dock_approach(start_offset=(40.0, 0.0, 0.0))
+
+        self.dock_result.appendPlainText(
+            "\n🎬 3D 도킹 시각화 시작 — 뷰어에서 단백질+리간드 확인")
 
     def set_molecule_smiles(self, smiles: str):
         self._smiles = smiles
@@ -4751,6 +5245,7 @@ class Molecule3DPopup(QWidget):
         # === Connect vibration signals ===
         self.tab_vibration.mode_selected.connect(self._on_vib_mode_selected)
         self.tab_vibration.animation_toggled.connect(self._on_vib_toggle)
+        self.tab_vibration.orca_load_requested.connect(self._load_orca_file)
 
     def _load_data(self):
         """초기 데이터 로드 (RDKit, PubChem, ORCA)"""

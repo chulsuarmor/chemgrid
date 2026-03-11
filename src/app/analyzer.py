@@ -72,15 +72,23 @@ class ChemicalAnalyzer:
                 for node, delta in res_deltas.items():
                     mol_charges[node] += delta
                 
-                # 치환기 벡터 효과
+                # 치환기 벡터 효과 (v4.0: ortho/para/meta 위치별 차별화)
                 for node in pi_isl:
                     for neighbor, _ in mol_adj.get(node, []):
                         if neighbor not in pi_isl:
                             score = self.physics.calculate_substituent_score(neighbor, pi_isl, norm_atoms, mol_adj)
-                            pull_force = (score * 0.75) / len(pi_isl)
+                            base_force = (score * 0.75) / len(pi_isl)
+                            topo_dist = self._ring_topology_distance(node, pi_isl, mol_adj)
                             for target in pi_isl:
-                                mol_charges[target] += pull_force
-                                mol_charges[neighbor] -= pull_force * 0.2
+                                dist = topo_dist.get(target, 0)
+                                if dist == 0:
+                                    weight = 1.5   # ipso
+                                elif dist % 2 == 1:
+                                    weight = 1.3   # ortho(1), para(3)
+                                else:
+                                    weight = 0.4   # meta(2)
+                                mol_charges[target] += base_force * weight
+                                mol_charges[neighbor] -= base_force * weight * 0.2
 
                 # [Fix v2] 형식전하 → π계 전자분포 반영 (사이클로펜타다이엔일 음이온 등)
                 for node in pi_isl:
@@ -92,11 +100,28 @@ class ChemicalAnalyzer:
                     )
                     _ion = (1 if _cf2 == "+" else (-1 if _cf2 == "-" else 0)) + _ac2
                     if _ion != 0:
-                        _spread = (_ion * -0.18) / max(len(pi_isl), 1)
+                        # [v4.0 Fix] 부호 반전 수정: 음이온(-) → 음전하(RED), 양이온(+) → 양전하(BLUE)
+                        _spread = (_ion * 0.25) / max(len(pi_isl), 1)
                         for target in pi_isl:
                             mol_charges[target] += _spread
 
-            # [analyzer.py] Line 70 부근 (analyze 함수 마지막)
+            # [v4.0] 분자 전체 형식전하 오프셋: 이온성 분자의 전체 ESP 보정
+            # 음이온(-1) → 모든 원자에 음전하 분배, 양이온(+1) → 양전하 분배
+            # 강도: 형식전하 1단위 → 원자당 ~0.5 전하 오프셋 (강한 ESP 전환 필요)
+            net_formal_charge = 0
+            for node in mol_charges:
+                _at = norm_atoms.get(node, {})
+                _cf = _at.get("charge", "")
+                net_formal_charge += (1 if _cf == "+" else (-1 if _cf == "-" else 0))
+                net_formal_charge += sum(
+                    (1 if s == "+" else (-1 if s == "-" else 0))
+                    for d, s in _at.get("attach", {}).items() if d != -1
+                )
+            if net_formal_charge != 0 and len(mol_charges) > 0:
+                offset = (net_formal_charge * 2.5) / len(mol_charges)
+                for k in mol_charges:
+                    mol_charges[k] += offset
+
             for k, q in mol_charges.items(): global_charges[k] = q
 
         # [Fix v3: 2026-03-10] all_aromatic 채우기 — π-island 링 위상 검사
@@ -160,6 +185,18 @@ class ChemicalAnalyzer:
             "stereo": stereo_labels,
             "theory_data": theory_data #
         }
+
+    def _ring_topology_distance(self, start, pi_island, adj):
+        """BFS로 ring 내 위상 거리 계산 (ortho=1, meta=2, para=3)"""
+        distances = {start: 0}
+        queue = [start]
+        while queue:
+            curr = queue.pop(0)
+            for neighbor, _ in adj.get(curr, []):
+                if neighbor in pi_island and neighbor not in distances:
+                    distances[neighbor] = distances[curr] + 1
+                    queue.append(neighbor)
+        return distances
 
     def generate_smiles(self, atoms, bonds):
         # [가드] RDKit 미설치 시 빈 데이터 반환 (graceful fallback)

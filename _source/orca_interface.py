@@ -62,6 +62,25 @@ end
 *
 """
 
+# v2.1: Orbital cube file generation template (run after main calculation)
+ORBITAL_PLOT_TEMPLATE = """
+! B3LYP 6-31G(d) TIGHTSCF MINIPRINT MOREAD NOITER
+%moinp "{gbw_file}"
+%plots
+  dim1 60
+  dim2 60
+  dim3 60
+  Format Gaussian_Cube
+  MO("homo.cube",{homo_idx},0);
+  MO("lumo.cube",{lumo_idx},0);
+  ElDens("density.cube");
+end
+
+* xyz {charge} {multiplicity}
+{atoms_block}
+*
+"""
+
 
 # ============================================================================
 # DATA STRUCTURES
@@ -629,6 +648,170 @@ def validate_orca_installation() -> bool:
     return True
 
 
+def generate_orbital_cubes(
+    out_path: Path,
+    work_dir: Path = None
+) -> Dict[str, Path]:
+    """
+    Generate orbital cube files from a completed ORCA calculation.
+    Uses MOREAD + NOITER to read existing .gbw and generate cube files via %plots.
+
+    Args:
+        out_path: Path to ORCA .out file from completed calculation
+        work_dir: Working directory (defaults to out_path's directory)
+
+    Returns:
+        Dict of cube file paths: {"homo": Path, "lumo": Path, "density": Path}
+    """
+    if work_dir is None:
+        work_dir = out_path.parent
+
+    gbw_path = out_path.with_suffix('.gbw')
+    if not gbw_path.exists():
+        print(f"[OrbitalCube] GBW file not found: {gbw_path}")
+        return {}
+
+    # Parse HOMO/LUMO indices from .out file
+    homo_idx, lumo_idx = _find_homo_lumo_indices(out_path)
+
+    # Extract geometry and charge from .out
+    atoms_block, charge, multiplicity = _extract_geometry_block(out_path)
+    if not atoms_block:
+        print("[OrbitalCube] Failed to extract geometry from .out file")
+        return {}
+
+    # Generate plot input file
+    plot_input = ORBITAL_PLOT_TEMPLATE.format(
+        gbw_file=gbw_path.name,
+        homo_idx=homo_idx,
+        lumo_idx=lumo_idx,
+        charge=charge,
+        multiplicity=multiplicity,
+        atoms_block=atoms_block
+    )
+
+    plot_input_path = work_dir / "orbital_plot.inp"
+    plot_input_path.write_text(plot_input)
+
+    print(f"[OrbitalCube] Running ORCA for cube generation (HOMO={homo_idx}, LUMO={lumo_idx})...")
+
+    try:
+        result = subprocess.run(
+            [str(ORCA_EXE), str(plot_input_path)],
+            capture_output=True, text=True,
+            timeout=120,
+            cwd=str(work_dir)
+        )
+
+        if result.returncode != 0:
+            print(f"[OrbitalCube] ORCA plot failed: {result.stderr[:200]}")
+            return {}
+    except subprocess.TimeoutExpired:
+        print("[OrbitalCube] ORCA plot timed out")
+        return {}
+    except Exception as e:
+        print(f"[OrbitalCube] Error: {e}")
+        return {}
+
+    # Collect generated cube files
+    cube_files = {}
+    for name, filename in [("homo", "homo.cube"), ("lumo", "lumo.cube"), ("density", "density.cube")]:
+        cube_path = work_dir / filename
+        if cube_path.exists():
+            cube_files[name] = cube_path
+            print(f"[OrbitalCube] Generated: {filename} ({cube_path.stat().st_size} bytes)")
+        else:
+            print(f"[OrbitalCube] Missing: {filename}")
+
+    return cube_files
+
+
+def _find_homo_lumo_indices(out_path: Path) -> Tuple[int, int]:
+    """Find HOMO and LUMO orbital indices from ORCA output"""
+    homo_idx = 0
+    lumo_idx = 1
+
+    try:
+        content = out_path.read_text(encoding='utf-8', errors='ignore')
+
+        # Look for ORBITAL ENERGIES section
+        in_orbital = False
+        last_occupied_idx = 0
+
+        for line in content.split('\n'):
+            if 'ORBITAL ENERGIES' in line:
+                in_orbital = True
+                continue
+            if in_orbital:
+                parts = line.split()
+                if len(parts) >= 4:
+                    try:
+                        idx = int(parts[0])
+                        occ = float(parts[1])
+                        if occ > 0.1:
+                            last_occupied_idx = idx
+                    except (ValueError, IndexError):
+                        if last_occupied_idx > 0:
+                            break
+
+        if last_occupied_idx > 0:
+            homo_idx = last_occupied_idx
+            lumo_idx = last_occupied_idx + 1
+            print(f"[OrbitalCube] Found HOMO={homo_idx}, LUMO={lumo_idx}")
+
+    except Exception as e:
+        print(f"[OrbitalCube] HOMO/LUMO index parse error: {e}")
+
+    return homo_idx, lumo_idx
+
+
+def _extract_geometry_block(out_path: Path) -> Tuple[str, int, int]:
+    """Extract final geometry as atoms block, plus charge and multiplicity"""
+    atoms_lines = []
+    charge = 0
+    multiplicity = 1
+
+    try:
+        content = out_path.read_text(encoding='utf-8', errors='ignore')
+        lines = content.split('\n')
+
+        # Find charge/multiplicity
+        for line in lines:
+            if 'Total Charge' in line:
+                m = re.search(r'(\d+)', line)
+                if m:
+                    charge = int(m.group(1))
+            if 'Multiplicity' in line:
+                m = re.search(r'(\d+)', line)
+                if m:
+                    multiplicity = int(m.group(1))
+
+        # Find last CARTESIAN COORDINATES (ANGSTROEM)
+        geom_start = -1
+        for i, line in enumerate(lines):
+            if 'CARTESIAN COORDINATES (ANGSTROEM)' in line:
+                geom_start = i + 2  # Skip header and dash line
+
+        if geom_start > 0:
+            for line in lines[geom_start:]:
+                parts = line.split()
+                if len(parts) >= 4:
+                    try:
+                        sym = parts[0]
+                        x, y, z = float(parts[1]), float(parts[2]), float(parts[3])
+                        atoms_lines.append(f"{sym:2s}  {x:14.8f}  {y:14.8f}  {z:14.8f}")
+                    except ValueError:
+                        break
+                elif line.strip() == '':
+                    if atoms_lines:
+                        break
+
+    except Exception as e:
+        print(f"[OrbitalCube] Geometry extraction error: {e}")
+
+    return '\n'.join(atoms_lines), charge, multiplicity
+
+
 def get_electron_density_at_point(
     gbw_path: Path,
     point: Tuple[float, float, float]
@@ -636,7 +819,7 @@ def get_electron_density_at_point(
     """
     Get electronic density value at specific 3D point
     Requires density cube file export from ORCA
-    
+
     For Phase A: Returns approximation based on distance to nearest atom
     """
     # Phase A stub: Advanced density grid interpolation in Phase B
