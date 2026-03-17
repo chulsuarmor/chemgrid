@@ -973,6 +973,7 @@ class MoleculeCanvas(QWidget):
             for bk in self.selected_bonds: pts.extend([QPointF(*bk[0]), QPointF(*bk[1])])
         
         # [해결] 빈 공간이 아닌 '가장 좌측 상단 원자'를 기준점(ref)으로 확정하여 좌표 꼬임 방지
+        if not pts: return
         anchor_node = sorted(pts, key=lambda p: (p.y(), p.x()))[0]
         ref = anchor_node 
         
@@ -1002,7 +1003,7 @@ class MoleculeCanvas(QWidget):
         for rel_b, bt in self.clipboard["b"]:
             p1_n, p2_n = snap_anchor + QPointF(*rel_b[0]), snap_anchor + QPointF(*rel_b[1])
             new_bt = copy.deepcopy(bt)
-            if isinstance(new_bt, tuple): # [해결] 새 위치에 맞게 방향 좌표 갱신
+            if isinstance(new_bt, tuple) and len(new_bt) >= 3: # [해결] 새 위치에 맞게 방향 좌표 갱신
                 new_bt = (p1_n, p2_n, new_bt[2])
             self.bonds[(get_coord_key(p1_n), get_coord_key(p2_n))] = new_bt
         self.is_pasting = False; self.update()
@@ -2129,8 +2130,8 @@ class MainWindow(QMainWindow):
             # 스펙트럼 데이터 파싱
             from pathlib import Path
             spectrum_data = parse_orca_frequencies(Path(file_path))
-            
-            if len(spectrum_data.modes) == 0:
+
+            if not spectrum_data or len(spectrum_data.modes) == 0:
                 QMessageBox.warning(
                     self,
                     "경고",
@@ -2235,9 +2236,9 @@ class MainWindow(QMainWindow):
                         peaks=[],
                         raw_data={"modes": spectrum_data.modes}
                     )
-            except:
-                pass
-            
+            except Exception as e:
+                print(f"[draw.py] spectrum parse error: {e}")
+
             if not spectra_data:
                 QMessageBox.warning(self, "알림", "스펙트럼 데이터를 찾을 수 없습니다.")
                 return

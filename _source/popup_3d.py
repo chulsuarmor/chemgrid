@@ -2154,6 +2154,8 @@ class Molecule3DViewer(QOpenGLWidget):
             return
         if h == 0:
             h = 1
+        if w == 0:
+            w = 1
         glViewport(0, 0, w, h)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
