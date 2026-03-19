@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>ChemGrid 종합 GUI 검증 보고서</title>
+<style>
+body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #1a1a2e; color: #eee; }
+h1 { color: #64B5F6; }
+.summary { font-size: 24px; margin: 20px 0; padding: 15px;
+            background: #b71c1c; border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+th, td { padding: 10px 14px; border: 1px solid #333; text-align: left; }
+th { background: #263238; }
+tr:nth-child(even) { background: #222233; }
+img { border-radius: 4px; cursor: pointer; }
+</style></head>
+<body>
+<h1>🧪 ChemGrid 종합 GUI 검증 보고서</h1>
+<p>생성일시: 2026-03-12 00:27:46</p>
+<div class="summary">결과: 1/8 PASS (12%)</div>
+<h2>📋 테스트 상세 결과</h2>
+<table>
+<tr><th>상태</th><th>테스트</th><th>상세</th><th>스크린샷</th></tr>
+
+        <tr>
+            <td style="color:#f44336; font-weight:bold;">FAIL</td>
+            <td>3D 팝업 (aspirin)</td>
+            <td>팝업이 열리지 않음</td>
+            <td><a href="gui_verify_shots\0025225050_3D_aspirin_full.png" target="_blank"><img src="gui_verify_shots\0025225050_3D_aspirin_full.png" width="300"></a></td>
+        </tr>
+        <tr>
+            <td style="color:#f44336; font-weight:bold;">FAIL</td>
+            <td>IR-Raman (aspirin)</td>
+            <td>팝업이 열리지 않음 (모듈 미설치 또는 에러)</td>
+            <td><a href="gui_verify_shots\0025428218_IR-Raman_aspirin_check_full.png" target="_blank"><img src="gui_verify_shots\0025428218_IR-Raman_aspirin_check_full.png" width="300"></a></td>
+        </tr>
+        <tr>
+            <td style="color:#f44336; font-weight:bold;">FAIL</td>
+            <td>NMR (aspirin)</td>
+            <td>팝업이 열리지 않음 (모듈 미설치 또는 에러)</td>
+            <td><a href="gui_verify_shots\0026032963_NMR_aspirin_check_full.png" target="_blank"><img src="gui_verify_shots\0026032963_NMR_aspirin_check_full.png" width="300"></a></td>
+        </tr>
+        <tr>
+            <td style="color:#4CAF50; font-weight:bold;">PASS</td>
+            <td>UV-Vis (aspirin)</td>
+            <td>팝업 제목: 예측 스펙트럼 — CC(=O)Oc1ccccc1C(=O)O</td>
+            <td><a href="gui_verify_shots\0026236962_UV-Vis_aspirin_full.png" target="_blank"><img src="gui_verify_shots\0026236962_UV-Vis_aspirin_full.png" width="300"></a></td>
+        </tr>
+        <tr>
+            <td style="color:#f44336; font-weight:bold;">FAIL</td>
+            <td>도킹 시뮬레이션</td>
+            <td>팝업이 열리지 않음 (vina/meeko 미설치 또는 import 에러)</td>
+            <td><a href="gui_verify_shots\0026451460_Docking_aspirin_check_full.png" target="_blank"><img src="gui_verify_shots\0026451460_Docking_aspirin_check_full.png" width="300"></a></td>
+        </tr>
+        <tr>
+            <td style="color:#f44336; font-weight:bold;">FAIL</td>
+            <td>3D 팝업 (benzene)</td>
+            <td>팝업이 열리지 않음</td>
+            <td><a href="gui_verify_shots\0027045500_3D_benzene_full.png" target="_blank"><img src="gui_verify_shots\0027045500_3D_benzene_full.png" width="300"></a></td>
+        </tr>
+        <tr>
+            <td style="color:#f44336; font-weight:bold;">FAIL</td>
+            <td>3D 팝업 (caffeine)</td>
+            <td>팝업이 열리지 않음</td>
+            <td><a href="gui_verify_shots\0027238185_3D_caffeine_full.png" target="_blank"><img src="gui_verify_shots\0027238185_3D_caffeine_full.png" width="300"></a></td>
+        </tr>
+        <tr>
+            <td style="color:#f44336; font-weight:bold;">FAIL</td>
+            <td>3D 팝업 (cholesterol)</td>
+            <td>팝업이 열리지 않음</td>
+            <td><a href="gui_verify_shots\0027432731_3D_cholesterol_full.png" target="_blank"><img src="gui_verify_shots\0027432731_3D_cholesterol_full.png" width="300"></a></td>
+        </tr>
+</table>
+</body></html>

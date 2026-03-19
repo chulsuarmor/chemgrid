@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChemGrid Visual QA Report — 2026-03-18</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #334155;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --accent: #3b82f6;
+    --pass: #22c55e;
+    --fail: #ef4444;
+    --warn: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+  }
+  .header {
+    text-align: center;
+    padding: 2rem 0 1.5rem;
+    border-bottom: 1px solid var(--surface2);
+    margin-bottom: 2rem;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .header .subtitle {
+    color: var(--text-dim);
+    font-size: 1rem;
+  }
+  .stats {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 1.2rem 2rem;
+    text-align: center;
+    min-width: 140px;
+    border: 1px solid var(--surface2);
+  }
+  .stat-card .value {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+  .stat-card .label {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .cat-header {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .card {
+    background: var(--surface);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--surface2);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    cursor: pointer;
+    display: block;
+    background: #000;
+  }
+  .no-img {
+    width: 100%;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface2);
+    color: var(--text-dim);
+    font-size: 0.9rem;
+  }
+  .card-body {
+    padding: 0.8rem 1rem;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge.pass { background: var(--pass); color: #000; }
+  .badge.fail { background: var(--fail); color: #fff; }
+  .step-id {
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+    color: var(--accent);
+  }
+  .step-desc {
+    font-size: 0.85rem;
+    color: var(--text);
+    margin-top: 0.2rem;
+  }
+  .step-mol {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 0.15rem;
+  }
+  .step-time {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+  }
+  .error-msg {
+    font-size: 0.75rem;
+    color: var(--fail);
+    margin-top: 0.3rem;
+    word-break: break-all;
+  }
+  .pass-card { border-left: 3px solid var(--pass); }
+  .fail-card { border-left: 3px solid var(--fail); }
+  .error-section {
+    background: var(--surface);
+    border: 1px solid var(--fail);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+  }
+  .error-section h2 {
+    color: var(--fail);
+    margin-bottom: 0.5rem;
+  }
+  .error-section li {
+    font-size: 0.85rem;
+    margin-left: 1.5rem;
+    margin-bottom: 0.3rem;
+    color: var(--text-dim);
+  }
+  .footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--surface2);
+  }
+  /* Modal for full-size image */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+  .modal.active { display: flex; }
+  .modal img {
+    max-width: 95vw;
+    max-height: 95vh;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>ChemGrid Visual QA Report</h1>
+  <div class="subtitle">2026-03-18T22:45:25.206901 | Duration: 8.6s</div>
+</div>
+
+<div class="stats">
+  <div class="stat-card">
+    <div class="value" style="color: #22c55e">100%</div>
+    <div class="label">Pass Rate</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">44</div>
+    <div class="label">Total Steps</div>
+  </div>
+  <div class="stat-card">
+    <div class="value" style="color: var(--pass)">44</div>
+    <div class="label">Passed</div>
+  </div>
+  <div class="stat-card">
+    <div class="value" style="color: var(--fail)">0</div>
+    <div class="label">Failed</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">2</div>
+    <div class="label">Errors</div>
+  </div>
+</div>
+
+<h2 class="cat-header">Initial State</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="01_initial_empty.png" alt="01_initial_empty" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">01_initial_empty</div>
+    <div class="step-desc">Empty canvas on startup</div>
+    <div class="step-mol">Molecule: none</div>
+    <div class="step-time">26 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">Text Input</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="02_text_input_typed.png" alt="02_text_input_typed" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">02_text_input_typed</div>
+    <div class="step-desc">Typed 'benzene' in molecule input</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">26 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="02_text_input_result.png" alt="02_text_input_result" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">02_text_input_result</div>
+    <div class="step-desc">After pressing Enter on 'benzene'</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">28 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">Drawing View</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="03_benzene_drawing.png" alt="03_benzene_drawing" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_benzene_drawing</div>
+    <div class="step-desc">benzene Drawing view (simple aromatic)</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">27 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="03_aspirin_drawing.png" alt="03_aspirin_drawing" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_aspirin_drawing</div>
+    <div class="step-desc">aspirin Drawing view (ester + aromatic + carboxyl)</div>
+    <div class="step-mol">Molecule: aspirin</div>
+    <div class="step-time">33 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="03_caffeine_drawing.png" alt="03_caffeine_drawing" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_caffeine_drawing</div>
+    <div class="step-desc">caffeine Drawing view (purine ring + carbonyls)</div>
+    <div class="step-mol">Molecule: caffeine</div>
+    <div class="step-time">32 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="03_ferrocene_drawing.png" alt="03_ferrocene_drawing" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_ferrocene_drawing</div>
+    <div class="step-desc">ferrocene Drawing view (coordination compound)</div>
+    <div class="step-mol">Molecule: ferrocene</div>
+    <div class="step-time">29 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="03_hemoglobin_drawing.png" alt="03_hemoglobin_drawing" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_hemoglobin_drawing</div>
+    <div class="step-desc">hemoglobin Drawing view (large porphyrin)</div>
+    <div class="step-mol">Molecule: hemoglobin</div>
+    <div class="step-time">28 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">Theory View</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="03_benzene_theory.png" alt="03_benzene_theory" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_benzene_theory</div>
+    <div class="step-desc">benzene Theory view — electron clouds</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">26 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="03_aspirin_theory.png" alt="03_aspirin_theory" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_aspirin_theory</div>
+    <div class="step-desc">aspirin Theory view — electron clouds</div>
+    <div class="step-mol">Molecule: aspirin</div>
+    <div class="step-time">30 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="03_caffeine_theory.png" alt="03_caffeine_theory" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_caffeine_theory</div>
+    <div class="step-desc">caffeine Theory view — electron clouds</div>
+    <div class="step-mol">Molecule: caffeine</div>
+    <div class="step-time">32 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="03_ferrocene_theory.png" alt="03_ferrocene_theory" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_ferrocene_theory</div>
+    <div class="step-desc">ferrocene Theory view — electron clouds</div>
+    <div class="step-mol">Molecule: ferrocene</div>
+    <div class="step-time">27 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="03_hemoglobin_theory.png" alt="03_hemoglobin_theory" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_hemoglobin_theory</div>
+    <div class="step-desc">hemoglobin Theory view — electron clouds</div>
+    <div class="step-mol">Molecule: hemoglobin</div>
+    <div class="step-time">25 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">Lewis View</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="03_benzene_lewis.png" alt="03_benzene_lewis" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_benzene_lewis</div>
+    <div class="step-desc">benzene Lewis structure — lone pairs + H</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">26 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="03_aspirin_lewis.png" alt="03_aspirin_lewis" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_aspirin_lewis</div>
+    <div class="step-desc">aspirin Lewis structure — lone pairs + H</div>
+    <div class="step-mol">Molecule: aspirin</div>
+    <div class="step-time">29 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="03_caffeine_lewis.png" alt="03_caffeine_lewis" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_caffeine_lewis</div>
+    <div class="step-desc">caffeine Lewis structure — lone pairs + H</div>
+    <div class="step-mol">Molecule: caffeine</div>
+    <div class="step-time">34 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="03_ferrocene_lewis.png" alt="03_ferrocene_lewis" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_ferrocene_lewis</div>
+    <div class="step-desc">ferrocene Lewis structure — lone pairs + H</div>
+    <div class="step-mol">Molecule: ferrocene</div>
+    <div class="step-time">27 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="03_hemoglobin_lewis.png" alt="03_hemoglobin_lewis" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">03_hemoglobin_lewis</div>
+    <div class="step-desc">hemoglobin Lewis structure — lone pairs + H</div>
+    <div class="step-mol">Molecule: hemoglobin</div>
+    <div class="step-time">26 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">3D Popup</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="04_3d_popup_default.png" alt="04_3d_popup_default" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04_3d_popup_default</div>
+    <div class="step-desc">3D Popup — default (properties) tab</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">59 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">3D Popup Tabs</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="04_3d_tab_0_📊_속성.png" alt="04_3d_tab_0_📊_속성" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04_3d_tab_0_📊_속성</div>
+    <div class="step-desc">3D Popup tab 0: 📊 속성</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">36 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="04_3d_tab_1_📈_스펙트럼.png" alt="04_3d_tab_1_📈_스펙트럼" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04_3d_tab_1_📈_스펙트럼</div>
+    <div class="step-desc">3D Popup tab 1: 📈 스펙트럼</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">42 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="04_3d_tab_2_🎵_진동모드.png" alt="04_3d_tab_2_🎵_진동모드" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04_3d_tab_2_🎵_진동모드</div>
+    <div class="step-desc">3D Popup tab 2: 🎵 진동모드</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">24 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="04_3d_tab_3_📝_AI분석.png" alt="04_3d_tab_3_📝_AI분석" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04_3d_tab_3_📝_AI분석</div>
+    <div class="step-desc">3D Popup tab 3: 📝 AI분석</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">39 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="04_3d_tab_4_🧬_도킹_에너지.png" alt="04_3d_tab_4_🧬_도킹_에너지" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04_3d_tab_4_🧬_도킹_에너지</div>
+    <div class="step-desc">3D Popup tab 4: 🧬 도킹 에너지</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">33 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">Spectrum Tabs</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="04a_spec_IR.png" alt="04a_spec_IR" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04a_spec_IR</div>
+    <div class="step-desc">Spectrum: IR</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">19 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="04a_spec_Raman.png" alt="04a_spec_Raman" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04a_spec_Raman</div>
+    <div class="step-desc">Spectrum: Raman</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">18 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="04a_spec_NMR_H.png" alt="04a_spec_NMR_H" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04a_spec_NMR_H</div>
+    <div class="step-desc">Spectrum: NMR_H</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">19 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="04a_spec_NMR_C13.png" alt="04a_spec_NMR_C13" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04a_spec_NMR_C13</div>
+    <div class="step-desc">Spectrum: NMR_C13</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">21 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="04a_spec_UV-Vis.png" alt="04a_spec_UV-Vis" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04a_spec_UV-Vis</div>
+    <div class="step-desc">Spectrum: UV-Vis</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">20 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">Orbital</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="04b_orbital_0_오비탈_없음.png" alt="04b_orbital_0_오비탈_없음" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04b_orbital_0_오비탈_없음</div>
+    <div class="step-desc">Orbital mode: 오비탈 없음</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">40 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="04b_orbital_1_🌀_π_오비탈_(sp2).png" alt="04b_orbital_1_🌀_π_오비탈_(sp2)" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04b_orbital_1_🌀_π_오비탈_(sp2)</div>
+    <div class="step-desc">Orbital mode: 🌀 π 오비탈 (sp2)</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">46 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="04b_orbital_2_⚗_혼성_오비탈_(자동).png" alt="04b_orbital_2_⚗_혼성_오비탈_(자동)" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">04b_orbital_2_⚗_혼성_오비탈_(자동)</div>
+    <div class="step-desc">Orbital mode: ⚗ 혼성 오비탈 (자동)</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">38 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">Predicted Spectrum</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="05_predicted_spec_ir.png" alt="05_predicted_spec_ir" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">05_predicted_spec_ir</div>
+    <div class="step-desc">Predicted spectrum popup: ir</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">20 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="05_predicted_spec_raman.png" alt="05_predicted_spec_raman" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">05_predicted_spec_raman</div>
+    <div class="step-desc">Predicted spectrum popup: raman</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">16 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="05_predicted_spec_nmr_h.png" alt="05_predicted_spec_nmr_h" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">05_predicted_spec_nmr_h</div>
+    <div class="step-desc">Predicted spectrum popup: nmr_h</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">20 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="05_predicted_spec_nmr_c13.png" alt="05_predicted_spec_nmr_c13" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">05_predicted_spec_nmr_c13</div>
+    <div class="step-desc">Predicted spectrum popup: nmr_c13</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">20 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="05_predicted_spec_uv_vis.png" alt="05_predicted_spec_uv_vis" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">05_predicted_spec_uv_vis</div>
+    <div class="step-desc">Predicted spectrum popup: uv_vis</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">16 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">Reaction Analysis</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="06_reaction_popup.png" alt="06_reaction_popup" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">06_reaction_popup</div>
+    <div class="step-desc">Reaction pathway popup — aspirin</div>
+    <div class="step-mol">Molecule: aspirin</div>
+    <div class="step-time">18 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">Synthesis</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="07_synthesis_popup.png" alt="07_synthesis_popup" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">07_synthesis_popup</div>
+    <div class="step-desc">Retrosynthesis route — aspirin</div>
+    <div class="step-mol">Molecule: aspirin</div>
+    <div class="step-time">22 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">Drug Screening</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="10_drug_screening.png" alt="10_drug_screening" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">10_drug_screening</div>
+    <div class="step-desc">Drug screening — aspirin + benzene</div>
+    <div class="step-mol">Molecule: aspirin</div>
+    <div class="step-time">17 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">AlphaFold</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="11_alphafold_popup.png" alt="11_alphafold_popup" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">11_alphafold_popup</div>
+    <div class="step-desc">AlphaFold structure prediction input</div>
+    <div class="step-mol">Molecule: none</div>
+    <div class="step-time">17 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">PDF Export</h2>
+<div class="grid">
+<div class="card pass-card">
+  <div class="no-img">No Screenshot</div>
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">12_pdf_export</div>
+    <div class="step-desc">PDF exported: 20,180 bytes</div>
+    <div class="step-mol">Molecule: benzene</div>
+    <div class="step-time">0 ms</div>
+    
+  </div>
+</div>
+</div>
+<h2 class="cat-header">Manual Drawing</h2>
+<div class="grid">
+<div class="card pass-card">
+  <img src="13_manual_draw_ethane.png" alt="13_manual_draw_ethane" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">13_manual_draw_ethane</div>
+    <div class="step-desc">Manual draw: 2 carbons + bond (ethane)</div>
+    <div class="step-mol">Molecule: ethane (manual)</div>
+    <div class="step-time">27 ms</div>
+    
+  </div>
+</div>
+<div class="card pass-card">
+  <img src="13_manual_ethane_theory.png" alt="13_manual_ethane_theory" loading="lazy" onclick="openModal(this.src)">
+  <div class="card-body">
+    <span class="badge pass">PASS</span>
+    <div class="step-id">13_manual_ethane_theory</div>
+    <div class="step-desc">Manual ethane — Theory view (no clouds expected)</div>
+    <div class="step-mol">Molecule: ethane (manual)</div>
+    <div class="step-time">26 ms</div>
+    
+  </div>
+</div>
+</div>
+
+
+<div class="error-section"><h2>Errors</h2><ul><li>[docking_popup] Traceback (most recent call last):
+  File "C:\chemgrid\src\app\tests\test_visual_auto.py", line 751, in run_tests
+    dp = DockingPopup(canvas=win.cv, parent=win)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^</li><li>[admet] Traceback (most recent call last):
+  File "C:\chemgrid\src\app\tests\test_visual_auto.py", line 771, in run_tests
+    admet = ADMETPopup(
+            ^^^^^^^^^^^
+  File "C:\chemgrid\src\app\popup_adme</li></ul></div>
+
+<div class="footer">
+  Generated by ChemGrid Visual QA System v4 | Python 3.12.12
+</div>
+
+<div class="modal" id="imgModal" onclick="closeModal()">
+  <img id="modalImg" src="" alt="Full size">
+</div>
+
+<script>
+function openModal(src) {
+  document.getElementById('modalImg').src = src;
+  document.getElementById('imgModal').classList.add('active');
+}
+function closeModal() {
+  document.getElementById('imgModal').classList.remove('active');
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+
+</body>
+</html>

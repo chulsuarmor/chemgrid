@@ -1,0 +1,520 @@
+{
+  "timestamp": "2026-03-19T20:55:55.391671",
+  "total_steps": 51,
+  "passed": 51,
+  "failed": 0,
+  "errors": [],
+  "steps": [
+    {
+      "step_id": "01_initial_empty",
+      "description": "Empty canvas on startup",
+      "molecule": "none",
+      "category": "Initial State",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\01_initial_empty.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 25.507211685180664
+    },
+    {
+      "step_id": "02_text_input_typed",
+      "description": "Typed 'benzene' in molecule input",
+      "molecule": "benzene",
+      "category": "Text Input",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\02_text_input_typed.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 26.001691818237305
+    },
+    {
+      "step_id": "02_text_input_result",
+      "description": "After pressing Enter on 'benzene'",
+      "molecule": "benzene",
+      "category": "Text Input",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\02_text_input_result.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 28.00130844116211
+    },
+    {
+      "step_id": "03_benzene_drawing",
+      "description": "benzene Drawing view (simple aromatic)",
+      "molecule": "benzene",
+      "category": "Drawing View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_benzene_drawing.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 27.99844741821289
+    },
+    {
+      "step_id": "03_benzene_theory",
+      "description": "benzene Theory view — electron clouds",
+      "molecule": "benzene",
+      "category": "Theory View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_benzene_theory.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 25.99930763244629
+    },
+    {
+      "step_id": "03_benzene_lewis",
+      "description": "benzene Lewis structure — lone pairs + H",
+      "molecule": "benzene",
+      "category": "Lewis View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_benzene_lewis.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 25.580644607543945
+    },
+    {
+      "step_id": "03_aspirin_drawing",
+      "description": "aspirin Drawing view (ester + aromatic + carboxyl)",
+      "molecule": "aspirin",
+      "category": "Drawing View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_aspirin_drawing.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 32.998085021972656
+    },
+    {
+      "step_id": "03_aspirin_theory",
+      "description": "aspirin Theory view — electron clouds",
+      "molecule": "aspirin",
+      "category": "Theory View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_aspirin_theory.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 28.99932861328125
+    },
+    {
+      "step_id": "03_aspirin_lewis",
+      "description": "aspirin Lewis structure — lone pairs + H",
+      "molecule": "aspirin",
+      "category": "Lewis View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_aspirin_lewis.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 32.09233283996582
+    },
+    {
+      "step_id": "03_caffeine_drawing",
+      "description": "caffeine Drawing view (purine ring + carbonyls)",
+      "molecule": "caffeine",
+      "category": "Drawing View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_caffeine_drawing.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 30.997276306152344
+    },
+    {
+      "step_id": "03_caffeine_theory",
+      "description": "caffeine Theory view — electron clouds",
+      "molecule": "caffeine",
+      "category": "Theory View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_caffeine_theory.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 29.999494552612305
+    },
+    {
+      "step_id": "03_caffeine_lewis",
+      "description": "caffeine Lewis structure — lone pairs + H",
+      "molecule": "caffeine",
+      "category": "Lewis View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_caffeine_lewis.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 30.506134033203125
+    },
+    {
+      "step_id": "03_ferrocene_drawing",
+      "description": "ferrocene Drawing view (coordination compound)",
+      "molecule": "ferrocene",
+      "category": "Drawing View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_ferrocene_drawing.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 30.00044822692871
+    },
+    {
+      "step_id": "03_ferrocene_theory",
+      "description": "ferrocene Theory view — electron clouds",
+      "molecule": "ferrocene",
+      "category": "Theory View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_ferrocene_theory.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 27.508258819580078
+    },
+    {
+      "step_id": "03_ferrocene_lewis",
+      "description": "ferrocene Lewis structure — lone pairs + H",
+      "molecule": "ferrocene",
+      "category": "Lewis View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_ferrocene_lewis.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 28.999805450439453
+    },
+    {
+      "step_id": "03_hemoglobin_drawing",
+      "description": "hemoglobin Drawing view (large porphyrin)",
+      "molecule": "hemoglobin",
+      "category": "Drawing View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_hemoglobin_drawing.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 25.99787712097168
+    },
+    {
+      "step_id": "03_hemoglobin_theory",
+      "description": "hemoglobin Theory view — electron clouds",
+      "molecule": "hemoglobin",
+      "category": "Theory View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_hemoglobin_theory.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 26.00264549255371
+    },
+    {
+      "step_id": "03_hemoglobin_lewis",
+      "description": "hemoglobin Lewis structure — lone pairs + H",
+      "molecule": "hemoglobin",
+      "category": "Lewis View",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\03_hemoglobin_lewis.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 25.00128746032715
+    },
+    {
+      "step_id": "04_3d_popup_default",
+      "description": "3D Popup — default (properties) tab",
+      "molecule": "benzene",
+      "category": "3D Popup",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04_3d_popup_default.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 58.45212936401367
+    },
+    {
+      "step_id": "04_3d_tab_0_📊_속성",
+      "description": "3D Popup tab 0: 📊 속성",
+      "molecule": "benzene",
+      "category": "3D Popup Tabs",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04_3d_tab_0_📊_속성.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 36.99851036071777
+    },
+    {
+      "step_id": "04_3d_tab_1_📈_스펙트럼",
+      "description": "3D Popup tab 1: 📈 스펙트럼",
+      "molecule": "benzene",
+      "category": "3D Popup Tabs",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04_3d_tab_1_📈_스펙트럼.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 41.998863220214844
+    },
+    {
+      "step_id": "04_3d_tab_2_🎵_진동모드",
+      "description": "3D Popup tab 2: 🎵 진동모드",
+      "molecule": "benzene",
+      "category": "3D Popup Tabs",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04_3d_tab_2_🎵_진동모드.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 24.99842643737793
+    },
+    {
+      "step_id": "04_3d_tab_3_📝_AI분석",
+      "description": "3D Popup tab 3: 📝 AI분석",
+      "molecule": "benzene",
+      "category": "3D Popup Tabs",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04_3d_tab_3_📝_AI분석.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 40.00353813171387
+    },
+    {
+      "step_id": "04_3d_tab_4_🧬_도킹_에너지",
+      "description": "3D Popup tab 4: 🧬 도킹 에너지",
+      "molecule": "benzene",
+      "category": "3D Popup Tabs",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04_3d_tab_4_🧬_도킹_에너지.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 32.001495361328125
+    },
+    {
+      "step_id": "04_3d_tab_5_🧪_신약설계",
+      "description": "3D Popup tab 5: 🧪 신약설계",
+      "molecule": "benzene",
+      "category": "3D Popup Tabs",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04_3d_tab_5_🧪_신약설계.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 20.99895477294922
+    },
+    {
+      "step_id": "04a_spec_IR",
+      "description": "Spectrum: IR",
+      "molecule": "benzene",
+      "category": "Spectrum Tabs",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04a_spec_IR.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 20.999908447265625
+    },
+    {
+      "step_id": "04a_spec_Raman",
+      "description": "Spectrum: Raman",
+      "molecule": "benzene",
+      "category": "Spectrum Tabs",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04a_spec_Raman.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 19.511699676513672
+    },
+    {
+      "step_id": "04a_spec_NMR_H",
+      "description": "Spectrum: NMR_H",
+      "molecule": "benzene",
+      "category": "Spectrum Tabs",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04a_spec_NMR_H.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 20.512819290161133
+    },
+    {
+      "step_id": "04a_spec_NMR_C13",
+      "description": "Spectrum: NMR_C13",
+      "molecule": "benzene",
+      "category": "Spectrum Tabs",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04a_spec_NMR_C13.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 22.007465362548828
+    },
+    {
+      "step_id": "04a_spec_UV-Vis",
+      "description": "Spectrum: UV-Vis",
+      "molecule": "benzene",
+      "category": "Spectrum Tabs",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04a_spec_UV-Vis.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 19.004106521606445
+    },
+    {
+      "step_id": "04b_orbital_0_오비탈_없음",
+      "description": "Orbital mode: 오비탈 없음",
+      "molecule": "benzene",
+      "category": "Orbital",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04b_orbital_0_오비탈_없음.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 41.99957847595215
+    },
+    {
+      "step_id": "04b_orbital_1_🌀_π_오비탈_(sp2)",
+      "description": "Orbital mode: 🌀 π 오비탈 (sp2)",
+      "molecule": "benzene",
+      "category": "Orbital",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04b_orbital_1_🌀_π_오비탈_(sp2).png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 51.50723457336426
+    },
+    {
+      "step_id": "04b_orbital_2_⚗_혼성_오비탈_(자동)",
+      "description": "Orbital mode: ⚗ 혼성 오비탈 (자동)",
+      "molecule": "benzene",
+      "category": "Orbital",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\04b_orbital_2_⚗_혼성_오비탈_(자동).png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 43.00355911254883
+    },
+    {
+      "step_id": "05_predicted_spec_ir",
+      "description": "Predicted spectrum popup: ir",
+      "molecule": "benzene",
+      "category": "Predicted Spectrum",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\05_predicted_spec_ir.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 15.501976013183594
+    },
+    {
+      "step_id": "05_predicted_spec_raman",
+      "description": "Predicted spectrum popup: raman",
+      "molecule": "benzene",
+      "category": "Predicted Spectrum",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\05_predicted_spec_raman.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 16.00503921508789
+    },
+    {
+      "step_id": "05_predicted_spec_nmr_h",
+      "description": "Predicted spectrum popup: nmr_h",
+      "molecule": "benzene",
+      "category": "Predicted Spectrum",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\05_predicted_spec_nmr_h.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 16.120433807373047
+    },
+    {
+      "step_id": "05_predicted_spec_nmr_c13",
+      "description": "Predicted spectrum popup: nmr_c13",
+      "molecule": "benzene",
+      "category": "Predicted Spectrum",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\05_predicted_spec_nmr_c13.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 16.997575759887695
+    },
+    {
+      "step_id": "05_predicted_spec_uv_vis",
+      "description": "Predicted spectrum popup: uv_vis",
+      "molecule": "benzene",
+      "category": "Predicted Spectrum",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\05_predicted_spec_uv_vis.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 19.99831199645996
+    },
+    {
+      "step_id": "06_reaction_popup",
+      "description": "Reaction pathway popup — aspirin",
+      "molecule": "aspirin",
+      "category": "Reaction Analysis",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\06_reaction_popup.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 17.998456954956055
+    },
+    {
+      "step_id": "07_synthesis_popup",
+      "description": "Retrosynthesis route — aspirin",
+      "molecule": "aspirin",
+      "category": "Synthesis",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\07_synthesis_popup.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 22.00150489807129
+    },
+    {
+      "step_id": "08_docking_popup",
+      "description": "Molecular docking simulation",
+      "molecule": "aspirin",
+      "category": "Docking",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\08_docking_popup.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 21.311283111572266
+    },
+    {
+      "step_id": "09_admet_default",
+      "description": "ADMET analysis — default tab",
+      "molecule": "aspirin",
+      "category": "ADMET",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\09_admet_default.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 15.014171600341797
+    },
+    {
+      "step_id": "09_admet_tab_0",
+      "description": "ADMET tab 0: 분자 정보",
+      "molecule": "aspirin",
+      "category": "ADMET",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\09_admet_tab_0.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 14.9993896484375
+    },
+    {
+      "step_id": "09_admet_tab_1",
+      "description": "ADMET tab 1: Lipinski / 약물 규칙",
+      "molecule": "aspirin",
+      "category": "ADMET",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\09_admet_tab_1.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 17.000675201416016
+    },
+    {
+      "step_id": "09_admet_tab_2",
+      "description": "ADMET tab 2: BBB / 대사",
+      "molecule": "aspirin",
+      "category": "ADMET",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\09_admet_tab_2.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 13.999462127685547
+    },
+    {
+      "step_id": "09_admet_tab_3",
+      "description": "ADMET tab 3: 레이더 차트",
+      "molecule": "aspirin",
+      "category": "ADMET",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\09_admet_tab_3.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 19.504308700561523
+    },
+    {
+      "step_id": "10_drug_screening",
+      "description": "Drug screening — aspirin + benzene",
+      "molecule": "aspirin",
+      "category": "Drug Screening",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\10_drug_screening.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 18.998384475708008
+    },
+    {
+      "step_id": "11_alphafold_popup",
+      "description": "AlphaFold structure prediction input",
+      "molecule": "none",
+      "category": "AlphaFold",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\11_alphafold_popup.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 18.094778060913086
+    },
+    {
+      "step_id": "12_pdf_export",
+      "description": "PDF exported: 20,180 bytes",
+      "molecule": "benzene",
+      "category": "PDF Export",
+      "screenshot_path": null,
+      "passed": true,
+      "error": null,
+      "duration_ms": 0.0
+    },
+    {
+      "step_id": "13_manual_draw_ethane",
+      "description": "Manual draw: 2 carbons + bond (ethane)",
+      "molecule": "ethane (manual)",
+      "category": "Manual Drawing",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\13_manual_draw_ethane.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 25.99477767944336
+    },
+    {
+      "step_id": "13_manual_ethane_theory",
+      "description": "Manual ethane — Theory view (no clouds expected)",
+      "molecule": "ethane (manual)",
+      "category": "Manual Drawing",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\visual_qa_20260319\\13_manual_ethane_theory.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 24.599313735961914
+    }
+  ],
+  "duration_sec": 10.01990556716919
+}

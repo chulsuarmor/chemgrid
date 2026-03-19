@@ -1,0 +1,122 @@
+{
+  "timestamp": "2026-03-19T17:32:34.850501",
+  "total_steps": 10,
+  "passed": 10,
+  "failed": 0,
+  "errors": [
+    "[docking] Traceback (most recent call last):\n  File \"C:\\chemgrid\\src\\app\\tests\\test_visual_3d.py\", line 405, in <module>\n    dock = DockingPopup(canvas=None, parent=None)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+  ],
+  "steps": [
+    {
+      "step_id": "3d_ballstick_benzene",
+      "description": "benzene Ball-and-Stick 3D view",
+      "molecule": "benzene",
+      "category": "A. 3D Ball-and-Stick",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\3d_audit_20260319\\3d_ballstick_benzene.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 367.53058433532715,
+      "pixel_colors": 63
+    },
+    {
+      "step_id": "3d_ballstick_aspirin",
+      "description": "aspirin Ball-and-Stick 3D view",
+      "molecule": "aspirin",
+      "category": "A. 3D Ball-and-Stick",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\3d_audit_20260319\\3d_ballstick_aspirin.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 367.8877353668213,
+      "pixel_colors": 60
+    },
+    {
+      "step_id": "3d_ballstick_ferrocene",
+      "description": "ferrocene Ball-and-Stick 3D view",
+      "molecule": "ferrocene",
+      "category": "A. 3D Ball-and-Stick",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\3d_audit_20260319\\3d_ballstick_ferrocene.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 364.51125144958496,
+      "pixel_colors": 118
+    },
+    {
+      "step_id": "orbital_benzene_pi",
+      "description": "benzene pi orbital (sp2)",
+      "molecule": "benzene",
+      "category": "B. Orbital Visualization",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\3d_audit_20260319\\orbital_benzene_pi.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 365.54455757141113,
+      "pixel_colors": 117
+    },
+    {
+      "step_id": "orbital_benzene_hybrid",
+      "description": "benzene hybrid orbital (auto)",
+      "molecule": "benzene",
+      "category": "B. Orbital Visualization",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\3d_audit_20260319\\orbital_benzene_hybrid.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 364.67957496643066,
+      "pixel_colors": 140
+    },
+    {
+      "step_id": "orbital_benzene_all",
+      "description": "benzene all orbitals",
+      "molecule": "benzene",
+      "category": "B. Orbital Visualization",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\3d_audit_20260319\\orbital_benzene_all.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 363.97314071655273,
+      "pixel_colors": 376
+    },
+    {
+      "step_id": "orbital_ethanol_hybrid",
+      "description": "ethanol sigma/pi hybrid",
+      "molecule": "ethanol",
+      "category": "B. Orbital Visualization",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\3d_audit_20260319\\orbital_ethanol_hybrid.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 366.7488098144531,
+      "pixel_colors": 142
+    },
+    {
+      "step_id": "orbital_ferrocene_d_orbital",
+      "description": "ferrocene d-orbital",
+      "molecule": "ferrocene",
+      "category": "B. Orbital Visualization",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\3d_audit_20260319\\orbital_ferrocene_d_orbital.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 362.6537322998047,
+      "pixel_colors": 87
+    },
+    {
+      "step_id": "orbital_off_benzene",
+      "description": "benzene orbital OFF (baseline)",
+      "molecule": "benzene",
+      "category": "B2. Orbital Comparison",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\3d_audit_20260319\\orbital_off_benzene.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 359.6518039703369,
+      "pixel_colors": 63
+    },
+    {
+      "step_id": "orbital_on_benzene_pi",
+      "description": "benzene orbital ON (pi) - should show lobes",
+      "molecule": "benzene",
+      "category": "B2. Orbital Comparison",
+      "screenshot_path": "C:\\chemgrid\\departments\\archive\\screenshots\\3d_audit_20260319\\orbital_on_benzene_pi.png",
+      "passed": true,
+      "error": null,
+      "duration_ms": 349.9119281768799,
+      "pixel_colors": 117
+    }
+  ],
+  "duration_sec": 17.70719838142395
+}

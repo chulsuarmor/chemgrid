@@ -1,0 +1,1077 @@
+[
+  {
+    "name": "water",
+    "smiles": "O",
+    "mw": 18,
+    "category": "small",
+    "expected": "O=강한δ-(빨강), H=강한δ+(파랑)",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023219467_01_water_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023220142_01_water_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023258233_01_water_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023258558_01_water_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023323386_01_water_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023323747_01_water_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.005,
+        "blue_ratio": 0.959,
+        "green_ratio": 0.001,
+        "dominant": "BLUE",
+        "total_colored": 171187,
+        "ring_contrast": 0.392
+      },
+      "theory": {
+        "red_ratio": 0.374,
+        "blue_ratio": 0.412,
+        "green_ratio": 0.007,
+        "dominant": "BLUE",
+        "total_colored": 763,
+        "ring_contrast": 1.651
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "formaldehyde",
+    "smiles": "C=O",
+    "mw": 30,
+    "category": "small",
+    "expected": "C=δ+(파랑), O=δ-(빨강), 카보닐 분극",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023405906_02_formaldehyde_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023406261_02_formaldehyde_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023444105_02_formaldehyde_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023444506_02_formaldehyde_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023509411_02_formaldehyde_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023509790_02_formaldehyde_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.342,
+        "blue_ratio": 0.491,
+        "green_ratio": 0.003,
+        "dominant": "BLUE",
+        "total_colored": 1786,
+        "ring_contrast": 1.372
+      },
+      "theory": {
+        "red_ratio": 0.334,
+        "blue_ratio": 0.495,
+        "green_ratio": 0.003,
+        "dominant": "BLUE",
+        "total_colored": 1968,
+        "ring_contrast": 1.404
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "methanol",
+    "smiles": "CO",
+    "mw": 32,
+    "category": "small",
+    "expected": "O=δ-(빨강), OH→H=δ+(파랑), C=약한δ+",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023589555_03_methanol_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2023589929_03_methanol_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024027791_03_methanol_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024028176_03_methanol_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024093003_03_methanol_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024093381_03_methanol_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.35,
+        "blue_ratio": 0.484,
+        "green_ratio": 0.003,
+        "dominant": "BLUE",
+        "total_colored": 1758,
+        "ring_contrast": 1.368
+      },
+      "theory": {
+        "red_ratio": 0.344,
+        "blue_ratio": 0.484,
+        "green_ratio": 0.003,
+        "dominant": "BLUE",
+        "total_colored": 1927,
+        "ring_contrast": 1.402
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "HF",
+    "smiles": "F",
+    "mw": 20,
+    "category": "small",
+    "expected": "F=강한δ-(빨강), H=강한δ+(파랑)",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024169476_04_HF_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024169905_04_HF_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024207766_04_HF_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024208143_04_HF_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024273033_04_HF_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024273407_04_HF_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.371,
+        "blue_ratio": 0.416,
+        "green_ratio": 0.011,
+        "dominant": "BLUE",
+        "total_colored": 649,
+        "ring_contrast": 1.715
+      },
+      "theory": {
+        "red_ratio": 0.382,
+        "blue_ratio": 0.411,
+        "green_ratio": 0.006,
+        "dominant": "BLUE",
+        "total_colored": 849,
+        "ring_contrast": 1.692
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "chloromethane",
+    "smiles": "CCl",
+    "mw": 50,
+    "category": "small",
+    "expected": "Cl=δ-(빨강), C=δ+(파랑)",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024356136_05_chloromethane_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024356502_05_chloromethane_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024394382_05_chloromethane_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024394766_05_chloromethane_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024459609_05_chloromethane_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024459982_05_chloromethane_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.333,
+        "blue_ratio": 0.49,
+        "green_ratio": 0.003,
+        "dominant": "BLUE",
+        "total_colored": 1697,
+        "ring_contrast": 1.377
+      },
+      "theory": {
+        "red_ratio": 0.33,
+        "blue_ratio": 0.488,
+        "green_ratio": 0.003,
+        "dominant": "BLUE",
+        "total_colored": 1867,
+        "ring_contrast": 1.411
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "acetic_acid",
+    "smiles": "CC(=O)O",
+    "mw": 60,
+    "category": "small",
+    "expected": "카보닐C=δ+(파랑), O=δ-(빨강), OH=δ+(파랑)",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024541492_06_acetic_acid_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024541888_06_acetic_acid_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024579803_06_acetic_acid_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2024580131_06_acetic_acid_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025044939_06_acetic_acid_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025045330_06_acetic_acid_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.349,
+        "blue_ratio": 0.289,
+        "green_ratio": 0.205,
+        "dominant": "RED",
+        "total_colored": 4228,
+        "ring_contrast": 1.47
+      },
+      "theory": {
+        "red_ratio": 0.344,
+        "blue_ratio": 0.296,
+        "green_ratio": 0.199,
+        "dominant": "RED",
+        "total_colored": 4339,
+        "ring_contrast": 1.488
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "ethanol",
+    "smiles": "CCO",
+    "mw": 46,
+    "category": "small",
+    "expected": "O=δ-(빨강), OH→H=δ+, alkyl C=중성(초록)",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025124437_07_ethanol_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025124833_07_ethanol_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025162739_07_ethanol_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025163079_07_ethanol_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025227892_07_ethanol_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025228261_07_ethanol_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.322,
+        "blue_ratio": 0.481,
+        "green_ratio": 0.006,
+        "dominant": "BLUE",
+        "total_colored": 824,
+        "ring_contrast": 1.561
+      },
+      "theory": {
+        "red_ratio": 0.349,
+        "blue_ratio": 0.477,
+        "green_ratio": 0.005,
+        "dominant": "BLUE",
+        "total_colored": 1009,
+        "ring_contrast": 1.584
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "benzene",
+    "smiles": "c1ccccc1",
+    "mw": 78,
+    "category": "aromatic_base",
+    "expected": "6개 C 균등 π전자밀도, 전부 초록~약한빨강, 크기 균일",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025307309_08_benzene_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025307706_08_benzene_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025345609_08_benzene_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025346006_08_benzene_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025410906_08_benzene_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025411256_08_benzene_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.062,
+        "blue_ratio": 0.071,
+        "green_ratio": 0.831,
+        "dominant": "GREEN",
+        "total_colored": 3324,
+        "ring_contrast": 1.137
+      },
+      "theory": {
+        "red_ratio": 0.082,
+        "blue_ratio": 0.091,
+        "green_ratio": 0.781,
+        "dominant": "GREEN",
+        "total_colored": 3469,
+        "ring_contrast": 1.259
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "naphthalene",
+    "smiles": "c1ccc2ccccc2c1",
+    "mw": 128,
+    "category": "aromatic_base",
+    "expected": "다환방향족, C1/C2 약간 차이, 전체적으로 중성",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025492801_09_naphthalene_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025493182_09_naphthalene_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025531114_09_naphthalene_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025531472_09_naphthalene_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025596300_09_naphthalene_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2025596733_09_naphthalene_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.033,
+        "blue_ratio": 0.037,
+        "green_ratio": 0.911,
+        "dominant": "GREEN",
+        "total_colored": 6322,
+        "ring_contrast": 0.85
+      },
+      "theory": {
+        "red_ratio": 0.045,
+        "blue_ratio": 0.05,
+        "green_ratio": 0.88,
+        "dominant": "GREEN",
+        "total_colored": 6333,
+        "ring_contrast": 0.968
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "phenol",
+    "smiles": "Oc1ccccc1",
+    "mw": 94,
+    "category": "edg_directing",
+    "expected": "OH=EDG→ortho/para 빨강(δ-), meta 파랑(δ+) 또는 축소",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026075303_10_phenol_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026075685_10_phenol_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026113599_10_phenol_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026114000_10_phenol_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026178878_10_phenol_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026179254_10_phenol_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.722,
+        "blue_ratio": 0.095,
+        "green_ratio": 0.001,
+        "dominant": "RED",
+        "total_colored": 4813,
+        "ring_contrast": 0.79
+      },
+      "theory": {
+        "red_ratio": 0.704,
+        "blue_ratio": 0.108,
+        "green_ratio": 0.001,
+        "dominant": "RED",
+        "total_colored": 4915,
+        "ring_contrast": 0.851
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "aniline",
+    "smiles": "Nc1ccccc1",
+    "mw": 93,
+    "category": "edg_directing",
+    "expected": "NH2=EDG→ortho/para 빨강(δ-), meta 상대적 파랑",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026258410_11_aniline_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026258755_11_aniline_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026296656_11_aniline_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026297034_11_aniline_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026361871_11_aniline_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026362286_11_aniline_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.721,
+        "blue_ratio": 0.097,
+        "green_ratio": 0.001,
+        "dominant": "RED",
+        "total_colored": 4817,
+        "ring_contrast": 0.797
+      },
+      "theory": {
+        "red_ratio": 0.703,
+        "blue_ratio": 0.109,
+        "green_ratio": 0.001,
+        "dominant": "RED",
+        "total_colored": 4910,
+        "ring_contrast": 0.851
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "anisole",
+    "smiles": "COc1ccccc1",
+    "mw": 108,
+    "category": "edg_directing",
+    "expected": "OCH3=강한EDG→ortho/para 빨강, meta 파랑",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026441495_12_anisole_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026441870_12_anisole_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026479767_12_anisole_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026480130_12_anisole_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026545052_12_anisole_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2026545489_12_anisole_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.095,
+        "blue_ratio": 0.107,
+        "green_ratio": 0.745,
+        "dominant": "GREEN",
+        "total_colored": 2379,
+        "ring_contrast": 1.348
+      },
+      "theory": {
+        "red_ratio": 0.118,
+        "blue_ratio": 0.133,
+        "green_ratio": 0.679,
+        "dominant": "GREEN",
+        "total_colored": 2556,
+        "ring_contrast": 1.466
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "toluene",
+    "smiles": "Cc1ccccc1",
+    "mw": 92,
+    "category": "edg_directing",
+    "expected": "CH3=약한EDG→ortho/para 약간 빨강, meta 약간 파랑",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027024699_13_toluene_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027025058_13_toluene_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027062942_13_toluene_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027063318_13_toluene_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027128129_13_toluene_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027128463_13_toluene_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.063,
+        "blue_ratio": 0.072,
+        "green_ratio": 0.829,
+        "dominant": "GREEN",
+        "total_colored": 3298,
+        "ring_contrast": 1.141
+      },
+      "theory": {
+        "red_ratio": 0.083,
+        "blue_ratio": 0.091,
+        "green_ratio": 0.78,
+        "dominant": "GREEN",
+        "total_colored": 3443,
+        "ring_contrast": 1.263
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "fluorobenzene",
+    "smiles": "Fc1ccccc1",
+    "mw": 96,
+    "category": "edg_directing",
+    "expected": "F=비활성화EDG→ortho/para 지향, 전체 약간 비활성화",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027211238_14_fluorobenzene_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027211681_14_fluorobenzene_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027249534_14_fluorobenzene_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027249913_14_fluorobenzene_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027314812_14_fluorobenzene_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027315206_14_fluorobenzene_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.723,
+        "blue_ratio": 0.094,
+        "green_ratio": 0.001,
+        "dominant": "RED",
+        "total_colored": 4825,
+        "ring_contrast": 0.786
+      },
+      "theory": {
+        "red_ratio": 0.707,
+        "blue_ratio": 0.106,
+        "green_ratio": 0.001,
+        "dominant": "RED",
+        "total_colored": 4924,
+        "ring_contrast": 0.845
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "nitrobenzene",
+    "smiles": "c1ccc(cc1)[N+](=O)[O-]",
+    "mw": 123,
+    "category": "ewg_directing",
+    "expected": "NO2=강한EWG→meta 활성화(빨강), ortho/para 비활성화(파랑/축소)",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027397383_15_nitrobenzene_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027397782_15_nitrobenzene_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027435660_15_nitrobenzene_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027436050_15_nitrobenzene_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027500889_15_nitrobenzene_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027501264_15_nitrobenzene_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.172,
+        "blue_ratio": 0.744,
+        "green_ratio": 0.001,
+        "dominant": "BLUE",
+        "total_colored": 3651,
+        "ring_contrast": 1.161
+      },
+      "theory": {
+        "red_ratio": 0.187,
+        "blue_ratio": 0.722,
+        "green_ratio": 0.001,
+        "dominant": "BLUE",
+        "total_colored": 3823,
+        "ring_contrast": 1.212
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "benzoic_acid",
+    "smiles": "c1ccc(cc1)C(=O)O",
+    "mw": 122,
+    "category": "ewg_directing",
+    "expected": "COOH=EWG→meta 지향, ortho/para 비활성화",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027583429_16_benzoic_acid_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2027583803_16_benzoic_acid_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028021742_16_benzoic_acid_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028022084_16_benzoic_acid_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028086904_16_benzoic_acid_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028087303_16_benzoic_acid_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.54,
+        "blue_ratio": 0.258,
+        "green_ratio": 0.002,
+        "dominant": "RED",
+        "total_colored": 3188,
+        "ring_contrast": 1.146
+      },
+      "theory": {
+        "red_ratio": 0.525,
+        "blue_ratio": 0.266,
+        "green_ratio": 0.002,
+        "dominant": "RED",
+        "total_colored": 3275,
+        "ring_contrast": 1.184
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "benzaldehyde",
+    "smiles": "c1ccc(cc1)C=O",
+    "mw": 106,
+    "category": "ewg_directing",
+    "expected": "CHO=EWG→meta 지향, ortho/para δ+",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028169546_17_benzaldehyde_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028169923_17_benzaldehyde_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028207832_17_benzaldehyde_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028208165_17_benzaldehyde_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028272974_17_benzaldehyde_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028273361_17_benzaldehyde_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.102,
+        "blue_ratio": 0.636,
+        "green_ratio": 0.082,
+        "dominant": "BLUE",
+        "total_colored": 2047,
+        "ring_contrast": 1.919
+      },
+      "theory": {
+        "red_ratio": 0.117,
+        "blue_ratio": 0.665,
+        "green_ratio": 0.152,
+        "dominant": "BLUE",
+        "total_colored": 2546,
+        "ring_contrast": 1.658
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "acetophenone",
+    "smiles": "CC(=O)c1ccccc1",
+    "mw": 120,
+    "category": "ewg_directing",
+    "expected": "COCH3=EWG→meta 지향, ortho/para δ+",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028355515_18_acetophenone_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028355977_18_acetophenone_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028393861_18_acetophenone_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028394261_18_acetophenone_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028459140_18_acetophenone_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028459533_18_acetophenone_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.412,
+        "blue_ratio": 0.258,
+        "green_ratio": 0.176,
+        "dominant": "RED",
+        "total_colored": 3145,
+        "ring_contrast": 1.409
+      },
+      "theory": {
+        "red_ratio": 0.409,
+        "blue_ratio": 0.263,
+        "green_ratio": 0.169,
+        "dominant": "RED",
+        "total_colored": 3252,
+        "ring_contrast": 1.43
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "cp_anion",
+    "smiles": "[cH-]1cccc1",
+    "mw": 65,
+    "category": "ionic_aromatic",
+    "expected": "Cp- 음이온: 6π, 전체 빨강(δ-), 균등 분포",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028539361_19_cp_anion_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028539761_19_cp_anion_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028577634_19_cp_anion_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2028578063_19_cp_anion_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029042904_19_cp_anion_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029043270_19_cp_anion_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.758,
+        "blue_ratio": 0.057,
+        "green_ratio": 0.001,
+        "dominant": "RED",
+        "total_colored": 4168,
+        "ring_contrast": 0.68
+      },
+      "theory": {
+        "red_ratio": 0.742,
+        "blue_ratio": 0.073,
+        "green_ratio": 0.001,
+        "dominant": "RED",
+        "total_colored": 4305,
+        "ring_contrast": 0.764
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "tropylium",
+    "smiles": "C1=CC=CC=C[CH+]1",
+    "mw": 91,
+    "category": "ionic_aromatic",
+    "expected": "C7H7+ 양이온: 6π, 전체 파랑(δ+), 균등 분포",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029123645_20_tropylium_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029124038_20_tropylium_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029161902_20_tropylium_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029162267_20_tropylium_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029227133_20_tropylium_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029227499_20_tropylium_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.092,
+        "blue_ratio": 0.852,
+        "green_ratio": 0.002,
+        "dominant": "BLUE",
+        "total_colored": 2297,
+        "ring_contrast": 1.084
+      },
+      "theory": {
+        "red_ratio": 0.12,
+        "blue_ratio": 0.81,
+        "green_ratio": 0.002,
+        "dominant": "BLUE",
+        "total_colored": 2412,
+        "ring_contrast": 1.192
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "aspirin",
+    "smiles": "CC(=O)Oc1ccccc1C(=O)O",
+    "mw": 180,
+    "category": "medium",
+    "expected": "복합: 에스테르+카르복실+벤젠, 다중 전하 분극",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029306666_21_aspirin_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029307039_21_aspirin_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029345019_21_aspirin_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029345398_21_aspirin_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029410218_21_aspirin_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029410638_21_aspirin_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.27,
+        "blue_ratio": 0.203,
+        "green_ratio": 0.403,
+        "dominant": "GREEN",
+        "total_colored": 5981,
+        "ring_contrast": 1.488
+      },
+      "theory": {
+        "red_ratio": 0.255,
+        "blue_ratio": 0.202,
+        "green_ratio": 0.416,
+        "dominant": "GREEN",
+        "total_colored": 6265,
+        "ring_contrast": 1.504
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "caffeine",
+    "smiles": "Cn1c(=O)c2c(nc(n2C)C)n1C",
+    "mw": 194,
+    "category": "medium",
+    "expected": "퓨린 이중고리, N=δ-, 카보닐C=δ+",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029490444_22_caffeine_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029490828_22_caffeine_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029528744_22_caffeine_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029529108_22_caffeine_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029593944_22_caffeine_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2029594343_22_caffeine_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.251,
+        "blue_ratio": 0.558,
+        "green_ratio": 0.075,
+        "dominant": "BLUE",
+        "total_colored": 7908,
+        "ring_contrast": 1.407
+      },
+      "theory": {
+        "red_ratio": 0.249,
+        "blue_ratio": 0.556,
+        "green_ratio": 0.077,
+        "dominant": "BLUE",
+        "total_colored": 7874,
+        "ring_contrast": 1.421
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "acetanilide",
+    "smiles": "CC(=O)Nc1ccccc1",
+    "mw": 135,
+    "category": "medium",
+    "expected": "NHC(=O)=EDG→ortho/para 활성화",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030075909_23_acetanilide_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030076329_23_acetanilide_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030114180_23_acetanilide_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030114541_23_acetanilide_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030179391_23_acetanilide_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030179767_23_acetanilide_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.613,
+        "blue_ratio": 0.064,
+        "green_ratio": 0.161,
+        "dominant": "RED",
+        "total_colored": 8335,
+        "ring_contrast": 0.914
+      },
+      "theory": {
+        "red_ratio": 0.603,
+        "blue_ratio": 0.073,
+        "green_ratio": 0.16,
+        "dominant": "RED",
+        "total_colored": 8400,
+        "ring_contrast": 0.95
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "cholesterol",
+    "smiles": "CC(C)CCCC(C)C1CCC2C1(CCC3C2CC=C4CC(CCC34C)O)C",
+    "mw": 387,
+    "category": "large",
+    "expected": "스테로이드 골격: OH=δ-, 대부분 중성(초록)",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030261323_24_cholesterol_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030261714_24_cholesterol_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030299576_24_cholesterol_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030299983_24_cholesterol_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030364876_24_cholesterol_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030365246_24_cholesterol_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.042,
+        "blue_ratio": 0.939,
+        "green_ratio": 0.0,
+        "dominant": "BLUE",
+        "total_colored": 18808,
+        "ring_contrast": 0.61
+      },
+      "theory": {
+        "red_ratio": 0.044,
+        "blue_ratio": 0.936,
+        "green_ratio": 0.0,
+        "dominant": "BLUE",
+        "total_colored": 19228,
+        "ring_contrast": 0.636
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  },
+  {
+    "name": "ATP",
+    "smiles": "c1nc(c2c(n1)n(cn2)C3CC(C(O3)COP(=O)(O)OP(=O)(O)OP(=O)(O)O)O)N",
+    "mw": 507,
+    "category": "large",
+    "expected": "아데닌 고리 + 리보스 + 트리포스페이트, O/N=δ-",
+    "shots": {
+      "drawing": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030442016_25_ATP_draw.png",
+      "drawing_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030442414_25_ATP_draw_canvas.png",
+      "lewis": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030480264_25_ATP_lewis.png",
+      "lewis_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030480664_25_ATP_lewis_canvas.png",
+      "theory": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030545505_25_ATP_theory.png",
+      "theory_canvas": "c:\\chemgrid\\docs\\reports\\ecloud_shots\\2030545901_25_ATP_theory_canvas.png"
+    },
+    "analysis": {
+      "drawing": {
+        "red_ratio": 0.305,
+        "blue_ratio": 0.441,
+        "green_ratio": 0.104,
+        "dominant": "BLUE",
+        "total_colored": 18974,
+        "ring_contrast": 1.426
+      },
+      "theory": {
+        "red_ratio": 0.293,
+        "blue_ratio": 0.443,
+        "green_ratio": 0.114,
+        "dominant": "BLUE",
+        "total_colored": 18935,
+        "ring_contrast": 1.455
+      }
+    },
+    "verdict": {
+      "drawing": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      },
+      "theory": {
+        "result": "PASS",
+        "reason": "이론값 일치"
+      }
+    }
+  }
+]

@@ -1,0 +1,10 @@
+=== 100 Molecule Stress Test ===
+Total molecules: 103
+Parse: 102/103
+IR: 102/102
+NMR: 96/102
+Retrosynthesis: 43/69
+Variant gen: 57/57
+
+Failures (1):
+  PARSE: nicotine
