@@ -1,0 +1,15 @@
+M1366_EVIDENCE_SHELL_21_W20R | 2026-05-18 | Worker D-M1153-002-W20r
+상황: W20r INDEX 생성 중 housing/evidence 전수 검사. 빈 디렉터리 21건 발견 (W20 시점 9건 → 12건 신규 추가).
+실수 패턴: Worker가 evidence 디렉터리를 mkdir만 하고 내부에 파일을 기록하지 않고 종료.
+신규 추가 12건: M1403_W18r_16task_dispatch, D-M1091-W213, D-M1091-W117, D-M1090-W46,
+  D889_VINA_TINY_DOCKING_SMOKE, D889_LIVE_ENGINE_PHASE2_VERSION_HEALTH_PROBE,
+  D889_LIVE_ENGINE_PHASE2_VERSION_HEALTH, D889_LIVE_ENGINE_READONLY_DISCOVERY,
+  D889_BACKGROUND_FULL_FEATURE_VALIDATION, D889_LIVE_ORCA_XTB_ENGINE_REALITY_PREFLIGHT,
+  D889_BACKGROUND_FULL_FEATURE_VALIDATION_RUNNER_BUILD, D888_W11
+W20 기존 9건: M1359_W11, D-M1091-W230/W226/W227/W189/W216/W156, D-M1090-W18/W79
+올바른방법: evidence 디렉터리 생성 후 즉시 evidence.md 또는 .json 1건 이상 기록 필수. 빈 채 종료=깡통=FP-38.
+INDEX_20260518.md 수정: W20 오류(SHA256 불일치, SHELL 9건 과소계산, INDEX 자신 누락) 전부 W20r에서 정정.
+H-2: evidence_shell_21 — 매 INDEX 갱신 시 SHELL 전수 재검사 의무.
+H-3: patrol.py evidence_shell_check 신설 필요. 현재 미구현.
+계열: misc, evidence_integrity, fp38
+M686(W20, 9건) 후속 기록.
