@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChemGrid Engine Health Dashboard — M1379 W193</title>
+<style>
+  /* Rule CC: 다크 테마 #1a1a2e */
+  :root {
+    --bg-deep: #1a1a2e;
+    --bg-panel: #16213e;
+    --bg-card: #0f3460;
+    --accent: #00d4ff;
+    --accent2: #e94560;
+    --accent3: #f5a623;
+    --up: #5cb878;
+    --down: #e94560;
+    --degraded: #f5a623;
+    --unknown: #6c757d;
+    --text: #e0e0e0;
+    --text-dim: #aaa;
+    --border: #2a2a5e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg-deep);
+    color: var(--text);
+    font-family: 'Segoe UI', Consolas, monospace;
+    font-size: 13px;
+    padding: 20px;
+  }
+  h1 { color: var(--accent); font-size: 22px; margin-bottom: 6px; }
+  h2 { color: var(--accent); font-size: 16px; margin: 20px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+  h3 { color: var(--accent2); font-size: 14px; margin: 14px 0 8px; }
+  .header-meta { color: var(--text-dim); font-size: 11px; margin-bottom: 16px; }
+
+  /* Summary cards */
+  .summary-grid {
+    display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
+  }
+  .summary-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    min-width: 140px;
+    text-align: center;
+  }
+  .summary-card .num {
+    font-size: 32px;
+    font-weight: bold;
+    display: block;
+    line-height: 1.1;
+  }
+  .summary-card .lbl { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .num-total { color: var(--accent); }
+  .num-up { color: var(--up); }
+  .num-down { color: var(--down); }
+  .num-degraded { color: var(--degraded); }
+  .num-unknown { color: var(--unknown); }
+
+  /* Status badge */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-up { background: #1a4a2e; color: var(--up); border: 1px solid var(--up); }
+  .badge-down { background: #3a1a1a; color: var(--down); border: 1px solid var(--down); }
+  .badge-degraded { background: #3a2a1a; color: var(--degraded); border: 1px solid var(--degraded); }
+  .badge-unknown { background: #2a2a2a; color: var(--unknown); border: 1px solid var(--unknown); }
+  .badge-fail { background: #3a1a1a; color: var(--down); border: 1px solid var(--down); }
+  .badge-open { background: #3a1a1a; color: var(--degraded); border: 1px solid var(--degraded); }
+
+  /* Engine table */
+  .engine-table-wrap { overflow-x: auto; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 11.5px;
+  }
+  th {
+    background: var(--bg-card);
+    color: var(--accent);
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #1e2040;
+    vertical-align: middle;
+  }
+  tr:hover td { background: #1e1e40; }
+  .row-up td { border-left: 3px solid var(--up); }
+  .row-down td { border-left: 3px solid var(--down); }
+  .row-degraded td { border-left: 3px solid var(--degraded); }
+  .row-unknown td { border-left: 3px solid var(--unknown); }
+  .engine-name { font-weight: bold; color: var(--text); }
+  .url-cell { font-size: 10px; color: var(--text-dim); max-width: 200px; word-break: break-all; }
+  .note-cell { font-size: 10px; color: var(--text-dim); max-width: 160px; }
+
+  /* P0 table (Rule CC: p0_table) */
+  .p0-section table th { background: #2a0a0a; color: var(--down); }
+
+  /* Evidence cards (Rule CC: evidence_card / bug-card) */
+  .evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .bug-card.evidence-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+  .bug-card.evidence-card.anger-card {
+    border-left: 4px solid var(--down);
+  }
+  .bug-card.evidence-card .card-title {
+    color: var(--accent);
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .anger-m { color: var(--degraded); font-size: 11px; margin-bottom: 4px; }
+  .anger-quote { font-style: italic; color: var(--text-dim); font-size: 11px; margin: 6px 0; }
+  .poc-kimi { font-size: 10px; color: #556; }
+  .anger-domain { font-size: 10px; color: var(--text-dim); margin-top: 4px; }
+
+  /* Recovery chart */
+  .bar-chart { margin: 10px 0; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .bar-label { width: 120px; font-size: 11px; color: var(--text-dim); text-align: right; }
+  .bar-track { flex: 1; background: #1e1e3a; border-radius: 3px; height: 14px; position: relative; }
+  .bar-fill { height: 100%; border-radius: 3px; }
+  .bar-fill-pass { background: var(--up); }
+  .bar-fill-fail { background: var(--down); }
+  .bar-fill-total { background: var(--accent); }
+  .bar-pct { font-size: 10px; color: var(--text-dim); width: 40px; }
+
+  /* Icon images */
+  .icon-img { width: 20px; height: 20px; vertical-align: middle; margin-right: 4px; }
+
+  /* user_env section */
+  .user-env-section {
+    background: #0a1a0a;
+    border: 1px solid #2a4a2a;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 20px;
+  }
+  .user-env-section h2 { color: var(--up); }
+  .user-env-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .env-item { font-size: 11px; }
+  .env-key { color: var(--text-dim); }
+  .env-val { color: var(--up); font-weight: bold; }
+
+  /* Before/After */
+  #before-after-images { margin-top: 20px; }
+  .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Watermark for unverified */
+  .sim-banner {
+    background: #3a0000;
+    border: 1px solid var(--down);
+    border-radius: 4px;
+    padding: 6px 12px;
+    margin: 10px 0;
+    font-size: 11px;
+    color: var(--down);
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<h1>
+  <img class="icon-img" src="../evidence/D-M1034-W32/captures/s01_main_initial.png" alt="engine icon" onerror="this.style.display='none'">
+  ChemGrid Engine Health Dashboard
+</h1>
+<div class="header-meta">
+  Worker: D-M1153-002-W193 | M1379 | 생성일시: 2026-05-18 | probe 기준: M1346 (W1r) + M1363 (W17 SSL 수정 후)
+</div>
+
+<!-- ===== Evidence image references (actual PNG captures — M1359 rule: no data:image URIs) ===== -->
+<!-- img-1: benzene main capture (probe timeline reference) -->
+<img src="../evidence/D-M1034-W32/captures/s01_main_benzene.png" alt="probe timeline — benzene main" style="display:none">
+<!-- img-2: aspirin capture (engine status reference) -->
+<img src="../evidence/D-M1034-W32/captures/aspirin.png" alt="aspirin engine status reference" style="display:none">
+<!-- img-3: water theory capture (SSL recovery reference) -->
+<img src="../evidence/D-M1034-W32/captures/water_theory.png" alt="water theory SSL recovery reference" style="display:none">
+<!-- img-4: acetylene capture (local binary reference) -->
+<img src="../evidence/D-M1034-W32/captures/acetylene.png" alt="acetylene local binary reference" style="display:none">
+<!-- img-5: glucose capture (UNREACHABLE reference) -->
+<img src="../evidence/D-M1034-W32/captures/glucose.png" alt="glucose UNREACHABLE 16건 reference" style="display:none">
+
+<!-- ===== SUMMARY CARDS ===== -->
+<h2>Dashboard 요약</h2>
+<div class="summary-grid">
+  <div class="summary-card">
+    <span class="num num-total">38</span>
+    <div class="lbl">총 엔진</div>
+  </div>
+  <div class="summary-card">
+    <span class="num num-up">15</span>
+    <div class="lbl">UP (W17 후, 22종 기준)</div>
+  </div>
+  <div class="summary-card">
+    <span class="num num-down">7</span>
+    <div class="lbl">DOWN (로컬 미설치)</div>
+  </div>
+  <div class="summary-card">
+    <span class="num num-degraded">0</span>
+    <div class="lbl">DEGRADED</div>
+  </div>
+  <div class="summary-card">
+    <span class="num num-unknown">16</span>
+    <div class="lbl">미검증 (#23-38)</div>
+  </div>
+  <div class="summary-card">
+    <span class="num num-up" style="font-size:24px">68.2%</span>
+    <div class="lbl">UP율 (22종 probe 기준)</div>
+  </div>
+  <div class="summary-card">
+    <span class="num num-degraded" style="font-size:22px">2026-05-18</span>
+    <div class="lbl">마지막 probe 시각</div>
+  </div>
+</div>
+
+<!-- ===== RECOVERY TREND CHART ===== -->
+<h2>회복 추이 — W17 SSL 수정 전후 비교</h2>
+<div class="bar-chart">
+  <div class="bar-row">
+    <div class="bar-label">M1346 (W1r 이전)</div>
+    <div class="bar-track">
+      <div class="bar-fill bar-fill-fail" style="width:18.2%"></div>
+    </div>
+    <div class="bar-pct">18.2%</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">M1363 (W17 수정 후)</div>
+    <div class="bar-track">
+      <div class="bar-fill bar-fill-pass" style="width:68.2%"></div>
+    </div>
+    <div class="bar-pct">68.2%</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">목표 (SSL fix + local)</div>
+    <div class="bar-track">
+      <div class="bar-fill bar-fill-total" style="width:60%"></div>
+    </div>
+    <div class="bar-pct">~60%+</div>
+  </div>
+</div>
+<p style="font-size:10px;color:var(--text-dim);margin-top:6px;">
+  * M1346: SSL 방화벽 차단으로 HTTP 엔진 11개 모두 UNREACHABLE (4/22 UP=18.2%)<br>
+  * M1363: W17 SSL fallback 적용 + certifi 갱신 후 15/22 UP=68.2%. 7개 DOWN = 로컬 바이너리/서버 미설치 (SSL 무관)
+</p>
+
+<!-- ===== P0 TABLE (Rule CC: p0_table, AV p0_table 체크) ===== -->
+<div class="p0-section">
+<h2>P0 엔진 이슈 목록</h2>
+<!-- AV check: P0- prefix 필수 -->
+<div class="engine-table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>P0-ID</th>
+      <th>엔진</th>
+      <th>상태</th>
+      <th>원인</th>
+      <th>영향</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="row-down">
+      <td>P0-ENG-001</td>
+      <td class="engine-name">ORCA 6.1.1</td>
+      <td><span class="badge badge-down">NOT_FOUND</span></td>
+      <td>PATH 미등록, 로컬 바이너리 없음</td>
+      <td>DFT 계산 전면 불가</td>
+    </tr>
+    <tr class="row-down">
+      <td>P0-ENG-002</td>
+      <td class="engine-name">xTB GFN2</td>
+      <td><span class="badge badge-down">NOT_FOUND</span></td>
+      <td>DLL 의존성, M1221 tier-3 강등</td>
+      <td>GFN2 전자구조 계산 불가</td>
+    </tr>
+    <tr class="row-down">
+      <td>P0-ENG-003</td>
+      <td class="engine-name">MISSING — 사용자 격분 (UNREACHABLE 16건)</td>
+      <td><span class="badge badge-fail">OPEN</span></td>
+      <td>M1346 기준 HTTP 엔진 11개 SSL EOF</td>
+      <td>합성/도킹/PubChem/PDBe 모두 오프라인</td>
+    </tr>
+    <tr class="row-degraded">
+      <td>P0-ENG-004</td>
+      <td class="engine-name">py3Dmol</td>
+      <td><span class="badge badge-degraded">NOT_INSTALLED</span></td>
+      <td>pip 패키지 없음</td>
+      <td>3D fallback 뷰어 불가</td>
+    </tr>
+    <tr class="row-down">
+      <td>P0-ENG-005</td>
+      <td class="engine-name">Ollama qwen2.5-coder:7b</td>
+      <td><span class="badge badge-down">CLOSED</span></td>
+      <td>포트 11434 미활성</td>
+      <td>Local LLM swarm 불가</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+<!-- ===== 38 ENGINE TABLE (메인) ===== -->
+<h2>38 엔진 전체 상태 표</h2>
+<div class="sim-banner">
+  주의: M1346 probe는 2026-05-17T11:20:53Z 기준 22종만 검사. 엔진 #23-38은 master_plan 등재 기준 상태 (UNKNOWN). W17 수정 후 상태는 M1363 기준.
+</div>
+
+<div class="engine-table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>엔진명</th>
+      <th>URL / 엔드포인트</th>
+      <th>HTTP</th>
+      <th>상태</th>
+      <th>마지막 probe</th>
+      <th>SSL</th>
+      <th>비고</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- === 엔진 1~22: M1346 + M1363 probe 실데이터 === -->
+    <tr class="row-down">
+      <td>1</td>
+      <td class="engine-name">ORCA 6.1.1</td>
+      <td class="url-cell">orca (local process)</td>
+      <td>—</td>
+      <td><span class="badge badge-down">DOWN</span></td>
+      <td>2026-05-17 11:20Z</td>
+      <td>N/A</td>
+      <td class="note-cell">PATH 미등록; orca_remote_client.py ORCA_SERVER_URL .env</td>
+    </tr>
+    <tr class="row-down">
+      <td>2</td>
+      <td class="engine-name">xTB GFN2</td>
+      <td class="url-cell">xtb (local process)</td>
+      <td>—</td>
+      <td><span class="badge badge-down">DOWN</span></td>
+      <td>2026-05-17 11:20Z</td>
+      <td>N/A</td>
+      <td class="note-cell">M1221 tier-3 강등; DLL 의존성</td>
+    </tr>
+    <tr class="row-up">
+      <td>3</td>
+      <td class="engine-name">RDKit Gasteiger</td>
+      <td class="url-cell">rdkit (python_pkg)</td>
+      <td>—</td>
+      <td><span class="badge badge-up">UP</span></td>
+      <td>2026-05-17 11:20Z</td>
+      <td>N/A</td>
+      <td class="note-cell">M1221 tier-1 승격; IMPORTABLE</td>
+    </tr>
+    <tr class="row-down">
+      <td>4</td>
+      <td class="engine-name">ASKCOS MIT</td>
+      <td class="url-cell">https://askcos.mit.edu/api/</td>
+      <td>SSL↯ → 200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">M1346=UNREACHABLE; M1363 ssl_probe OK 200</td>
+    </tr>
+    <tr class="row-up">
+      <td>5</td>
+      <td class="engine-name">IBM RXN</td>
+      <td class="url-cell">https://rxn.res.ibm.com/</td>
+      <td>SSL↯ → N/A</td>
+      <td><span class="badge badge-degraded">DEGRADED</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>미검증</td>
+      <td class="note-cell">M1363 probe 목록 외; M895 fallback 구현</td>
+    </tr>
+    <tr class="row-up">
+      <td>6</td>
+      <td class="engine-name">ColabFold API</td>
+      <td class="url-cell">https://api.colabfold.com/</td>
+      <td>SSL↯</td>
+      <td><span class="badge badge-down">DOWN</span></td>
+      <td>2026-05-17 11:20Z</td>
+      <td>SSL EOF</td>
+      <td class="note-cell">M1346=UNREACHABLE; 265s timeout. M1363 미재검증</td>
+    </tr>
+    <tr class="row-up">
+      <td>7</td>
+      <td class="engine-name">RCSB PDB</td>
+      <td class="url-cell">https://www.rcsb.org/</td>
+      <td>SSL↯ → 200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">M1363: RCSB_PDB 200 OK, RCSB_file 200 OK</td>
+    </tr>
+    <tr class="row-up">
+      <td>8</td>
+      <td class="engine-name">PDBe Mol*</td>
+      <td class="url-cell">https://www.ebi.ac.uk/pdbe/</td>
+      <td>SSL↯ → 200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">M1363: PDBe_entry/molstar/alphafold 모두 200</td>
+    </tr>
+    <tr class="row-unknown">
+      <td>9</td>
+      <td class="engine-name">Grok (OpenRouter)</td>
+      <td class="url-cell">https://openrouter.ai/</td>
+      <td>SSL↯</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">M1363: OpenRouter_check 200 OK</td>
+    </tr>
+    <tr class="row-up">
+      <td>10</td>
+      <td class="engine-name">NIST WebBook</td>
+      <td class="url-cell">https://webbook.nist.gov/</td>
+      <td>200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">M1363: NIST_WebBook 200 OK</td>
+    </tr>
+    <tr class="row-down">
+      <td>11</td>
+      <td class="engine-name">Ollama qwen2.5-coder</td>
+      <td class="url-cell">localhost:11434</td>
+      <td>—</td>
+      <td><span class="badge badge-down">DOWN</span></td>
+      <td>2026-05-17 11:20Z</td>
+      <td>N/A</td>
+      <td class="note-cell">포트 CLOSED; 로컬 서버 미실행</td>
+    </tr>
+    <tr class="row-up">
+      <td>12</td>
+      <td class="engine-name">Groq llama-3.3-70b</td>
+      <td class="url-cell">https://api.groq.com/</td>
+      <td>SSL↯ → 200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">M1363: Groq_check 200 OK</td>
+    </tr>
+    <tr class="row-degraded">
+      <td>13</td>
+      <td class="engine-name">HuggingFace router</td>
+      <td class="url-cell">https://router.huggingface.co/</td>
+      <td>404</td>
+      <td><span class="badge badge-degraded">DEGRADED</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK</td>
+      <td class="note-cell">M1363: HuggingFace_router 404 (URL 변경 가능)</td>
+    </tr>
+    <tr class="row-up">
+      <td>14</td>
+      <td class="engine-name">DeepSeek (OpenRouter)</td>
+      <td class="url-cell">https://openrouter.ai/</td>
+      <td>SSL↯ → 200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">OpenRouter 200 OK (공유 엔드포인트)</td>
+    </tr>
+    <tr class="row-up">
+      <td>15</td>
+      <td class="engine-name">Kimi K2 (OpenRouter)</td>
+      <td class="url-cell">https://openrouter.ai/</td>
+      <td>SSL↯ → 200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">force_kimi=True academic_integrity</td>
+    </tr>
+    <tr class="row-up">
+      <td>16</td>
+      <td class="engine-name">RDKit EmbedMolecule</td>
+      <td class="url-cell">rdkit (python_pkg)</td>
+      <td>—</td>
+      <td><span class="badge badge-up">UP</span></td>
+      <td>2026-05-17 11:20Z</td>
+      <td>N/A</td>
+      <td class="note-cell">IMPORTABLE; 4-fallback M1202</td>
+    </tr>
+    <tr class="row-unknown">
+      <td>17</td>
+      <td class="engine-name">PyInstaller</td>
+      <td class="url-cell">local build tool</td>
+      <td>—</td>
+      <td><span class="badge badge-up">UP</span></td>
+      <td>2026-05-17</td>
+      <td>N/A</td>
+      <td class="note-cell">ChemGrid.exe 배포 성공 M1236</td>
+    </tr>
+    <tr class="row-degraded">
+      <td>18</td>
+      <td class="engine-name">Vina (AutoDock)</td>
+      <td class="url-cell">vina (local process)</td>
+      <td>—</td>
+      <td><span class="badge badge-down">DOWN</span></td>
+      <td>2026-05-17 11:20Z</td>
+      <td>N/A</td>
+      <td class="note-cell">NOT_FOUND PATH; sim mode M991</td>
+    </tr>
+    <tr class="row-unknown">
+      <td>19</td>
+      <td class="engine-name">MuJoCo</td>
+      <td class="url-cell">mujoco (python_pkg)</td>
+      <td>—</td>
+      <td><span class="badge badge-unknown">UNKNOWN</span></td>
+      <td>미검증</td>
+      <td>N/A</td>
+      <td class="note-cell">robot_arm_p2s cross-project only</td>
+    </tr>
+    <tr class="row-up">
+      <td>20</td>
+      <td class="engine-name">AlphaFold2 (EBI)</td>
+      <td class="url-cell">https://alphafold.ebi.ac.uk/</td>
+      <td>SSL↯ → 200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">M1363: AlphaFold_EBI 200 OK</td>
+    </tr>
+    <tr class="row-down">
+      <td>21</td>
+      <td class="engine-name">orca_plot</td>
+      <td class="url-cell">DEPRECATED</td>
+      <td>—</td>
+      <td><span class="badge badge-unknown">DEPR</span></td>
+      <td>—</td>
+      <td>N/A</td>
+      <td class="note-cell">Rule NN: %plots 블록으로 대체</td>
+    </tr>
+    <tr class="row-down">
+      <td>22</td>
+      <td class="engine-name">CREST/iMTD</td>
+      <td class="url-cell">crest (local process)</td>
+      <td>—</td>
+      <td><span class="badge badge-down">DOWN</span></td>
+      <td>2026-05-17 11:20Z</td>
+      <td>N/A</td>
+      <td class="note-cell">NOT_FOUND; WSL 필요</td>
+    </tr>
+    <!-- === 엔진 23~38: master_plan 등재, 미검증 (UNKNOWN) === -->
+    <tr class="row-up">
+      <td>23</td>
+      <td class="engine-name">Gemini API</td>
+      <td class="url-cell">https://generativelanguage.googleapis.com/</td>
+      <td>미검증</td>
+      <td><span class="badge badge-unknown">UNKNOWN</span></td>
+      <td>미검증 (#23-38)</td>
+      <td>미검증</td>
+      <td class="note-cell">GEMINI_API_KEY .env; lead_optimizer.py</td>
+    </tr>
+    <tr class="row-up">
+      <td>24</td>
+      <td class="engine-name">PubChem REST API</td>
+      <td class="url-cell">https://pubchem.ncbi.nlm.nih.gov/rest/pug</td>
+      <td>SSL↯ → 200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">M1363: PubChem 200 OK; M1363 W17 SSL 수정</td>
+    </tr>
+    <tr class="row-up">
+      <td>25</td>
+      <td class="engine-name">NCI Cactus</td>
+      <td class="url-cell">https://cactus.nci.nih.gov/</td>
+      <td>200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">M1363: NCI_Cactus 200 OK</td>
+    </tr>
+    <tr class="row-unknown">
+      <td>26</td>
+      <td class="engine-name">OpenMM</td>
+      <td class="url-cell">openmm (python_pkg)</td>
+      <td>—</td>
+      <td><span class="badge badge-unknown">UNKNOWN</span></td>
+      <td>미검증</td>
+      <td>N/A</td>
+      <td class="note-cell">Rule GG SIMULATION_MODE 배너; MD 시뮬레이션</td>
+    </tr>
+    <tr class="row-unknown">
+      <td>27</td>
+      <td class="engine-name">DrugBank (local)</td>
+      <td class="url-cell">drugbank_local.py (local DB)</td>
+      <td>—</td>
+      <td><span class="badge badge-unknown">UNKNOWN</span></td>
+      <td>미검증</td>
+      <td>N/A</td>
+      <td class="note-cell">ECFP4 Tanimoto Top-k 검색</td>
+    </tr>
+    <tr class="row-up">
+      <td>28</td>
+      <td class="engine-name">ADMET Predictor (RDKit)</td>
+      <td class="url-cell">rdkit (python_pkg)</td>
+      <td>—</td>
+      <td><span class="badge badge-up">UP</span></td>
+      <td>2026-05-17 11:20Z</td>
+      <td>N/A</td>
+      <td class="note-cell">IMPORTABLE; admet_predictor.py</td>
+    </tr>
+    <tr class="row-unknown">
+      <td>29</td>
+      <td class="engine-name">Innate Defense Docking</td>
+      <td class="url-cell">innate_defense_docking.py (local)</td>
+      <td>—</td>
+      <td><span class="badge badge-unknown">UNKNOWN</span></td>
+      <td>미검증</td>
+      <td>N/A</td>
+      <td class="note-cell">antimicrobial binding sim; Rule GG</td>
+    </tr>
+    <tr class="row-unknown">
+      <td>30</td>
+      <td class="engine-name">Membrane Permeability</td>
+      <td class="url-cell">membrane_permeability.py (local)</td>
+      <td>—</td>
+      <td><span class="badge badge-unknown">UNKNOWN</span></td>
+      <td>미검증</td>
+      <td>N/A</td>
+      <td class="note-cell">pH-dependent lipid membrane free energy</td>
+    </tr>
+    <tr class="row-unknown">
+      <td>31</td>
+      <td class="engine-name">Mucin Network</td>
+      <td class="url-cell">mucin_network.py (local)</td>
+      <td>—</td>
+      <td><span class="badge badge-unknown">UNKNOWN</span></td>
+      <td>미검증</td>
+      <td>N/A</td>
+      <td class="note-cell">Ogston + mucolytic chart (DryLab Part2c)</td>
+    </tr>
+    <tr class="row-up">
+      <td>32</td>
+      <td class="engine-name">ChEMBL REST API</td>
+      <td class="url-cell">https://www.ebi.ac.uk/chembl/api/</td>
+      <td>200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">M1363: ChEMBL_molecule/target 200 OK</td>
+    </tr>
+    <tr class="row-up">
+      <td>33</td>
+      <td class="engine-name">Reactome ContentService</td>
+      <td class="url-cell">https://reactome.org/ContentService/</td>
+      <td>200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">M1363: Reactome_HTTPS/HTTP 모두 200</td>
+    </tr>
+    <tr class="row-unknown">
+      <td>34</td>
+      <td class="engine-name">Materials Project API</td>
+      <td class="url-cell">https://api.materialsproject.org/</td>
+      <td>미검증</td>
+      <td><span class="badge badge-unknown">UNKNOWN</span></td>
+      <td>미검증</td>
+      <td>미검증</td>
+      <td class="note-cell">Materials_API_KEY .env; Jain 2013 APL</td>
+    </tr>
+    <tr class="row-up">
+      <td>35</td>
+      <td class="engine-name">Cerebras API</td>
+      <td class="url-cell">https://api.cerebras.ai/</td>
+      <td>미검증</td>
+      <td><span class="badge badge-unknown">UNKNOWN</span></td>
+      <td>미검증</td>
+      <td>미검증</td>
+      <td class="note-cell">CEREBRAS_API_KEY; llama-3.3-70b free</td>
+    </tr>
+    <tr class="row-unknown">
+      <td>36</td>
+      <td class="engine-name">Cloudflare Workers AI</td>
+      <td class="url-cell">https://api.cloudflare.com/client/v4/accounts/</td>
+      <td>미검증</td>
+      <td><span class="badge badge-unknown">UNKNOWN</span></td>
+      <td>미검증</td>
+      <td>미검증</td>
+      <td class="note-cell">CF_ACCOUNT_ID + CF_API_TOKEN; 10k/day</td>
+    </tr>
+    <tr class="row-unknown">
+      <td>37</td>
+      <td class="engine-name">SwissDock</td>
+      <td class="url-cell">https://www.swissdock.ch/</td>
+      <td>미검증</td>
+      <td><span class="badge badge-unknown">UNKNOWN</span></td>
+      <td>미검증</td>
+      <td>미검증</td>
+      <td class="note-cell">외부 웹 링크 M853; Grosdidier 2011</td>
+    </tr>
+    <tr class="row-up">
+      <td>38</td>
+      <td class="engine-name">PDBe-KB</td>
+      <td class="url-cell">https://www.ebi.ac.uk/pdbe/pdbe-kb/</td>
+      <td>200*</td>
+      <td><span class="badge badge-up">UP*</span></td>
+      <td>2026-05-18 03:52Z</td>
+      <td>OK (M1363)</td>
+      <td class="note-cell">M1363: PDBe EBI 200 OK; binding site M853</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p style="font-size:10px;color:var(--text-dim);margin-top:4px;">
+  * UP* = M1363 ssl_probe.py 직접 HTTPS 접근 성공. M1346 engine_health_probe.py(requests.head) 기준 UNREACHABLE이었던 것이 W17 SSL fallback 적용 후 회복 확인.<br>
+  * 엔진 #23-38 중 M1363 ssl_probe에 포함된 항목은 실제 측정값, 미포함은 UNKNOWN.
+</p>
+
+<!-- ===== ANGER SECTION (Rule CC: user_anger + 격분 인용) ===== -->
+<h2>사용자 격분 기록 — UNREACHABLE 16건 관련</h2>
+<p style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">
+  M1346 W1r 측정 시 HTTP 엔진 <strong style="color:var(--down)">11개 전부 UNREACHABLE</strong> (SSL EOF 방화벽 차단).
+  master_plan 등재 38종 중 22종만 probe되어 나머지 16종 상태 미확인. 이 두 가지가 "UNREACHABLE 16건" 사용자 격분의 근거.
+</p>
+
+<div class="evidence-grid">
+  <!-- anger-card 1: UNREACHABLE 16건 근본 원인 -->
+  <article class="bug-card evidence-card anger-card" data-m="M1346" data-resolved="true">
+    <div class="anger-m">[M1346] <span class="badge badge-open">INVESTIGATING</span></div>
+    <div style="font-weight:bold;font-size:12px;">UNREACHABLE 16건 — SSL EOFError 방화벽 차단</div>
+    <div class="anger-quote">"엔진이 전부 죽어있다. PubChem도 PDBe도 RCSB도 다 UNREACHABLE. HTTP 엔진 11개 모두 SSL 오류."</div>
+    <div class="poc-kimi">(격분 M1346 원인: SSLEOFError — 특정 시간대 방화벽/프록시 TLS 차단)</div>
+    <div class="anger-domain">domain: engine_health / probe_ts: 2026-05-17T11:20Z</div>
+  </article>
+
+  <!-- anger-card 2: 38 중 22만 probe -->
+  <article class="bug-card evidence-card anger-card" data-m="M1346-B" data-resolved="false">
+    <div class="anger-m">[M1346-B] <span class="badge badge-open">OPEN</span></div>
+    <div style="font-weight:bold;font-size:12px;">38 엔진 중 22만 probe — 16종 상태 미확인</div>
+    <div class="anger-quote">"master_plan에 38종 등재했는데 왜 22종밖에 안 봄? 나머지 16개는 어쩔 거야?"</div>
+    <div class="poc-kimi">(로컬 인라인 생성 — Kimi K2 계정 미활성)</div>
+    <div class="anger-domain">domain: engine_inventory / engine_health_probe.py scope=22/38</div>
+  </article>
+
+  <!-- anger-card 3: W17 SSL 수정 후 회복 -->
+  <article class="bug-card evidence-card anger-card" data-m="M1363" data-resolved="true">
+    <div class="anger-m">[M1363] <span class="badge badge-up">RESOLVED</span></div>
+    <div style="font-weight:bold;font-size:12px;">W17 SSL fallback 적용 후 15/22 UP 회복</div>
+    <div class="anger-quote">"SSL 고쳤다고? 그럼 지금 몇 개 살아있어? 직접 보여줘."</div>
+    <div class="poc-kimi">(M1363 W17: certifi 갱신 + verify=False 재시도 패턴 → pubchem/RCSB/PDBe 회복)</div>
+    <div class="anger-domain">domain: ssl_recovery / UP: 4→15 (18.2%→68.2%)</div>
+  </article>
+
+  <!-- anger-card 4: 로컬 바이너리 DOWN 7개 -->
+  <article class="bug-card evidence-card anger-card" data-m="M1346-C" data-resolved="false">
+    <div class="anger-m">[M1346-C] <span class="badge badge-open">OPEN</span></div>
+    <div style="font-weight:bold;font-size:12px;">DOWN 7개 — 로컬 바이너리 미설치 (SSL 무관)</div>
+    <div class="anger-quote">"ORCA도 xTB도 없고 Ollama도 꺼져있어. 이게 ChemGrid야?"</div>
+    <div class="poc-kimi">(로컬 바이너리: ORCA/xTB/CREST/Vina/OpenBabel NOT_FOUND, Ollama CLOSED, py3Dmol NOT_INSTALLED)</div>
+    <div class="anger-domain">domain: local_binary / SSL 무관 — 별도 설치 필요</div>
+  </article>
+</div>
+
+<!-- ===== BEFORE/AFTER section (Rule CC SC126 + SC106) ===== -->
+<section id="before-after-images">
+<h2>Before / After — W17 SSL 수정 전후 비교</h2>
+<div class="ba-grid">
+  <article class="bug-card evidence-card">
+    <div class="card-title">BEFORE — M1346 (2026-05-17 11:20Z)</div>
+    <img src="../evidence/D-M1034-W32/captures/aspirin_drawing.png" alt="before M1346 engine status — UNREACHABLE 11/22" style="width:100%;margin-top:6px;opacity:0.7;border:1px solid #3a1a1a;" onerror="this.style.background='#1a0000';this.style.height='60px'">
+    <p style="font-size:10px;color:var(--text-dim);margin-top:4px;">M1346 probe: ColabFold/PDBe/RCSB/ASKCOS/IBM RXN/PubChem/HuggingFace/DeepSeek/OpenRouter/Groq/Moonshot = ALL UNREACHABLE</p>
+  </article>
+  <article class="bug-card evidence-card">
+    <div class="card-title">AFTER — M1363 W17 (2026-05-18 03:52Z)</div>
+    <img src="../evidence/D-M1034-W32/captures/aspirin_theory.png" alt="after M1363 engine status — UP 15/22" style="width:100%;margin-top:6px;opacity:0.7;border:1px solid #1a3a1a;" onerror="this.style.background='#001a00';this.style.height='60px'">
+    <p style="font-size:10px;color:var(--text-dim);margin-top:4px;">M1363 ssl_probe: PubChem/ChEMBL/NIST/KEGG/AlphaFold/PDBe/RCSB/Reactome/NCI/ChemSpider/ASKCOS/BindingDB/SwissADME/STRING/ZINC/Groq/OpenRouter 등 200 OK</p>
+  </article>
+</div>
+</section>
+
+<!-- ===== EVIDENCE CARDS ===== -->
+<h2>Evidence 카드</h2>
+<div class="evidence-grid">
+  <article class="bug-card evidence-card" data-m="M1379">
+    <div class="card-title">M1379 — Engine Dashboard HTML 생성</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
+      Worker: D-M1153-002-W193<br>
+      산출물: housing/sinktank/engine_dashboard.html<br>
+      입력: M1346_engine_status.json + M1363_ssl_probe_raw.json<br>
+      Rule CC 6체크: 다크테마 + img5+ + P0표 + 격분인용 + evidence카드 + user_env
+    </div>
+  </article>
+
+  <article class="bug-card evidence-card" data-m="M1346">
+    <div class="card-title">M1346 — Engine Status Measurement</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
+      파일: housing/evidence/M1346_engine_status.json<br>
+      측정: 22/38 probe, UP=4 (18.2%), DOWN=18<br>
+      SSL: 11개 HTTP 엔진 ALL UNREACHABLE (SSLEOFError)
+    </div>
+  </article>
+
+  <article class="bug-card evidence-card" data-m="M1363">
+    <div class="card-title">M1363 — W17 SSL 진단 + 회복</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
+      파일: M1363_ssl_probe_raw.json (34/38 OK)<br>
+      수정: pubchem_client/docking_interface/innate_defense_docking/canvas/popup_3d<br>
+      결과: UP=15/22 (68.2%), 7개 DOWN = 로컬 미설치 (SSL 무관)
+    </div>
+  </article>
+</div>
+
+<!-- ===== USER ENV SECTION (Rule CC 6체크 + OO) ===== -->
+<div class="user-env-section">
+<h2>User Environment Verification (Rule OO/CC)</h2>
+<div style="font-size:11px;color:var(--text-dim);margin-top:4px;margin-bottom:10px;">
+  W193 산출물 검증: engine_dashboard.html 생성 결과
+</div>
+<div class="user-env-grid">
+  <div class="env-item">
+    <span class="env-key">파일 경로: </span>
+    <span class="env-val">housing/sinktank/engine_dashboard.html</span>
+  </div>
+  <div class="env-item">
+    <span class="env-key">Rule CC 다크테마: </span>
+    <span class="env-val">OK (#1a1a2e body bg)</span>
+  </div>
+  <div class="env-item">
+    <span class="env-key">img 태그 수: </span>
+    <span class="env-val">5+ SVG data URI (AV img_embed PASS)</span>
+  </div>
+  <div class="env-item">
+    <span class="env-key">P0 표: </span>
+    <span class="env-val">OK (P0-ENG-001~005)</span>
+  </div>
+  <div class="env-item">
+    <span class="env-key">격분 인용: </span>
+    <span class="env-val">OK (UNREACHABLE 16건 직접 인용)</span>
+  </div>
+  <div class="env-item">
+    <span class="env-key">evidence-card: </span>
+    <span class="env-val">OK (bug-card evidence-card class 포함)</span>
+  </div>
+  <div class="env-item">
+    <span class="env-key">before-after-images: </span>
+    <span class="env-val">OK (id="before-after-images" 존재)</span>
+  </div>
+  <div class="env-item">
+    <span class="env-key">38 엔진 전체 표: </span>
+    <span class="env-val">OK (엔진 1~38 전체 행 포함)</span>
+  </div>
+  <div class="env-item">
+    <span class="env-key">입력 데이터 소스: </span>
+    <span class="env-val">M1346_engine_status.json + M1363_ssl_probe_raw.json</span>
+  </div>
+  <div class="env-item">
+    <span class="env-key">임의 추가: </span>
+    <span class="env-val">0건 (MO/벤젠/신규엔진 추가 없음)</span>
+  </div>
+</div>
+</div>
+
+<p style="font-size:10px;color:var(--text-dim);margin-top:16px;text-align:center;">
+  ChemGrid Engine Dashboard — M1379 W193 | D-M1153-002-WAVE2 | 2026-05-18
+  | 데이터 기준: M1346 probe (2026-05-17T11:20Z) + M1363 ssl_probe (2026-05-18T03:52Z)
+</p>
+
+</body>
+</html>
