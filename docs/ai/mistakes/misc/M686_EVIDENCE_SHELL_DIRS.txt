@@ -1,0 +1,8 @@
+M686_EVIDENCE_SHELL_DIRS | 2026-05-18 | Worker D-M1153-002-W20
+상황: housing/evidence INDEX 생성 중 9개 디렉터리에 내부 파일 0건 발견.
+실수: Worker가 evidence 디렉터리만 mkdir하고 내부에 파일을 기록하지 않고 종료.
+대상: M1359_W11, D-M1091-W230/W226/W227/W189/W216/W156, D-M1090-W18/W79
+올바른방법: evidence 디렉터리 생성 후 즉시 evidence.md 또는 .json 1건 이상 기록 필수. 빈 채 종료=깡통=FP-38.
+H-2: EVIDENCE-SHELL-001 — Worker 완료 선언 전 evidence 내부파일 존재 확인 의무.
+H-3: patrol.py evidence_shell_check 신설 권고 (find -maxdepth 1 -type d -empty = 0이어야 PASS).
+계열: misc, evidence_integrity, fp38
