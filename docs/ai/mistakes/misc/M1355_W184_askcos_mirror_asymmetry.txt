@@ -1,0 +1,14 @@
+## M1355_W184 — ASKCOS expand_one mirror fallback 비대칭 + IBM RXN 재시도 없음
+날짜: 2026-05-18 / Worker: D-M1153-002-W184
+
+상황: G1 합성 route 품질 fix (D-M1153-003 WAVE 1)
+실수 내용:
+  1. askcos_client.expand_one()에서 ConnectionError 시 mirror failover 없음
+     — is_available()는 MIRROR_URLS 순회하는데 expand_one()은 BASE_URL 단일 사용
+     — MIT 서버 다운 시 askcos2.mit.edu로 자동 전환 불가
+  2. _get_ibm_rxn_client() is_available() 1회만 호출 — 일시 503/504 재시도 없음
+올바른 방법:
+  1. _try_one_mirror() 내부함수로 retry 캡슐화 후 _mirror_list 순회
+     성공 mirror → BASE_URL 갱신 (이후 호출도 재사용)
+  2. _IBM_RXN_MAX_RETRIES=2, sleep(1.5) 간격
+패턴: EXTERNAL-API-MIRROR-001 (health check=mirror 순회 + actual call=단일 URL 비대칭 금지)
