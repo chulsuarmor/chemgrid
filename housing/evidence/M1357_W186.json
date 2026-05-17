@@ -1,0 +1,160 @@
+{
+  "report_id": "M1357_W186",
+  "worker": "D-M1153-002-W186",
+  "date": "2026-05-18",
+  "audit_type": "read-only cross-check",
+  "scope": "G2 AlphaFold Integration — popup_alphafold.py + popup_lead_optimizer.py + alphafold_interface.py",
+
+  "py_compile": {
+    "alphafold_interface.py": "PASS",
+    "popup_alphafold.py": "PASS",
+    "popup_lead_optimizer.py": "PASS"
+  },
+
+  "cross_check_table": [
+    {
+      "check_id": "CC-01",
+      "subject": "alphafold_interface.py — line 365 NameError bug",
+      "finding": "DEFECT — CRITICAL",
+      "detail": "Line 365: `if not isinstance(headers, dict): headers = {}` references bare name `headers` which is undefined in scope. The `resp.headers` attribute is the actual urllib response header object. This branch re-assigns a local `headers = {}` and then line 366 calls `resp.headers.get(...)` on resp.headers (not the re-bound local), so the guard is semantically inert AND would raise NameError if the branch were taken. py_compile passes because it is syntactically valid Python, but runtime execution of this branch triggers NameError: name 'headers' is not defined. Confirmed via static read: no prior `headers` assignment in scope before line 365.",
+      "rule_refs": ["Rule N (타입 가드)", "Rule M (silent failure 금지)"],
+      "severity": "CRITICAL — NameError on first ColabFold poll response"
+    },
+    {
+      "check_id": "CC-02",
+      "subject": "alphafold_interface.py — line 369 string literal bug",
+      "finding": "DEFECT — HIGH",
+      "detail": "Line 369: `if \"application\\json\" in content_type:` — backslash-j is not a valid escape, Python interprets this as literal `application\\json` (with backslash), not `application/json`. The content-type check will always fail, so ColabFold JSON status responses will never be parsed; the loop will treat every 200 JSON response as a raw PDB and call parse_pdb_text on JSON data, which will return an empty ProteinStructure.",
+      "rule_refs": ["Rule M (silent failure 금지)"],
+      "severity": "HIGH — ColabFold status polling silently broken"
+    },
+    {
+      "check_id": "CC-03",
+      "subject": "Rule FF — Tab 5 PDBe Mol* external link prominent",
+      "finding": "PASS",
+      "detail": "popup_alphafold.py Tab 5 (_create_tab5_pdbe): `btn_pdbe_mol` is the largest primary button (font-size 14px, bold, 14px/28px padding) at the top of the group. A `pdbe_url_note` QLabel with objectName `pdbe_external_link_note` explicitly shows the EBI URL pattern. A `webgl_contract_banner` QLabel with objectName `pdbe_webgl_fallback_contract_banner` states PDBe Mol* is the primary academic viewer and cites Sehnal 2021. Rule FF satisfied: PDBe Mol* external link is prominently placed as primary.",
+      "rule_refs": ["Rule FF (PDBe Mol* 학술 표준 우선)"],
+      "severity": "PASS"
+    },
+    {
+      "check_id": "CC-04",
+      "subject": "Jumper 2021 citation present",
+      "finding": "PASS",
+      "detail": "popup_alphafold.py: Multiple citations of 'Jumper et al. 2021 Nature 596:583' found in: class docstring (line 327), Tab 2 alphafold_info QLabel (line 596-597), Tab 4 pLDDT GroupBox title (line 745), _draw_plddt_chart ax.set_title (line 1703), Tab 6 DryLab Report references section (line 1189). Rule NN satisfied for Jumper 2021.",
+      "rule_refs": ["Rule NN (학술정합성자동)", "Rule FF"],
+      "severity": "PASS"
+    },
+    {
+      "check_id": "CC-05",
+      "subject": "Sehnal 2021 citation present",
+      "finding": "PASS",
+      "detail": "popup_alphafold.py: Sehnal D. et al. 2021 Nucleic Acids Res 49:W431 cited in: Tab 5 intro_text QLabel (line 924-926), pdbe_url_note QLabel (line 948-950), webgl_contract_banner (line 965-966), usage_text usage guide (line 1087-1090), fallback_banner (line 1107), _on_open_alphafold_pdbe_molstar docstring (line 1399), _on_download_alphafold_pdb QMessageBox (line 1527-1529). Rule FF + NN satisfied for Sehnal 2021.",
+      "rule_refs": ["Rule FF", "Rule NN"],
+      "severity": "PASS"
+    },
+    {
+      "check_id": "CC-06",
+      "subject": "ColabFold progress_callback integration",
+      "finding": "PARTIAL — NO CALLBACK PARAM",
+      "detail": "alphafold_interface.submit_colabfold_prediction() does NOT accept a progress_callback parameter. Progress is communicated only via the QThread.progress signal in _PredictionWorker.run() which emits a single string 'AlphaFold API 요청 중...' before calling predict_structure(). There is no per-poll-cycle progress update. _PredictionWorker does not call progress.emit() during the polling loop inside submit_colabfold_prediction. This means UI shows a single static message during potentially 10-minute ColabFold wait. The AlphaFoldFetchWorker in popup_lead_optimizer.py uses status signal and emits messages before each fallback step, which is better but still no per-poll progress.",
+      "rule_refs": ["Rule M (사용자 피드백 의무)"],
+      "severity": "LOW — UX issue, not a crash"
+    },
+    {
+      "check_id": "CC-07",
+      "subject": "RCSB fallback chain — alphafold_interface.predict_structure()",
+      "finding": "PASS — chain correct",
+      "detail": "predict_structure() priority: (1) pdb_id → fetch_pdb_from_rcsb() — RCSB direct; (2) sequence → validate_fasta_sequence() → _load_from_cache() → submit_colabfold_prediction(). fetch_pdb_from_rcsb() uses https://files.rcsb.org/download/{PDB_ID}.pdb with HTTPError handling. popup_lead_optimizer.py AlphaFoldFetchWorker explicitly tries RCSB first, then ColabFold as Fallback 2, with logger.warning on each failure step. Chain is: RCSB → ColabFold → error emit (no silent failure).",
+      "rule_refs": ["Rule M"],
+      "severity": "PASS"
+    },
+    {
+      "check_id": "CC-08",
+      "subject": "popup_lead_optimizer.py — AlphaFold interface import",
+      "finding": "PASS",
+      "detail": "Lines 96-128: try/except import of alphafold_interface with AF_INTERFACE_OK flag. Fallback stub classes defined for PredictionResult, ProteinStructure, predict_structure, filter_by_plddt, validate_fasta_sequence. AlphaFoldFetchWorker (line 631) checks AF_INTERFACE_OK at top of run() and emits error signal if unavailable — no silent failure.",
+      "rule_refs": ["Rule M", "CLAUDE.md conditional import pattern"],
+      "severity": "PASS"
+    },
+    {
+      "check_id": "CC-09",
+      "subject": "Rule SS — PyQt6 signal connect() verification",
+      "finding": "PASS",
+      "detail": "popup_alphafold.py: Comments confirm signal verification: `QTabWidget.currentChanged` (line 409), `QComboBox.currentIndexChanged` (line 436), `QTextEdit.textChanged` (line 636). All three are real PyQt6 signals. popup_lead_optimizer.py: QThread signals (stage_changed, progress, variant_ready, finished, error) are declared with pyqtSignal() at class level — correct pattern. No unverified signal connections found.",
+      "rule_refs": ["Rule SS (PyQt6 시그널 검증)"],
+      "severity": "PASS"
+    },
+    {
+      "check_id": "CC-10",
+      "subject": "Rule GG — SIMULATION_MODE banner for fallback",
+      "finding": "PASS",
+      "detail": "popup_alphafold.py Tab 5 webgl_contract_banner (line 961-975): States 'SIMULATION_MODE / FALLBACK CONTRACT' with yellow/orange border. Tab 4 ptm_desc label (line 877-887): States 'SIMULATION MODE — 실제 AlphaFold API 반환값 없음'. _on_download_alphafold_pdb(): viewer.setWindowTitle contains '[ChemGrid 자체 뷰어 — 폴백]' and QMessageBox shows '[ChemGrid 자체 3D 뷰어 — 폴백 모드]'. Rule GG satisfied.",
+      "rule_refs": ["Rule GG (SIMULATION_MODE UI 명시)"],
+      "severity": "PASS"
+    },
+    {
+      "check_id": "CC-11",
+      "subject": "Rule N — isinstance guards on external API responses",
+      "finding": "PASS (with CC-01 exception)",
+      "detail": "alphafold_interface.py: isinstance guard on ColabFold submit response (line 324-330), isinstance guard on poll status_data (line 372). popup_alphafold.py: _on_receptor_changed checks isinstance(preset, dict) (line 1229-1230), _on_open_alphafold_search checks isinstance(preset, dict) (line 1300). popup_lead_optimizer.py: _on_stage_changed has isinstance guard on stage_map (line 1671). CC-01 defect invalidates the headers guard but other guards are correct.",
+      "rule_refs": ["Rule N"],
+      "severity": "PASS (partial — CC-01 defect)"
+    },
+    {
+      "check_id": "CC-12",
+      "subject": "Rule M — no silent failure in critical paths",
+      "finding": "PASS",
+      "detail": "All major failure paths emit logger.warning + QMessageBox.warning. _on_open_3dmol_smiles, _on_open_alphafold_pdbe_molstar, _on_download_alphafold_pdb all handle failures explicitly. AlphaFoldFetchWorker emits error signal on failure. No bare `except: pass` found in the three files.",
+      "rule_refs": ["Rule M"],
+      "severity": "PASS"
+    }
+  ],
+
+  "critical_defects": [
+    {
+      "defect_id": "DEFECT-01",
+      "file": "alphafold_interface.py",
+      "line": 365,
+      "type": "NameError (runtime)",
+      "description": "Bare `headers` name referenced before assignment. `if not isinstance(headers, dict): headers = {}` — `headers` is not defined in scope. Line 366 `resp.headers.get(...)` uses resp.headers correctly, making line 365 dead but crash-ready if reached via a different code path or future refactor.",
+      "fix_needed": "Remove line 365 entirely. `resp.headers` is the correct object and is already used on line 366."
+    },
+    {
+      "defect_id": "DEFECT-02",
+      "file": "alphafold_interface.py",
+      "line": 369,
+      "type": "Logic bug — string literal with backslash-j",
+      "description": "\"application\\\\json\" should be \"application/json\". ColabFold JSON responses will never match, causing infinite silent polling loop that always parses JSON as PDB text.",
+      "fix_needed": "Change `\"application\\\\json\"` to `\"application/json\"` on line 369."
+    }
+  ],
+
+  "rule_ff_compliance": {
+    "pdbe_mol_star_external_link": "PRESENT — Tab 5 primary button, large font, prominent placement",
+    "pdbe_external_link_prominent": "YES — btn_pdbe_mol is largest button in Tab 5, appears at top of pdbe_group",
+    "sehnal_2021_citation": "PRESENT — 7 locations in popup_alphafold.py",
+    "jumper_2021_citation": "PRESENT — 5 locations in popup_alphafold.py",
+    "self_3d_engine_is_fallback_with_watermark": "PRESENT — webgl_contract_banner + window title '[폴백]' + QMessageBox",
+    "overall": "PASS"
+  },
+
+  "colabfold_progress_callback": {
+    "submit_colabfold_prediction_has_callback_param": false,
+    "prediction_worker_emits_single_message_only": true,
+    "per_poll_progress_update": false,
+    "lead_optimizer_alphafold_worker_emits_per_fallback": true,
+    "assessment": "Minimal — single status message. No per-poll progress. Low severity UX gap."
+  },
+
+  "rcsb_fallback_chain": {
+    "predict_structure_chain": ["pdb_id -> RCSB", "sequence -> cache -> ColabFold"],
+    "fetch_pdb_from_rcsb_error_handling": "HTTPError + generic Exception caught, returns PredictionResult with error",
+    "lead_optimizer_fallback_chain": ["RCSB first (if pdb_id)", "ColabFold second (if sequence)", "error signal emit"],
+    "assessment": "PASS — chain complete, no silent failure"
+  },
+
+  "verdict": "CONDITIONAL PASS — 2 runtime defects in alphafold_interface.py (CC-01 NameError, CC-02 backslash-j string) must be fixed before production. Rule FF, Sehnal 2021, Jumper 2021 citations all present and prominent. RCSB fallback chain correct. py_compile PASS all 3 files.",
+
+  "code_changes_made": 0,
+  "files_modified": []
+}
