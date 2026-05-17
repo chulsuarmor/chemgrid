@@ -11,8 +11,11 @@ import os
 import re
 import json
 import time
+import logging
 import tempfile
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 
@@ -215,6 +218,9 @@ def parse_pdb_text(pdb_text: str) -> ProteinStructure:
         "LEU": "L", "LYS": "K", "MET": "M", "PHE": "F", "PRO": "P",
         "SER": "S", "THR": "T", "TRP": "W", "TYR": "Y", "VAL": "V",
     }
+    # Rule N: isinstance guard for aa3to1
+    if not isinstance(aa3to1, dict):
+        aa3to1 = {}
     structure.sequence = "".join(
         aa3to1.get(r.name, "X") for r in structure.residues
     )
@@ -250,8 +256,8 @@ def _load_from_cache(sequence: str) -> Optional[ProteinStructure]:
             structure = parse_pdb_text(pdb_text)
             structure.source = "cache"
             return structure
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to load cached prediction: %s", e)
     return None
 
 
@@ -261,8 +267,8 @@ def _save_to_cache(sequence: str, pdb_text: str) -> None:
         _CACHE_DIR.mkdir(parents=True, exist_ok=True)
         cache_path = _get_cache_path(sequence)
         cache_path.write_text(pdb_text, encoding="utf-8")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to save prediction to cache: %s", e)
 
 
 def submit_colabfold_prediction(
@@ -314,6 +320,15 @@ def submit_colabfold_prediction(
 
         with urllib.request.urlopen(req, timeout=30) as resp:
             resp_data = json.loads(resp.read().decode("utf-8"))
+            # N코드: 외부 API 응답 isinstance 가드
+            if not isinstance(resp_data, dict):
+                logger.warning("ColabFold 응답이 dict가 아님: type=%s", type(resp_data).__name__)
+                return PredictionResult(
+                    success=False,
+                    error=f"ColabFold API returned unexpected type: {type(resp_data).__name__}",
+                    elapsed_seconds=time.time() - start_time,
+                    method="colabfold_api",
+                )
             ticket_id = resp_data.get("id", "")
 
     except urllib.error.URLError as e:
@@ -351,11 +366,19 @@ def submit_colabfold_prediction(
 
                     if "application/json" in content_type:
                         status_data = json.loads(data)
+                        # N코드: 외부 API 폴링 응답 isinstance 가드
+                        if not isinstance(status_data, dict):
+                            logger.warning("ColabFold 상태 응답이 dict가 아님: type=%s", type(status_data).__name__)
+                            time.sleep(poll_interval)
+                            continue
                         status = status_data.get("status", "")
                         if status == "FAILURE":
+                            error_msg = status_data.get("error", "unknown")
+                            if not isinstance(error_msg, str):
+                                error_msg = str(error_msg)
                             return PredictionResult(
                                 success=False,
-                                error=f"ColabFold prediction failed: {status_data.get('error', 'unknown')}",
+                                error=f"ColabFold prediction failed: {error_msg}",
                                 elapsed_seconds=time.time() - start_time,
                                 method="colabfold_api",
                             )
@@ -376,10 +399,10 @@ def submit_colabfold_prediction(
                 else:
                     pass  # Unexpected status, keep polling
 
-        except urllib.error.URLError:
-            pass  # Transient network error, retry
-        except Exception:
-            pass
+        except urllib.error.URLError as e:
+            logger.warning("Transient network error during polling, retrying: %s", e)
+        except Exception as e:
+            logger.warning("Unexpected error during ColabFold polling: %s", e)
 
         time.sleep(poll_interval)
 
