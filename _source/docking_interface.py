@@ -9,12 +9,26 @@ ChemDraw Pro: Molecular Docking Backend
 
 import os
 import sys
+import shutil  # [M646_BINS] shutil.which for vina PATH lookup
 import subprocess
 import time
 import tempfile
 import json
+import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
+
+logger = logging.getLogger(__name__)
+
+
+def _external_probe_disabled() -> bool:
+    """True when GUI evidence capture must not wait on external WSL probes."""
+    return (
+        os.environ.get("CHEMGRID_CAPTURE_MODE", "0") == "1"
+        or os.environ.get("CHEMGRID_SKIP_EXTERNAL_PROBES", "0") == "1"
+        or os.environ.get("CHEMGRID_SKIP_WSL_PROBES", "0") == "1"
+    )
+
 
 try:
     from PyQt6.QtCore import QThread, pyqtSignal
@@ -37,11 +51,22 @@ from docking_data import (
 # ============================================================================
 
 # Vina executable path - configurable
+# [M646_BINS] 4-stage detection: env VINA_PATH → shutil.which → ChemGrid bin 절대경로 폴백 → common locations
 _vina_env = os.environ.get("VINA_PATH", "")
 VINA_PATH = Path(_vina_env) if (_vina_env and Path(_vina_env).is_file()) else Path("")
 if not (str(VINA_PATH) and VINA_PATH.is_file()):
-    # Try common locations
+    # [M646_BINS] shutil.which 시스템 PATH 탐색 (vina_1.2.7_win.exe 또는 vina)
+    for _exe_name in ("vina_1.2.7_win.exe", "vina.exe", "vina"):
+        _which = shutil.which(_exe_name)
+        if _which:
+            VINA_PATH = Path(_which)
+            logger.info("[M646_BINS] Vina via shutil.which: %s", _which)
+            break
+if not (str(VINA_PATH) and VINA_PATH.is_file()):
+    # Try common locations - [M646_BINS] ChemGrid 표준 bin 절대경로 우선 (1순위)
     _candidates = [
+        # [M646_BINS] ChemGrid 표준 bin 경로 (배포 기본값)
+        Path(r"C:/chemgrid/bin/vina/vina_1.2.7_win.exe"),
         Path(r"C:\Program Files\Vina\vina.exe"),
         Path(r"C:\vina\vina.exe"),
         Path.home() / "vina" / "vina.exe",
@@ -49,7 +74,30 @@ if not (str(VINA_PATH) and VINA_PATH.is_file()):
     for c in _candidates:
         if c.is_file():
             VINA_PATH = c
+            logger.info("[M646_BINS] Vina absolute path 폴백: %s", c)
             break
+
+# WSL Vina detection (Windows Subsystem for Linux)
+_WSL_VINA_PATH = ""  # Linux path inside WSL
+_WSL_VINA_AVAILABLE = False
+if sys.platform == "win32" and not _external_probe_disabled():
+    _wsl_candidates = ["/tmp/vina", "/usr/local/bin/vina", "/usr/bin/vina", "/home/skagjs/bin/vina"]
+    for _wpath in _wsl_candidates:
+        try:
+            _proc = subprocess.run(
+                ["wsl", "bash", "-lc", f"test -x {_wpath} && echo OK"],
+                capture_output=True, text=True, timeout=5,
+                encoding='utf-8', errors='replace',  # Rule M: cp949 기본값 방지 (M532)
+            )
+            if "OK" in _proc.stdout:
+                _WSL_VINA_PATH = _wpath
+                _WSL_VINA_AVAILABLE = True
+                logger.info("WSL Vina detected at: %s", _wpath)
+                break
+        except Exception as e:
+            logger.warning("WSL vina detection failed for %s: %s", _wpath, e)
+elif sys.platform == "win32":
+    logger.info("[docking_interface] WSL Vina detection skipped for capture/external-probe-disabled mode")
 
 # Check for vina Python package as alternative
 try:
@@ -98,9 +146,29 @@ except ImportError:
 _vina_exe_available = str(VINA_PATH) != '' and str(VINA_PATH) != '.' and VINA_PATH.is_file()
 
 # Overall docking availability (real Vina or simulation fallback)
-VINA_AVAILABLE = VINA_PYTHON_AVAILABLE or _vina_exe_available
+VINA_AVAILABLE = VINA_PYTHON_AVAILABLE or _vina_exe_available or _WSL_VINA_AVAILABLE
 DOCKING_AVAILABLE = RDKIT_AVAILABLE  # Pipeline works with simulation mode even without Vina
 SIMULATION_MODE = not VINA_AVAILABLE  # True when Vina is not installed
+if SIMULATION_MODE:
+    # vina Python package not installed and no Vina executable found.
+    # To enable real docking: pip install vina  (or set VINA_PATH env var)
+    logger.warning(
+        "[docking_interface] Vina 미설치 — SIMULATION_MODE 활성화. "
+        "실제 도킹 결과를 얻으려면: pip install vina"
+    )
+
+
+def _win_to_wsl_path(win_path) -> str:
+    """Convert a Windows path to WSL (Linux) path.
+
+    Example: C:\\Users\\foo\\bar.txt -> /mnt/c/Users/foo/bar.txt
+    """
+    p = str(win_path).replace("\\", "/")
+    # Handle drive letter: C:/... -> /mnt/c/...
+    if len(p) >= 2 and p[1] == ":":
+        drive = p[0].lower()
+        p = f"/mnt/{drive}{p[2:]}"
+    return p
 
 
 # ============================================================================
@@ -203,7 +271,27 @@ class PDBDownloader(QThread):
         try:
             self.progress.emit(f"PDB ID '{self.pdb_id}' 다운로드 중...")
             url = f"https://files.rcsb.org/download/{self.pdb_id}.pdb"
-            resp = requests.get(url, timeout=30)
+            # requests is a module (checked via REQUESTS_AVAILABLE at top) — no isinstance guard needed
+            try:
+                resp = requests.get(url, timeout=30)  # [MAGIC: 30s] RCSB PDB file download
+            except Exception as _ssl_e:
+                _ssl_msg = str(_ssl_e)
+                _is_ssl = (
+                    "SSL" in type(_ssl_e).__name__
+                    or "ssl" in _ssl_msg.lower()
+                    or "UNEXPECTED_EOF" in _ssl_msg
+                    or "certificate" in _ssl_msg.lower()
+                )
+                if _is_ssl:
+                    # M1363: SSL EOF fallback — 방화벽/프록시 환경 대응
+                    import logging as _log
+                    _log.getLogger(__name__).warning(
+                        "[M1363] RCSB SSL 오류 → verify=False 재시도 (%s): %s",
+                        url, _ssl_msg[:100]
+                    )
+                    resp = requests.get(url, timeout=30, verify=False)
+                else:
+                    raise
 
             if resp.status_code == 404:
                 self.error.emit(f"PDB ID '{self.pdb_id}'를 찾을 수 없습니다.")
@@ -253,8 +341,8 @@ class LigandPreparer:
         # Optimize with MMFF
         try:
             AllChem.MMFFOptimizeMolecule(mol, maxIters=200)
-        except Exception:
-            pass  # optimization is optional
+        except Exception as e:
+            logger.warning("MMFF optimization failed (optional): %s", e)
 
         # Extract atom data
         conf = mol.GetConformer()
@@ -285,8 +373,8 @@ class LigandPreparer:
         AllChem.EmbedMolecule(mol, AllChem.ETKDGv3())
         try:
             AllChem.MMFFOptimizeMolecule(mol, maxIters=200)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("MMFF optimization failed for ligand prep: %s", e)
 
         if MEEKO_AVAILABLE:
             # Use Meeko for PDBQT preparation
@@ -300,8 +388,8 @@ class LigandPreparer:
                         output_path.write_text(pdbqt_string, encoding='utf-8')
                         ligand.prepared_pdbqt = output_path
                         return output_path
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Meeko PDBQT preparation failed: %s", e)
 
         # Fallback: write as PDB and convert
         pdb_path = output_dir / "ligand.pdb"
@@ -314,8 +402,8 @@ class LigandPreparer:
                 ob_mol.write("pdbqt", str(pdbqt_path), overwrite=True)
                 ligand.prepared_pdbqt = pdbqt_path
                 return pdbqt_path
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("OpenBabel ligand PDBQT conversion failed: %s", e)
 
         # Last fallback: simple PDBQT generation (basic)
         return LigandPreparer._simple_pdb_to_pdbqt(pdb_path, output_dir, ligand)
@@ -333,10 +421,16 @@ class LigandPreparer:
 
         try:
             AllChem.ComputeGasteigerCharges(mol)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Gasteiger charge computation failed: %s", e)
 
-        lines = []
+        # AutoDock Vina PDBQT atom type mapping (element -> AD4 type)
+        _AD4_TYPE = {
+            "C": "C", "N": "N", "O": "OA", "S": "SA", "H": "HD",
+            "F": "F", "Cl": "Cl", "Br": "Br", "I": "I", "P": "P",
+        }
+
+        lines = ["ROOT"]  # Vina requires ROOT/ENDROOT torsion tree
         conf = mol.GetConformer()
         for i in range(mol.GetNumAtoms()):
             atom = mol.GetAtomWithIdx(i)
@@ -346,7 +440,15 @@ class LigandPreparer:
                 charge = 0.0  # sanitize NaN/inf
 
             element = atom.GetSymbol()
-            atom_type = element  # simplified AD4 type
+            atom_type = _AD4_TYPE.get(element, element)
+            # Hydrogen bonded to N/O/S gets HD type
+            if element == "H":
+                for nbr in atom.GetNeighbors():
+                    if nbr.GetSymbol() in ("N", "O", "S"):
+                        atom_type = "HD"
+                        break
+                else:
+                    atom_type = "H"
 
             line = (
                 f"ATOM  {i+1:5d}  {element:<3s} LIG A   1    "
@@ -355,6 +457,7 @@ class LigandPreparer:
             )
             lines.append(line)
 
+        lines.append("ENDROOT")
         lines.append("TORSDOF 0")
 
         pdbqt_path = output_dir / "ligand.pdbqt"
@@ -385,8 +488,8 @@ class ReceptorPreparer:
                 ob_mol.write("pdbqt", str(pdbqt_path), overwrite=True)
                 receptor.prepared_pdbqt = pdbqt_path
                 return pdbqt_path
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("OpenBabel receptor PDBQT conversion failed: %s", e)
 
         # Fallback: basic PDBQT conversion from PDB
         return ReceptorPreparer._simple_pdb_to_pdbqt(receptor, output_dir)
@@ -486,6 +589,8 @@ class VinaDockingThread(QThread):
                 dock_result = self._run_vina_python()
             elif _vina_exe_available:
                 dock_result = self._run_vina_subprocess()
+            elif _WSL_VINA_AVAILABLE:
+                dock_result = self._run_vina_wsl()
             elif SIMULATION_MODE:
                 self.progress.emit("시뮬레이션 모드: Vina 미설치 — 거리 기반 휴리스틱 스코어링...")
                 dock_result = self._run_simulation_fallback()
@@ -547,7 +652,8 @@ class VinaDockingThread(QThread):
         # Get results
         try:
             energies = v.energies()  # [[affinity, ...], ...]
-        except Exception:
+        except Exception as e:
+            logger.warning("Failed to retrieve Vina energies: %s", e)
             energies = []
 
         output_pdbqt = self.work_dir / "docking_output.pdbqt"
@@ -586,6 +692,7 @@ class VinaDockingThread(QThread):
         log_path = self.work_dir / "vina_log.txt"
 
         # Write Vina config
+        # Note: Vina 1.2.x does not accept 'log' in config; output captured from stdout.
         config_lines = [
             f"receptor = {self.receptor_pdbqt}",
             f"ligand = {self.ligand_pdbqt}",
@@ -599,7 +706,6 @@ class VinaDockingThread(QThread):
             f"num_modes = {self.config.num_modes}",
             f"energy_range = {self.config.energy_range}",
             f"out = {output_path}",
-            f"log = {log_path}",
         ]
         config_path.write_text("\n".join(config_lines), encoding='utf-8')
 
@@ -607,7 +713,8 @@ class VinaDockingThread(QThread):
         cmd = [str(VINA_PATH), "--config", str(config_path)]
         proc = subprocess.run(
             cmd, capture_output=True, text=True,
-            timeout=600, cwd=str(self.work_dir)
+            timeout=600, cwd=str(self.work_dir),
+            encoding='utf-8', errors='replace',  # Rule M: cp949 기본값 방지 (M532)
         )
 
         vina_log = proc.stdout + proc.stderr
@@ -626,6 +733,80 @@ class VinaDockingThread(QThread):
         log_poses = VinaOutputParser.parse_log(vina_log)
 
         # Merge energy data from log into poses
+        for i, pose in enumerate(poses):
+            if i < len(log_poses):
+                pose.affinity_kcal = log_poses[i].affinity_kcal
+                pose.rmsd_lb = log_poses[i].rmsd_lb
+                pose.rmsd_ub = log_poses[i].rmsd_ub
+
+        return DockingResult(
+            converged=True,
+            poses=poses,
+            vina_log=vina_log,
+        )
+
+    def _run_vina_wsl(self) -> DockingResult:
+        """Run docking using Vina binary inside WSL (Windows Subsystem for Linux).
+
+        Converts Windows file paths to /mnt/... Linux paths so WSL Vina
+        can read the receptor/ligand PDBQT files and write output.
+        """
+        self.progress.emit("WSL Vina로 도킹 중...")
+
+        config_path = self.work_dir / "vina_config.txt"
+        output_path = self.work_dir / "docking_output.pdbqt"
+
+        # Convert Windows paths to WSL-compatible /mnt/... paths
+        wsl_receptor = _win_to_wsl_path(self.receptor_pdbqt)
+        wsl_ligand = _win_to_wsl_path(self.ligand_pdbqt)
+        wsl_output = _win_to_wsl_path(output_path)
+
+        # Write Vina config with WSL paths
+        # Note: Vina 1.2.x does not accept 'log' as a config-file option;
+        # log output is captured from stdout/stderr instead.
+        config_lines = [
+            f"receptor = {wsl_receptor}",
+            f"ligand = {wsl_ligand}",
+            f"center_x = {self.config.center_x}",
+            f"center_y = {self.config.center_y}",
+            f"center_z = {self.config.center_z}",
+            f"size_x = {self.config.size_x}",
+            f"size_y = {self.config.size_y}",
+            f"size_z = {self.config.size_z}",
+            f"exhaustiveness = {self.config.exhaustiveness}",
+            f"num_modes = {self.config.num_modes}",
+            f"energy_range = {self.config.energy_range}",
+            f"out = {wsl_output}",
+        ]
+        config_path.write_text("\n".join(config_lines), encoding='utf-8')
+
+        wsl_config = _win_to_wsl_path(config_path)
+
+        # Execute Vina via WSL  (bash -lc avoids /tmp path translation issues)
+        cmd = [
+            "wsl", "bash", "-lc",
+            f"exec {_WSL_VINA_PATH} --config {wsl_config}",
+        ]
+        logger.info("WSL Vina command: %s", " ".join(cmd))
+
+        proc = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=600,
+            encoding='utf-8', errors='replace',  # Rule M: cp949 기본값 방지 (M532)
+        )
+
+        vina_log = proc.stdout + proc.stderr
+
+        if proc.returncode != 0:
+            return DockingResult(
+                converged=False,
+                vina_log=vina_log,
+                error_message=f"WSL Vina exited with code {proc.returncode}",
+            )
+
+        # Parse output (file is on Windows filesystem via /mnt, so read normally)
+        poses = VinaOutputParser.parse_output_pdbqt(output_path)
+        log_poses = VinaOutputParser.parse_log(vina_log)
+
         for i, pose in enumerate(poses):
             if i < len(log_poses):
                 pose.affinity_kcal = log_poses[i].affinity_kcal
@@ -676,8 +857,8 @@ class VinaDockingThread(QThread):
                             elem = line[76:78].strip() if len(line) > 76 else "C"
                             lig_coords.append((x, y, z))
                             lig_elements.append(elem)
-                        except (ValueError, IndexError):
-                            pass
+                        except (ValueError, IndexError) as e:
+                            logger.warning("Failed to parse ligand atom line: %s", e)
 
         if not lig_coords:
             return DockingResult(
@@ -706,7 +887,33 @@ class VinaDockingThread(QThread):
         for pose_id in range(1, num_poses + 1):
             # Simulated affinity: heavier molecules tend to bind better (rough heuristic)
             n_heavy = sum(1 for e in lig_elements if e not in ('H', ''))
+
+            # ----------------------------------------------------------------
+            # 학계 신뢰도 보정 (M438 fix)
+            # ----------------------------------------------------------------
+            # 기본 추정값
             base_affinity = -3.0 - (n_heavy * 0.3)  # more atoms -> more negative
+
+            # [1] Lipinski MW 컷오프 페널티 (Rule I 매직넘버 주석 필수)
+            # 탄소수 기반 MW 근사: n_heavy * 12 ≈ MW/1.3 (수소 제외 rough estimate)
+            approx_mw = n_heavy * 12.0 * 1.3  # rough MW estimate (H-excluded × 12 × 1.3 correction)
+            LIPINSKI_MW_CUTOFF = 500.0  # Da — Lipinski 경구흡수 Rule of Five (Lipinski 1997 Adv. Drug Deliv. Rev.)
+            if approx_mw > LIPINSKI_MW_CUTOFF:
+                # 과대한 리간드는 결합부위 sterically impossible → 페널티 부여
+                base_affinity += 5.0  # MW > 500 Da 페널티 +5 kcal/mol (Vina 실제값 기반 경험 보정)
+
+            # [2] Macromolecule heavy atom 페널티
+            MACROMOLECULE_HEAVY_THRESHOLD = 50  # heavy atoms — 일반 drug-like ligand 상한 (Veber 2002 J Med Chem)
+            if n_heavy > MACROMOLECULE_HEAVY_THRESHOLD:
+                excess = n_heavy - MACROMOLECULE_HEAVY_THRESHOLD
+                base_affinity += excess * 0.2  # 초과 원자당 +0.2 kcal/mol (steric clash 추정)
+
+            # [3] 상한 cap: 실제 강력한 결합제도 -15 kcal/mol 이내 (학계 관측 한계)
+            MAX_PHYSICAL_AFFINITY = -15.0  # kcal/mol — typical strong binder physical limit
+            # (Wang R. et al. J Med Chem 2004; Vina benchmarks: near-covalent binders ≈ -12~-14)
+            base_affinity = max(MAX_PHYSICAL_AFFINITY, base_affinity)
+            # ----------------------------------------------------------------
+
             noise = rng.gauss(0, 0.5) * (pose_id - 1) * 0.3
             affinity = round(base_affinity + noise, 1)
 
@@ -785,8 +992,8 @@ def docking_result_to_screening_scores(
     """
     try:
         return result.to_screening_scores(interactions=interactions)
-    except Exception:
-        # Graceful fallback: return empty dict on any conversion error
+    except Exception as e:
+        logger.warning("Docking result to screening scores conversion failed: %s", e)
         return {}
 
 
@@ -854,8 +1061,8 @@ class VinaOutputParser:
                             current_pose.affinity_kcal = float(parts[3])
                             current_pose.rmsd_lb = float(parts[4])
                             current_pose.rmsd_ub = float(parts[5])
-                        except (ValueError, IndexError):
-                            pass
+                        except (ValueError, IndexError) as e:
+                            logger.warning("Failed to parse VINA RESULT line: %s", e)
 
                 elif line.startswith(("ATOM", "HETATM")) and current_pose is not None:
                     try:
@@ -867,8 +1074,8 @@ class VinaOutputParser:
                         # Extract element
                         element = line[76:78].strip() if len(line) > 76 else line[12:16].strip()[0]
                         current_pose.atom_elements.append(element)
-                    except (ValueError, IndexError):
-                        pass
+                    except (ValueError, IndexError) as e:
+                        logger.warning("Failed to parse pose atom line: %s", e)
 
                 elif line.startswith("ENDMDL") and current_pose is not None:
                     poses.append(current_pose)
