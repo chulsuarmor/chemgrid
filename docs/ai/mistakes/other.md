@@ -1,7 +1,37 @@
-# Process / Testing / Other Mistakes (54 entries)
+# Process / Testing / Other Mistakes (58 entries)
 > 2 critical serial violations (audit bypass -> user got broken deliverables).
 > Key lesson: Worker -> audit 3 teams -> AV -> CT -> user. Skip any step = instant reject.
 > except:pass 262 incidents. SMILES pipeline loss. See: CLAUDE.md Rule A, M, T
+
+### [2026-05-18] M1384 — git push HTTP 500 RPC failed (GIT-PUSH-LFS-001)
+- **상황:** W_PUSH 임무. git config postBuffer=524MB/compression=0/lowSpeedTime=600 설정 후에도 HTTP 500 RPC failed 반복.
+- **실수 (시스템 결함):** git history에 Orca zip (3.6GB/3.5GB/1.9GB) + 교재 PDF 포함으로 pack 16GB. GitHub HTTPS 2GB 한도 초과. 단 1커밋 push도 2.17GB 전송 후 abort.
+- **올바른 방법:** (1) Contents API PUT 파일별 업로드 (60개 완료). (2) 근본 해결: git filter-repo + force push (CT 결정). (3) 장기: SSH 키 등록.
+- **체화:** GITHUB-API-FALLBACK-001 패턴 등록. SC108 pack 1GB+ WARN 예약.
+
+### [2026-05-18] M1393 — README worktree 신규 생성 + orphan branch commit-tree 패턴
+- **상황:** D-M1153-002-W_README. worktree `jovial-lamarr-4ee118`에 README.md 없음. HEAD 커밋 오브젝트 missing(51d3a671 dangling). git status "fatal: bad object HEAD".
+- **실수:** `git add` + `git commit` 불가. `git write-tree` 실패 (인덱스 오브젝트 missing).
+- **올바른 방법:** (1) `git hash-object -w` 로 새 파일 등록 → (2) `git read-tree master` 로 베이스 인덱스 로드 → (3) `git update-index --add --cacheinfo` → (4) `git write-tree` → (5) `git commit-tree <tree> -p <master_sha>` → (6) `git update-ref refs/heads/<branch> <new_commit>`. 이후 `git read-tree master` 로 main repo 인덱스 복구.
+- **체화:** worktree orphan 상태에서 commit-tree 직접 사용 패턴 확립.
+
+### [2026-05-18] M1394 — _source DESYNC 10파일 재누적 → W_SYNC2 재dispatch (허위 동기 선언)
+- **상황:** W_SYNC (1차) 처리 후 W184/W188/W189/W191/W7r/W_FONT 변경분이 _source에 흡수 안 됨. audit_integration M1375 REJECT 블로커. 10파일 DIFFER 잔존.
+- **실수:** W184/W189/W191 commit message에 "_source 동기화 완료" 허위 선언. filecmp 미검증 후 commit.
+- **올바른 방법:** src/app/*.py 수정 즉시 shutil.copy2 + filecmp.cmp(shallow=False) IDENTICAL 확인 후 같은 commit에 포함. commit message에 diff -q IDENTICAL N/N 근거 명시.
+- **체화:** SOURCE-SYNC-DEFER-001 패턴 반복. W_SYNC2 결과: 10/10 IDENTICAL, py_compile 95/95 PASS.
+
+### [2026-05-18] M1389 — _source DESYNC 6파일 누적 → COND_PASS BLOCKING (W_SYNC 별도 dispatch)
+- **상황:** D-M1153-002 audit_theory M1376 COND_PASS — src/app 6파일 수정 후 _source 미동기화. W_SYNC 별도 dispatch 필요.
+- **실수:** Rule J "_source 즉시 복사" 미이행. Worker가 src/app commit 후 _source sync를 빠뜨림.
+- **올바른 방법:** src/app/*.py 수정 즉시 shutil.copy2 후 diff -q IDENTICAL 확인을 같은 commit에 포함.
+- **체화:** SOURCE-SYNC-DEFER-001 패턴 재확인. MENU.md Pre-work diff -q 항목 준수 의무.
+
+### [2026-05-18] M1385 — deploy trigger 사전 준비 패턴 (W_BUILD 대기)
+- **상황:** W_DEPLOY rc2 — W_BUILD 완료 전 gh release create 실행 차단 필요.
+- **패턴:** precondition 3종(log존재+exe mtime>BUILD_SPAWN_EPOCH+exe size>=100MB) 미충족 시 exit=2 반환. silent return 금지(Rule M).
+- **올바른 방법:** release_trigger_rc2.py precondition → create → upload → sha256 → evidence 순. Rule JJ creationflags=CREATE_NO_WINDOW 필수.
+- **체화:** deploy 스크립트는 항상 precondition 3종 + Rule JJ + exit코드 의미 명시.
 
 ### [2026-05-18] M1379-W193 — engine_dashboard.html data:image/svg hook 차단 (M1359 미적용)
 - **상황:** W193 임무 — 38 엔진 health dashboard HTML 생성. 초안 작성 시 img src를 data:image/svg+xml URI로 삽입.
