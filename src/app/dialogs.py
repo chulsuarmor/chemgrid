@@ -2,6 +2,8 @@
 dialogs.py — ChemGrid 대화상자 모듈
 PeriodicTableDialog, PenSettingsBox, ComparisonDialog, HistoryBrowserDialog, BatchProcessorDialog
 """
+import logging
+
 from PyQt6.QtWidgets import (QDialog, QGridLayout, QPushButton, QSlider,
                              QVBoxLayout, QHBoxLayout, QLabel, QFrame,
                              QMessageBox, QTextEdit, QListWidget, QProgressBar,
@@ -10,6 +12,8 @@ from PyQt6.QtWidgets import (QDialog, QGridLayout, QPushButton, QSlider,
 from PyQt6.QtCore import Qt
 
 from ui_utils import VERSION
+
+logger = logging.getLogger(__name__)
 
 
 # ==========================================
@@ -136,33 +140,56 @@ class ComparisonDialog(QDialog):
         if not mol2_text:
             QMessageBox.warning(self, "알림", "비교 대상 분자를 입력하세요.")
             return
-        
+
         try:
             # 비교 수행
             result = self.comparator.compare_molecules(self.mol1_smiles, mol2_text)
-            
+
+            # N코드: result 타입 가드 — compare_molecules가 None/비정상 반환 방어
+            if result is None:
+                logger.warning("compare_molecules returned None for mol1=%s, mol2=%s",
+                               self.mol1_smiles, mol2_text)
+                QMessageBox.warning(self, "알림", "비교 결과를 생성하지 못했습니다.")
+                return
+
             # 요약 결과 표시
-            summary = f"🔬 분자 비교 결과\n\n"
-            summary += f"유사도 (Tanimoto): {result.tanimoto_similarity:.1%}\n"
-            summary += f"동일 분자: {'✓ Yes' if result.is_identical else '✗ No'}\n"
-            if result.common_substructure:
-                summary += f"공통 부분구조: {result.common_substructure}\n"
-            
+            tanimoto = getattr(result, 'tanimoto_similarity', None)
+            if not isinstance(tanimoto, (int, float)):
+                logger.warning("tanimoto_similarity not numeric: %s", type(tanimoto).__name__)
+                tanimoto = 0.0
+
+            is_identical = getattr(result, 'is_identical', False)
+            common_sub = getattr(result, 'common_substructure', '')
+
+            summary = f"분자 비교 결과\n\n"
+            summary += f"유사도 (Tanimoto): {tanimoto:.1%}\n"
+            summary += f"동일 분자: {'Yes' if is_identical else 'No'}\n"
+            if common_sub:
+                summary += f"공통 부분구조: {common_sub}\n"
+
             self.summary_text.setText(summary)
-            
+
             # 상세 정보 표시
-            detail = f"분자 1 SMILES: {result.mol1_smiles}\n\n"
-            detail += f"분자 2 SMILES: {result.mol2_smiles}\n\n"
+            mol1_smiles = getattr(result, 'mol1_smiles', self.mol1_smiles)
+            mol2_smiles = getattr(result, 'mol2_smiles', mol2_text)
+            differences = getattr(result, 'differences', {})
+
+            detail = f"분자 1 SMILES: {mol1_smiles}\n\n"
+            detail += f"분자 2 SMILES: {mol2_smiles}\n\n"
             detail += f"차이점:\n"
-            if isinstance(result.differences, dict):
-                for key, value in result.differences.items():
-                    detail += f"  • {key}: {value}\n"
+            if isinstance(differences, dict):
+                for key, value in differences.items():
+                    detail += f"  - {key}: {value}\n"
+            elif isinstance(differences, (list, tuple)):
+                for item in differences:
+                    detail += f"  - {item}\n"
             else:
-                detail += str(result.differences)
-            
+                detail += str(differences)
+
             self.detail_text.setText(detail)
-            
+
         except Exception as e:
+            logger.warning("분자 비교 중 오류 발생: %s", e)
             QMessageBox.critical(self, "오류", f"비교 중 오류 발생: {str(e)}")
 
 
@@ -237,18 +264,42 @@ class HistoryBrowserDialog(QDialog):
         """히스토리 새로고침"""
         try:
             entries = self.history_manager.get_all_entries() if hasattr(self.history_manager, 'get_all_entries') else []
-            self.filtered_entries = entries
-            self.history_table.setRowCount(len(entries))
-            
-            for i, entry in enumerate(entries):
-                self.history_table.setItem(i, 0, QTableWidgetItem(str(i+1)))
-                self.history_table.setItem(i, 1, QTableWidgetItem(getattr(entry, 'timestamp', 'N/A')[:19]))
-                self.history_table.setItem(i, 2, QTableWidgetItem(getattr(entry, 'formula', 'N/A')))
-                self.history_table.setItem(i, 3, QTableWidgetItem(getattr(entry, 'method', 'N/A')))
-                self.history_table.setItem(i, 4, QTableWidgetItem(f"{round(getattr(entry, 'energy', 0), 4)}"))
-                self.history_table.setItem(i, 5, QTableWidgetItem(getattr(entry, 'convergence_status', 'N/A')))
-                self.history_table.setItem(i, 6, QTableWidgetItem(f"{round(getattr(entry, 'computation_time_sec', 0), 2)}"))
+            # N코드: entries 타입 가드
+            if not isinstance(entries, (list, tuple)):
+                logger.warning("get_all_entries returned non-list: type=%s", type(entries).__name__)
+                entries = []
+            self.filtered_entries = list(entries)
+            self.history_table.setRowCount(len(self.filtered_entries))
+
+            for i, entry in enumerate(self.filtered_entries):
+                ts_raw = getattr(entry, 'timestamp', 'N/A')
+                ts_str = str(ts_raw)[:19] if ts_raw is not None else 'N/A'
+                formula_raw = getattr(entry, 'formula', 'N/A')
+                formula_str = str(formula_raw) if formula_raw is not None else 'N/A'
+                method_raw = getattr(entry, 'method', 'N/A')
+                method_str = str(method_raw) if method_raw is not None else 'N/A'
+                energy_raw = getattr(entry, 'energy', 0)
+                try:
+                    energy_val = round(float(energy_raw), 4)
+                except (TypeError, ValueError):
+                    energy_val = 0.0
+                status_raw = getattr(entry, 'convergence_status', 'N/A')
+                status_str = str(status_raw) if status_raw is not None else 'N/A'
+                time_raw = getattr(entry, 'computation_time_sec', 0)
+                try:
+                    time_val = round(float(time_raw), 2)
+                except (TypeError, ValueError):
+                    time_val = 0.0
+
+                self.history_table.setItem(i, 0, QTableWidgetItem(str(i + 1)))
+                self.history_table.setItem(i, 1, QTableWidgetItem(ts_str))
+                self.history_table.setItem(i, 2, QTableWidgetItem(formula_str))
+                self.history_table.setItem(i, 3, QTableWidgetItem(method_str))
+                self.history_table.setItem(i, 4, QTableWidgetItem(str(energy_val)))
+                self.history_table.setItem(i, 5, QTableWidgetItem(status_str))
+                self.history_table.setItem(i, 6, QTableWidgetItem(str(time_val)))
         except Exception as e:
+            logger.warning("히스토리 로드 실패: %s", e)
             QMessageBox.warning(self, "오류", f"히스토리 로드 실패: {str(e)}")
     
     def apply_filter(self):
@@ -257,30 +308,52 @@ class HistoryBrowserDialog(QDialog):
         if not query:
             self.refresh_history()
             return
-        
+
         try:
             filtered_entries = []
             for entry in self.filtered_entries:
-                formula = getattr(entry, 'formula', '').lower()
-                method = getattr(entry, 'method', '').lower()
-                timestamp = getattr(entry, 'timestamp', '').lower()
-                
+                # N코드: getattr 결과 str 변환 보장
+                formula = str(getattr(entry, 'formula', '') or '').lower()
+                method = str(getattr(entry, 'method', '') or '').lower()
+                timestamp = str(getattr(entry, 'timestamp', '') or '').lower()
+
                 if query in formula or query in method or query in timestamp:
                     filtered_entries.append(entry)
-            
+
             # 필터된 결과 표시
             self.history_table.setRowCount(len(filtered_entries))
             for i, entry in enumerate(filtered_entries):
-                self.history_table.setItem(i, 0, QTableWidgetItem(str(i+1)))
-                self.history_table.setItem(i, 1, QTableWidgetItem(getattr(entry, 'timestamp', 'N/A')[:19]))
-                self.history_table.setItem(i, 2, QTableWidgetItem(getattr(entry, 'formula', 'N/A')))
-                self.history_table.setItem(i, 3, QTableWidgetItem(getattr(entry, 'method', 'N/A')))
-                self.history_table.setItem(i, 4, QTableWidgetItem(f"{round(getattr(entry, 'energy', 0), 4)}"))
-                self.history_table.setItem(i, 5, QTableWidgetItem(getattr(entry, 'convergence_status', 'N/A')))
-                self.history_table.setItem(i, 6, QTableWidgetItem(f"{round(getattr(entry, 'computation_time_sec', 0), 2)}"))
-            
+                ts_raw = getattr(entry, 'timestamp', 'N/A')
+                ts_str = str(ts_raw)[:19] if ts_raw is not None else 'N/A'
+                formula_raw = getattr(entry, 'formula', 'N/A')
+                formula_str = str(formula_raw) if formula_raw is not None else 'N/A'
+                method_raw = getattr(entry, 'method', 'N/A')
+                method_str = str(method_raw) if method_raw is not None else 'N/A'
+                energy_raw = getattr(entry, 'energy', 0)
+                try:
+                    energy_val = round(float(energy_raw), 4)
+                except (TypeError, ValueError):
+                    energy_val = 0.0
+                status_raw = getattr(entry, 'convergence_status', 'N/A')
+                status_str = str(status_raw) if status_raw is not None else 'N/A'
+                time_raw = getattr(entry, 'computation_time_sec', 0)
+                try:
+                    time_val = round(float(time_raw), 2)
+                except (TypeError, ValueError):
+                    time_val = 0.0
+
+                self.history_table.setItem(i, 0, QTableWidgetItem(str(i + 1)))
+                self.history_table.setItem(i, 1, QTableWidgetItem(ts_str))
+                self.history_table.setItem(i, 2, QTableWidgetItem(formula_str))
+                self.history_table.setItem(i, 3, QTableWidgetItem(method_str))
+                self.history_table.setItem(i, 4, QTableWidgetItem(str(energy_val)))
+                self.history_table.setItem(i, 5, QTableWidgetItem(status_str))
+                self.history_table.setItem(i, 6, QTableWidgetItem(str(time_val)))
+
+            logger.info("히스토리 검색 완료: %d건 일치", len(filtered_entries))
             QMessageBox.information(self, "검색 완료", f"{len(filtered_entries)}개 항목을 찾았습니다.")
         except Exception as e:
+            logger.warning("히스토리 검색 중 오류: %s", e)
             QMessageBox.warning(self, "오류", f"검색 중 오류 발생: {str(e)}")
     
     def show_details(self):
@@ -288,24 +361,45 @@ class HistoryBrowserDialog(QDialog):
         row = self.history_table.currentRow()
         if row < 0:
             return
-        
+
+        # N코드: 인덱스 범위 방어
+        if row >= len(self.filtered_entries):
+            logger.warning("show_details: row %d out of range (entries=%d)",
+                           row, len(self.filtered_entries))
+            self.detail_text.setText("선택된 항목의 데이터를 찾을 수 없습니다.")
+            return
+
         try:
             entry = self.filtered_entries[row]
-            detail = f"🔬 계산 상세 정보\n\n"
-            detail += f"ID: {getattr(entry, 'id', 'N/A')}\n"
-            detail += f"SMILES: {getattr(entry, 'smiles', 'N/A')}\n"
-            detail += f"분자식: {getattr(entry, 'formula', 'N/A')}\n"
-            detail += f"방법: {getattr(entry, 'method', 'N/A')}\n"
-            detail += f"기저 집합: {getattr(entry, 'basis_set', 'N/A')}\n"
-            detail += f"에너지: {getattr(entry, 'energy', 0)} Ha\n"
-            detail += f"HOMO-LUMO Gap: {getattr(entry, 'homo_lumo_gap', 'N/A')} eV\n"
-            detail += f"쌍극자 모멘트: {getattr(entry, 'dipole_moment', 'N/A')} D\n"
-            detail += f"계산 시간: {getattr(entry, 'computation_time_sec', 0)}초\n"
-            detail += f"상태: {getattr(entry, 'convergence_status', 'N/A')}\n"
-            detail += f"메모: {getattr(entry, 'notes', 'N/A')}\n"
-            
+
+            # N코드: 각 필드를 안전하게 str 변환
+            def _safe_str(val, default='N/A'):
+                if val is None:
+                    return default
+                return str(val)
+
+            def _safe_num(val, default=0, precision=4):
+                try:
+                    return round(float(val), precision)
+                except (TypeError, ValueError):
+                    return default
+
+            detail = "계산 상세 정보\n\n"
+            detail += f"ID: {_safe_str(getattr(entry, 'id', 'N/A'))}\n"
+            detail += f"SMILES: {_safe_str(getattr(entry, 'smiles', 'N/A'))}\n"
+            detail += f"분자식: {_safe_str(getattr(entry, 'formula', 'N/A'))}\n"
+            detail += f"방법: {_safe_str(getattr(entry, 'method', 'N/A'))}\n"
+            detail += f"기저 집합: {_safe_str(getattr(entry, 'basis_set', 'N/A'))}\n"
+            detail += f"에너지: {_safe_num(getattr(entry, 'energy', 0))} Ha\n"
+            detail += f"HOMO-LUMO Gap: {_safe_str(getattr(entry, 'homo_lumo_gap', 'N/A'))} eV\n"
+            detail += f"쌍극자 모멘트: {_safe_str(getattr(entry, 'dipole_moment', 'N/A'))} D\n"
+            detail += f"계산 시간: {_safe_num(getattr(entry, 'computation_time_sec', 0), precision=2)}초\n"
+            detail += f"상태: {_safe_str(getattr(entry, 'convergence_status', 'N/A'))}\n"
+            detail += f"메모: {_safe_str(getattr(entry, 'notes', 'N/A'))}\n"
+
             self.detail_text.setText(detail)
         except Exception as e:
+            logger.warning("계산 상세 정보 로드 오류: %s", e)
             self.detail_text.setText(f"정보 로드 중 오류 발생: {str(e)}")
 
 
@@ -366,39 +460,58 @@ class BatchProcessorDialog(QDialog):
     
     def start_batch_processing(self):
         """배치 처리 시작"""
-        smiles_list = [s.strip() for s in self.smiles_input.toPlainText().strip().split('\n') if s.strip()]
+        raw_text = self.smiles_input.toPlainText()
+        if not isinstance(raw_text, str):
+            logger.warning("smiles_input returned non-str: type=%s", type(raw_text).__name__)
+            raw_text = str(raw_text) if raw_text is not None else ''
+        smiles_list = [s.strip() for s in raw_text.strip().split('\n') if s.strip()]
         if not smiles_list:
             QMessageBox.warning(self, "알림", "처리할 분자를 입력하세요.")
             return
-        
+
         try:
             # 배치 작업 추가
             job_ids = []
             for idx, smiles in enumerate(smiles_list):
                 if hasattr(self.batch_processor, 'add_job'):
                     job_id = self.batch_processor.add_job(smiles)
-                    job_ids.append(job_id)
-                    
+                    # N코드: job_id 결과 확인
+                    if job_id is None:
+                        logger.warning("add_job returned None for SMILES: %s", smiles[:60])
+                    else:
+                        job_ids.append(job_id)
+
                     # 진행률 업데이트
                     progress = int((idx + 1) / len(smiles_list) * 100)
                     self.progress_bar.setValue(progress)
                     self.progress_label.setText(f"{idx + 1}/{len(smiles_list)} 분자 처리 중... ({progress}%)")
-                    
+
                     # 결과 목록에 추가
-                    self.result_list.addItem(f"✓ {smiles[:40]}... (처리됨)")
-                    
+                    display_smiles = smiles[:40] if len(smiles) > 40 else smiles
+                    self.result_list.addItem(f"[OK] {display_smiles} (처리됨)")
+
                     # UI 업데이트
                     QApplication.processEvents()
-            
+                else:
+                    logger.warning("batch_processor에 add_job 메서드 없음")
+
             # 처리 완료
             self.progress_bar.setValue(100)
             self.progress_label.setText(f"처리 완료: {len(job_ids)}개 분자")
+            logger.info("배치 처리 완료: %d/%d 분자", len(job_ids), len(smiles_list))
             QMessageBox.information(self, "성공", f"{len(job_ids)}개 분자의 배치 처리가 완료되었습니다.")
         except Exception as e:
+            logger.warning("배치 처리 중 오류: %s", e)
             QMessageBox.critical(self, "오류", f"배치 처리 중 오류 발생: {str(e)}")
     
     def cancel_batch_processing(self):
         """배치 처리 취소"""
-        self.batch_processor.cancel_all()
+        if hasattr(self.batch_processor, 'cancel_all'):
+            try:
+                self.batch_processor.cancel_all()
+            except Exception as e:
+                logger.warning("배치 처리 취소 중 오류: %s", e)
+        else:
+            logger.warning("batch_processor에 cancel_all 메서드 없음")
         self.progress_label.setText("취소됨")
         self.progress_bar.setValue(0)
