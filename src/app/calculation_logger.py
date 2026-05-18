@@ -325,7 +325,7 @@ class CalculationLogger:
             start = datetime.fromisoformat(entry.started_time)
             finish = datetime.fromisoformat(entry.finished_time)
             return (finish - start).total_seconds()
-        except:
+        except (ValueError, TypeError):
             return 0.0
     
     @staticmethod
