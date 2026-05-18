@@ -4,6 +4,10 @@ ChemGrid Pro Error Handling System
 - 모든 오류를 중앙에서 처리
 - 사용자 친화적 메시지 제공
 - 로깅 및 추적 기능
+
+v3.10 (2026-04-10): M/N 코드 적용
+  - isinstance 타입 가드 추가 (외부 입력 방어)
+  - Silent failure 금지 (모든 경로에 logger 메시지)
 """
 
 import logging
@@ -14,6 +18,8 @@ from typing import Optional
 
 from PyQt6.QtWidgets import QMessageBox
 from PyQt6.QtCore import pyqtSignal, QObject, Qt
+
+logger = logging.getLogger(__name__)
 
 
 class ErrorHandler(QObject):
@@ -76,7 +82,7 @@ class ErrorHandler(QObject):
     ):
         """
         오류 처리
-        
+
         Args:
             error_type: "ORCA", "PHASE_B", "PHASE_C", "PHASE_D", "SMILES", "IMPORT" 등
             exception: Exception 객체 (선택사항)
@@ -84,34 +90,58 @@ class ErrorHandler(QObject):
             show_dialog: 사용자 팝업 표시 여부
             severity: "ERROR", "WARNING", "CRITICAL"
         """
-        
+        # N 코드: isinstance 타입 가드 — 외부에서 잘못된 타입이 올 수 있음
+        if not isinstance(error_type, str):
+            logger.warning("handle_error: error_type이 str이 아님 (type=%s), str로 변환", type(error_type).__name__)
+            error_type = str(error_type)
+        if exception is not None and not isinstance(exception, BaseException):
+            logger.warning("handle_error: exception이 BaseException이 아님 (type=%s)", type(exception).__name__)
+            exception = None
+        if not isinstance(context, str):
+            logger.warning("handle_error: context가 str이 아님 (type=%s), str로 변환", type(context).__name__)
+            context = str(context) if context is not None else ""
+        if not isinstance(severity, str):
+            logger.warning("handle_error: severity가 str이 아님 (type=%s), 기본값 'ERROR' 사용", type(severity).__name__)
+            severity = "ERROR"
+
         # 로깅
         if exception:
             error_msg = f"[{error_type}] {context}\n{traceback.format_exc()}"
         else:
             error_msg = f"[{error_type}] {context}"
-        
+
         if severity == "ERROR":
             self._logger.error(error_msg)
         elif severity == "WARNING":
             self._logger.warning(error_msg)
         elif severity == "CRITICAL":
             self._logger.critical(error_msg)
-        
+        else:
+            # M 코드: 알 수 없는 severity도 silent failure 금지
+            self._logger.warning("Unknown severity '%s', treating as ERROR: %s", severity, error_msg)
+            self._logger.error(error_msg)
+
         # 사용자 메시지 생성
         user_msg = self._get_user_friendly_message(error_type, exception, context)
-        
+
         # 신호 발출
         self.error_occurred.emit(error_type, user_msg)
-        
+
         # 팝업 표시
         if show_dialog:
-            icon_type = {
+            icon_map = {
                 "ERROR": QMessageBox.Icon.Warning,
                 "WARNING": QMessageBox.Icon.Information,
                 "CRITICAL": QMessageBox.Icon.Critical
-            }.get(severity, QMessageBox.Icon.Warning)
-            
+            }
+            # Rule N: isinstance guard for icon_map
+            if not isinstance(icon_map, dict): icon_map = {}
+            icon_type = icon_map.get(severity)
+            if icon_type is None:
+                # M 코드: .get() 실패 시 silent fallback 금지 — 로깅 필수
+                logger.warning("icon_map에서 severity '%s'를 찾지 못함, Warning 아이콘 사용", severity)
+                icon_type = QMessageBox.Icon.Warning
+
             msg_box = QMessageBox()
             msg_box.setIcon(icon_type)
             msg_box.setWindowTitle(f"오류: {error_type}")
@@ -127,7 +157,12 @@ class ErrorHandler(QObject):
         context: str
     ) -> str:
         """오류 타입별 사용자 친화적 메시지 생성"""
-        
+        # N 코드: 입력 타입 방어
+        if not isinstance(error_type, str):
+            error_type = str(error_type) if error_type is not None else "UNKNOWN"
+        if not isinstance(context, str):
+            context = str(context) if context is not None else ""
+
         messages = {
             "ORCA": {
                 "default": """
@@ -309,27 +344,52 @@ PDF 내보내기 중 오류가 발생했습니다.
         }
         
         # 오류 타입별 메시지 선택
-        type_messages = messages.get(error_type, {})
-        
+        # Rule N: isinstance guard for messages
+        if not isinstance(messages, dict): messages = {}
+        type_messages = messages.get(error_type)
+        # N 코드: .get() 결과 타입 확인
+        if type_messages is None:
+            logger.warning("알 수 없는 오류 타입 '%s', 기본 메시지 사용", error_type)
+            type_messages = {}
+        if not isinstance(type_messages, dict):
+            logger.warning("type_messages가 dict가 아님 (type=%s), 빈 dict로 대체", type(type_messages).__name__)
+            type_messages = {}
+
         # 특정 예외 타입별 메시지
-        if exception:
-            exc_type = type(exception).__name__
+        if exception is not None and isinstance(exception, BaseException):
             exc_str = str(exception).lower()
-            
+
             # 키워드 기반 세부 메시지 선택
             if "timeout" in exc_str:
-                return type_messages.get("TimeoutExpired", type_messages.get("default", "오류가 발생했습니다."))
+                msg = type_messages.get("TimeoutExpired", type_messages.get("default", "오류가 발생했습니다."))
+                logger.debug("예외 키워드 'timeout' 매칭, 메시지 키: TimeoutExpired")
+                return msg
             elif "convergence" in exc_str or "converged" in exc_str:
-                return type_messages.get("convergence", type_messages.get("default", "오류가 발생했습니다."))
+                msg = type_messages.get("convergence", type_messages.get("default", "오류가 발생했습니다."))
+                logger.debug("예외 키워드 'convergence' 매칭")
+                return msg
             elif "reportlab" in exc_str:
-                return type_messages.get("pdf_reportlab", type_messages.get("default", "오류가 발생했습니다."))
+                msg = type_messages.get("pdf_reportlab", type_messages.get("default", "오류가 발생했습니다."))
+                logger.debug("예외 키워드 'reportlab' 매칭")
+                return msg
             elif ".chem" in exc_str and "save" in exc_str:
-                return type_messages.get("chem_save", type_messages.get("default", "오류가 발생했습니다."))
+                # Rule N: isinstance guard for type_messages
+                if not isinstance(type_messages, dict): type_messages = {}
+                msg = type_messages.get("chem_save", type_messages.get("default", "오류가 발생했습니다."))
+                logger.debug("예외 키워드 '.chem save' 매칭")
+                return msg
             elif ".chem" in exc_str and "load" in exc_str:
-                return type_messages.get("chem_load", type_messages.get("default", "오류가 발생했습니다."))
-        
+                msg = type_messages.get("chem_load", type_messages.get("default", "오류가 발생했습니다."))
+                logger.debug("예외 키워드 '.chem load' 매칭")
+                return msg
+
         # 기본 메시지
-        return type_messages.get("default", f"오류가 발생했습니다:\n{context}")
+        default_msg = type_messages.get("default")
+        if default_msg is None:
+            # M 코드: 기본 메시지도 없는 경우 silent return 금지
+            logger.warning("error_type '%s'에 대한 기본 메시지 없음, context 기반 메시지 생성", error_type)
+            return f"오류가 발생했습니다:\n{context}"
+        return default_msg
     
     def info(self, message: str, context: str = ""):
         """정보 메시지 로깅"""
@@ -347,17 +407,26 @@ PDF 내보내기 중 오류가 발생했습니다.
         self._logger.debug(msg)
 
 
-# 편의 함수
+# 편의 함수 — N 코드: 외부 호출부에서 잘못된 타입이 올 수 있으므로 방어
 def error(error_type: str, exception: Exception = None, context: str = "", show_dialog: bool = True):
     """전역 오류 처리 함수"""
+    if not isinstance(error_type, str):
+        logger.warning("error(): error_type이 str이 아님 (type=%s)", type(error_type).__name__)
+        error_type = str(error_type) if error_type is not None else "UNKNOWN"
     ErrorHandler.instance().handle_error(error_type, exception, context, show_dialog, "ERROR")
 
 
 def warning(error_type: str, exception: Exception = None, context: str = "", show_dialog: bool = True):
     """전역 경고 처리 함수"""
+    if not isinstance(error_type, str):
+        logger.warning("warning(): error_type이 str이 아님 (type=%s)", type(error_type).__name__)
+        error_type = str(error_type) if error_type is not None else "UNKNOWN"
     ErrorHandler.instance().handle_error(error_type, exception, context, show_dialog, "WARNING")
 
 
 def critical(error_type: str, exception: Exception = None, context: str = "", show_dialog: bool = True):
     """전역 심각한 오류 처리 함수"""
+    if not isinstance(error_type, str):
+        logger.warning("critical(): error_type이 str이 아님 (type=%s)", type(error_type).__name__)
+        error_type = str(error_type) if error_type is not None else "UNKNOWN"
     ErrorHandler.instance().handle_error(error_type, exception, context, show_dialog, "CRITICAL")
