@@ -7,13 +7,16 @@ ChemGrid: ADMET (Absorption, Distribution, Metabolism, Excretion, Toxicity) Pred
 - Comprehensive ADMET profile from SMILES input
 """
 
+import logging
 import math
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 
+logger = logging.getLogger(__name__)
+
 try:
     from rdkit import Chem
-    from rdkit.Chem import Descriptors, Lipinski, Crippen, rdMolDescriptors
+    from rdkit.Chem import Descriptors, Lipinski, Crippen, rdMolDescriptors, QED
     RDKIT_AVAILABLE = True
 except ImportError:
     RDKIT_AVAILABLE = False
@@ -79,7 +82,8 @@ class ADMETProfile:
     n_heavy_atoms: int = 0
     molar_refractivity: float = 0.0
     # Drug-likeness
-    drug_likeness_score: float = 0.0  # 0-1
+    qed_score: float = 0.0           # RDKit QED (Quantitative Estimate of Drug-likeness), 0-1
+    drug_likeness_score: float = 0.0  # 0-1 composite score
     oral_bioavailability: str = ""    # "likely", "moderate", "unlikely"
     # Summary
     overall_assessment: str = ""
@@ -91,7 +95,7 @@ class ADMETProfile:
 # LIPINSKI RULE OF FIVE
 # ============================================================================
 
-def evaluate_lipinski(mol) -> LipinskiResult:
+def evaluate_lipinski(mol) -> Optional[LipinskiResult]:
     """
     Evaluate Lipinski's Rule of Five for oral bioavailability.
 
@@ -103,6 +107,10 @@ def evaluate_lipinski(mol) -> LipinskiResult:
 
     A compound is "drug-like" if it violates at most 1 rule.
     """
+    if mol is None:
+        logger.warning("evaluate_lipinski: mol is None — cannot evaluate")
+        return None
+
     result = LipinskiResult()
 
     result.mw = Descriptors.MolWt(mol)
@@ -131,7 +139,7 @@ def evaluate_lipinski(mol) -> LipinskiResult:
 # BBB PERMEABILITY
 # ============================================================================
 
-def estimate_bbb_permeability(mol) -> BBBResult:
+def estimate_bbb_permeability(mol) -> Optional[BBBResult]:
     """
     Estimate Blood-Brain Barrier permeability using physicochemical descriptors.
 
@@ -144,6 +152,10 @@ def estimate_bbb_permeability(mol) -> BBBResult:
 
     Returns a score 0-1 and classification.
     """
+    if mol is None:
+        logger.warning("estimate_bbb_permeability: mol is None — cannot estimate")
+        return None
+
     result = BBBResult()
 
     result.tpsa = Descriptors.TPSA(mol)
@@ -228,7 +240,7 @@ _METABOLIC_ALERTS = [
 ]
 
 
-def estimate_metabolic_stability(mol) -> MetabolicStabilityResult:
+def estimate_metabolic_stability(mol) -> Optional[MetabolicStabilityResult]:
     """
     Estimate metabolic stability using structural alerts and descriptors.
 
@@ -238,6 +250,10 @@ def estimate_metabolic_stability(mol) -> MetabolicStabilityResult:
       - LogP (highly lipophilic = faster metabolism)
       - MW (larger = more sites of metabolism)
     """
+    if mol is None:
+        logger.warning("estimate_metabolic_stability: mol is None — cannot estimate")
+        return None
+
     result = MetabolicStabilityResult()
 
     result.n_rotatable_bonds = Lipinski.NumRotatableBonds(mol)
@@ -306,7 +322,7 @@ def estimate_metabolic_stability(mol) -> MetabolicStabilityResult:
 # VEBER RULES (Oral Bioavailability)
 # ============================================================================
 
-def evaluate_veber_rules(mol) -> Dict:
+def evaluate_veber_rules(mol) -> Optional[Dict]:
     """
     Evaluate Veber's rules for oral bioavailability.
 
@@ -314,6 +330,10 @@ def evaluate_veber_rules(mol) -> Dict:
       - Rotatable bonds <= 10
       - TPSA <= 140 A^2
     """
+    if mol is None:
+        logger.warning("evaluate_veber_rules: mol is None — cannot evaluate")
+        return None
+
     rot_bonds = Lipinski.NumRotatableBonds(mol)
     tpsa = Descriptors.TPSA(mol)
 
@@ -336,7 +356,7 @@ def evaluate_veber_rules(mol) -> Dict:
 # GHOSE FILTER
 # ============================================================================
 
-def evaluate_ghose_filter(mol) -> Dict:
+def evaluate_ghose_filter(mol) -> Optional[Dict]:
     """
     Evaluate Ghose filter for drug-likeness.
 
@@ -346,6 +366,10 @@ def evaluate_ghose_filter(mol) -> Dict:
       - 40 <= Molar Refractivity <= 130
       - 20 <= Total Atom Count <= 70
     """
+    if mol is None:
+        logger.warning("evaluate_ghose_filter: mol is None — cannot evaluate")
+        return None
+
     mw = Descriptors.MolWt(mol)
     logp = Crippen.MolLogP(mol)
     mr = Crippen.MolMR(mol)
@@ -395,6 +419,10 @@ def _validate_molecule_type(mol) -> Tuple[bool, List[str]]:
     Returns:
         (is_valid, warnings) where is_valid=True means no issues found.
     """
+    if mol is None:
+        logger.warning("_validate_molecule_type: mol is None — skipping validation")
+        return False, ["mol 객체가 None — 분자 검증 불가"]
+
     warnings: List[str] = []
 
     # 1. Metal / non-organic element detection
@@ -476,15 +504,31 @@ def predict_admet(smiles: str, mol_name: str = "") -> ADMETProfile:
     Returns:
         ADMETProfile with all predictions
     """
+    # N: Type guard — smiles must be str
+    if not isinstance(smiles, str):
+        logger.warning("predict_admet: smiles is not str — type=%s, value=%s", type(smiles).__name__, smiles)
+        smiles = str(smiles) if smiles is not None else ""
+    if not isinstance(mol_name, str):
+        logger.warning("predict_admet: mol_name is not str — type=%s", type(mol_name).__name__)
+        mol_name = str(mol_name) if mol_name is not None else ""
+
     profile = ADMETProfile(smiles=smiles, mol_name=mol_name)
+
+    if not smiles or not smiles.strip():
+        profile.error = "빈 SMILES 문자열 — ADMET 예측 불가"
+        logger.warning("predict_admet: empty SMILES string provided")
+        return profile
 
     if not RDKIT_AVAILABLE:
         profile.error = "RDKit not available - cannot compute ADMET properties"
+        logger.warning("predict_admet: RDKit unavailable")
         return profile
 
+    # L: SMILES parsing defense — MolFromSmiles + None check
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
-        profile.error = f"Invalid SMILES: {smiles}"
+        profile.error = f"잘못된 SMILES 구조: {smiles}"
+        logger.warning("predict_admet: invalid SMILES — %s", smiles)
         return profile
 
     # --- Chemical plausibility pre-filter ---
@@ -500,7 +544,7 @@ def predict_admet(smiles: str, mol_name: str = "") -> ADMETProfile:
     # Add hydrogens for accurate descriptor calculation
     mol_h = Chem.AddHs(mol)
 
-    # Core predictions
+    # Core predictions (None-safe: sub-functions return None on failure)
     profile.lipinski = evaluate_lipinski(mol)
     profile.bbb = estimate_bbb_permeability(mol)
     profile.metabolic_stability = estimate_metabolic_stability(mol)
@@ -512,55 +556,71 @@ def predict_admet(smiles: str, mol_name: str = "") -> ADMETProfile:
     profile.n_heavy_atoms = mol.GetNumHeavyAtoms()
     profile.molar_refractivity = Crippen.MolMR(mol)
 
+    # QED (Quantitative Estimate of Drug-likeness) — Bickerton et al. 2012
+    try:
+        profile.qed_score = QED.qed(mol)
+    except Exception as e:
+        logger.warning("QED calculation failed for %s: %s", smiles, e)
+        profile.qed_score = 0.0
+
     # Drug-likeness composite score (0-1)
     dl_score = 0.0
     dl_factors = 0
 
-    if profile.lipinski.passes:
+    # N: None guard — lipinski can be None
+    if profile.lipinski is not None and profile.lipinski.passes:
         dl_score += 0.3
     dl_factors += 0.3
 
     veber = evaluate_veber_rules(mol)
-    if veber["passes"]:
+    # N: None guard — veber can be None
+    if veber is not None and veber["passes"]:
         dl_score += 0.2
     dl_factors += 0.2
 
     ghose = evaluate_ghose_filter(mol)
-    if ghose["passes"]:
+    # N: None guard — ghose can be None
+    if ghose is not None and ghose["passes"]:
         dl_score += 0.2
     dl_factors += 0.2
 
-    # Metabolic stability contribution
-    if profile.metabolic_stability.classification == "high":
-        dl_score += 0.15
-    elif profile.metabolic_stability.classification == "moderate":
-        dl_score += 0.08
+    # Metabolic stability contribution (None guard)
+    if profile.metabolic_stability is not None:
+        if profile.metabolic_stability.classification == "high":
+            dl_score += 0.15
+        elif profile.metabolic_stability.classification == "moderate":
+            dl_score += 0.08
     dl_factors += 0.15
 
-    # BBB is a bonus, not required
-    if profile.bbb.classification == "BBB+":
+    # BBB is a bonus, not required (None guard)
+    if profile.bbb is not None and profile.bbb.classification == "BBB+":
         dl_score += 0.15
     dl_factors += 0.15
 
     profile.drug_likeness_score = dl_score / dl_factors if dl_factors > 0 else 0.0
 
-    # Oral bioavailability assessment
-    if profile.lipinski.passes and veber["passes"]:
+    # Oral bioavailability assessment (None guards)
+    lipinski_passes = profile.lipinski.passes if profile.lipinski is not None else False
+    lipinski_violations = profile.lipinski.violations if profile.lipinski is not None else 999
+    veber_passes = veber["passes"] if (veber is not None and isinstance(veber, dict)) else False
+
+    if lipinski_passes and veber_passes:
         profile.oral_bioavailability = "likely"
-    elif profile.lipinski.violations <= 2:
+    elif lipinski_violations <= 2:
         profile.oral_bioavailability = "moderate"
     else:
         profile.oral_bioavailability = "unlikely"
 
     # Warnings (append to any pre-filter warnings already in profile.warnings)
-    if profile.lipinski.violations > 1:
-        profile.warnings.append(f"Lipinski violations ({profile.lipinski.violations}): poor oral absorption expected")
+    if lipinski_violations > 1:
+        profile.warnings.append(f"Lipinski violations ({lipinski_violations}): poor oral absorption expected")
     if profile.tpsa > 140:
         profile.warnings.append(f"High TPSA ({profile.tpsa:.1f}): poor membrane permeability")
-    if profile.metabolic_stability.classification == "low":
-        profile.warnings.append("Low metabolic stability: rapid clearance expected")
-    if len(profile.metabolic_stability.alerts) > 3:
-        profile.warnings.append(f"Multiple metabolic soft spots ({len(profile.metabolic_stability.alerts)})")
+    if profile.metabolic_stability is not None:
+        if profile.metabolic_stability.classification == "low":
+            profile.warnings.append("Low metabolic stability: rapid clearance expected")
+        if len(profile.metabolic_stability.alerts) > 3:
+            profile.warnings.append(f"Multiple metabolic soft spots ({len(profile.metabolic_stability.alerts)})")
     if profile.n_heavy_atoms > 50:
         profile.warnings.append("Large molecule: may have absorption issues")
 
@@ -577,11 +637,17 @@ def predict_admet(smiles: str, mol_name: str = "") -> ADMETProfile:
 
 def admet_to_dict(profile: ADMETProfile) -> Dict:
     """Convert an ADMETProfile to a plain dictionary for serialization."""
+    # N: Type guard — profile must be ADMETProfile
+    if not isinstance(profile, ADMETProfile):
+        logger.warning("admet_to_dict: profile is not ADMETProfile — type=%s", type(profile).__name__)
+        return {"error": f"잘못된 프로파일 타입: {type(profile).__name__}"}
+
     d = {
         "smiles": profile.smiles,
         "mol_name": profile.mol_name,
         "is_organic": profile.is_organic,
         "error": profile.error,
+        "qed_score": round(profile.qed_score, 3),
         "drug_likeness_score": round(profile.drug_likeness_score, 3),
         "oral_bioavailability": profile.oral_bioavailability,
         "overall_assessment": profile.overall_assessment,
