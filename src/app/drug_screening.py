@@ -7,9 +7,12 @@ ChemGrid: Drug Screening Pipeline
 - Multi-criteria compound prioritization
 """
 
+import logging
 import math
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
 
 try:
     from rdkit import Chem
@@ -98,6 +101,76 @@ class ScreeningResult:
 
 
 # ============================================================================
+# LogD pH CORRECTION (P1 fix — Mannhold 2009 JCIM + Henderson-Hasselbalch)
+# ============================================================================
+
+def calculate_logd(smiles: str, pH: float = 7.4) -> Optional[float]:
+    """
+    Estimate LogD at a given pH using LogP + Henderson-Hasselbalch correction.
+
+    LogD = LogP - log10(1 + 10^(pKa - pH))  for acids (single ionizable group)
+    LogD = LogP - log10(1 + 10^(pH - pKa))  for bases
+
+    Note: This is a SIMPLIFIED single-group model.
+    For multi-protic molecules use software such as ChemAxon MarvinSketch.
+
+    References:
+        Mannhold R. et al. J Chem Inf Model 2009, 49(3):747-776 (LogD review)
+        Avdeef A. Absorption and Drug Development, 2003.
+    """
+    if not RDKIT_AVAILABLE:
+        logger.warning("calculate_logd: RDKit not available for SMILES=%s", smiles)
+        return None
+    if not isinstance(smiles, str) or not smiles.strip():
+        logger.warning("calculate_logd: invalid SMILES (type=%s)", type(smiles).__name__)
+        return None
+    if not isinstance(pH, (int, float)):
+        logger.warning("calculate_logd: pH must be numeric, got %s", type(pH).__name__)
+        pH = 7.4  # default physiological pH
+
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        logger.warning("calculate_logd: MolFromSmiles failed for SMILES=%s", smiles)
+        return None
+
+    logp = Crippen.MolLogP(mol)  # Wildman-Crippen LogP (non-ionized form)
+
+    # Heuristic pKa estimation from SMARTS functional groups
+    # Acid: carboxylic acid pKa ~4.5, phenol pKa ~10.0
+    # Base: amine (aliphatic) pKa ~10.5, amine (aromatic) pKa ~4.5
+    pka_acid = None
+    pka_base = None
+
+    cooh_smarts = Chem.MolFromSmarts("[CX3](=O)[OX2H1]")    # Carboxylic acid
+    phenol_smarts = Chem.MolFromSmarts("[cX3]1[cH]1[OX2H1]") # Phenol (simplified)
+    ali_amine_smarts = Chem.MolFromSmarts("[NX3;H1,H2;!$(N-C=O)]")  # Aliphatic amine
+    aro_amine_smarts = Chem.MolFromSmarts("[nX2,nX3]")       # Aromatic N (pyridine-like)
+
+    if cooh_smarts is not None and mol.HasSubstructMatch(cooh_smarts):
+        pka_acid = 4.5   # [MAGIC:4.5] carboxylic acid mean pKa (Avdeef 2003)
+    elif phenol_smarts is not None and mol.HasSubstructMatch(phenol_smarts):
+        pka_acid = 10.0  # [MAGIC:10.0] phenol mean pKa
+
+    if ali_amine_smarts is not None and mol.HasSubstructMatch(ali_amine_smarts):
+        pka_base = 10.5  # [MAGIC:10.5] aliphatic amine mean pKa
+    elif aro_amine_smarts is not None and mol.HasSubstructMatch(aro_amine_smarts):
+        pka_base = 4.5   # [MAGIC:4.5] aromatic N mean pKa
+
+    logd = logp
+
+    if pka_acid is not None:
+        # Acid ionization reduces lipophilicity at pH > pKa
+        logd -= math.log10(1.0 + 10.0 ** (pH - pka_acid))
+
+    if pka_base is not None:
+        # Base ionization reduces lipophilicity at pH < pKa
+        logd -= math.log10(1.0 + 10.0 ** (pka_base - pH))
+
+    logger.debug("calculate_logd: SMILES=%s LogP=%.2f LogD(pH%.1f)=%.2f", smiles, logp, pH, logd)
+    return round(logd, 3)
+
+
+# ============================================================================
 # QED SCORING
 # ============================================================================
 
@@ -111,17 +184,24 @@ def calculate_qed(smiles: str) -> Optional[QEDResult]:
     Based on: Bickerton et al., Nature Chemistry 4, 90-98 (2012)
     """
     if not RDKIT_AVAILABLE:
+        logger.warning("calculate_qed: RDKit not available, cannot compute QED for SMILES=%s", smiles)
+        return None
+
+    if not isinstance(smiles, str) or not smiles.strip():
+        logger.warning("calculate_qed: invalid SMILES input (type=%s, value=%r)", type(smiles).__name__, smiles)
         return None
 
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
+        logger.warning("calculate_qed: failed to parse SMILES=%s", smiles)
         return None
 
     result = QEDResult()
 
     try:
         result.qed_score = RDKit_QED.qed(mol)
-    except Exception:
+    except Exception as e:
+        logger.warning("calculate_qed: RDKit QED failed for %s: %s, using approximation", smiles, e)
         # Fallback: manual QED approximation
         result.qed_score = _approximate_qed(mol)
 
@@ -213,17 +293,33 @@ def filter_target_by_confidence(
         Dict with reliability assessment
     """
     if not ALPHAFOLD_AVAILABLE:
+        logger.warning("filter_target_by_confidence: alphafold_interface not available")
         return {
             "reliable": False,
             "error": "alphafold_interface not available",
         }
 
+    if structure is None:
+        logger.warning("filter_target_by_confidence: structure is None")
+        return {
+            "reliable": False,
+            "error": "No structure provided",
+        }
+
+    if not isinstance(min_plddt, (int, float)):
+        logger.warning("filter_target_by_confidence: invalid min_plddt type=%s, using default 70.0", type(min_plddt).__name__)
+        min_plddt = 70.0
+
     confidence = filter_by_plddt(structure, min_plddt=min_plddt)
+    # Rule N: external function may return non-dict
+    if not isinstance(confidence, dict):
+        logger.warning("filter_by_plddt returned non-dict: type=%s", type(confidence).__name__)
+        return {"reliable": False, "error": "filter_by_plddt returned invalid type"}
 
     recommendation = ""
-    if confidence["reliable"]:
+    if confidence.get("reliable"):
         recommendation = "Structure suitable for docking-based virtual screening"
-    elif confidence["confidence_ratio"] >= 0.5:
+    elif confidence.get("confidence_ratio", 0.0) >= 0.5:
         recommendation = ("Partial confidence - limit docking to high-confidence "
                           "binding site residues only")
     else:
@@ -254,6 +350,14 @@ def rank_by_binding_affinity(
     Returns:
         Sorted list (best affinity first), filtered by cutoff
     """
+    if not isinstance(docking_scores, list):
+        logger.warning("rank_by_binding_affinity: docking_scores is not a list (type=%s)", type(docking_scores).__name__)
+        return []
+
+    if not docking_scores:
+        logger.warning("rank_by_binding_affinity: empty docking_scores list")
+        return []
+
     filtered = [d for d in docking_scores if d.binding_affinity <= affinity_cutoff]
     filtered.sort(key=lambda x: x.binding_affinity)
     return filtered
@@ -278,6 +382,14 @@ def score_compound(
       - admet: 0.25 (ADMET properties)
       - alerts: 0.10 (penalty for structural alerts)
     """
+    if not isinstance(smiles, str) or not smiles.strip():
+        logger.warning("score_compound: invalid SMILES (type=%s, value=%r)", type(smiles).__name__, smiles)
+        hit = ScreeningHit()
+        hit.compound = CompoundEntry(smiles=str(smiles) if smiles else "", name=name)
+        hit.flags = ["invalid_smiles"]
+        hit.tier = "C"
+        return hit
+
     if weights is None:
         weights = {
             "qed": 0.30,
@@ -285,6 +397,10 @@ def score_compound(
             "admet": 0.25,
             "alerts": 0.10,
         }
+
+    if not isinstance(weights, dict):
+        logger.warning("score_compound: weights is not a dict (type=%s), using defaults", type(weights).__name__)
+        weights = {"qed": 0.30, "affinity": 0.35, "admet": 0.25, "alerts": 0.10}
 
     hit = ScreeningHit()
     hit.compound = CompoundEntry(smiles=smiles, name=name)
@@ -375,12 +491,28 @@ def run_screening(
         ScreeningResult
     """
     result = ScreeningResult()
+
+    if not isinstance(compounds, list):
+        logger.warning("run_screening: compounds is not a list (type=%s)", type(compounds).__name__)
+        result.error = "Invalid compounds input"
+        return result
+
     result.n_compounds = len(compounds)
     result.filters_applied = []
 
+    if not compounds:
+        logger.warning("run_screening: empty compounds list")
+        result.error = "No compounds provided"
+        return result
+
     if not RDKIT_AVAILABLE:
+        logger.warning("run_screening: RDKit not available — cannot run screening")
         result.error = "RDKit not available - cannot run screening"
         return result
+
+    if docking_scores is not None and not isinstance(docking_scores, dict):
+        logger.warning("run_screening: docking_scores is not a dict (type=%s), ignoring", type(docking_scores).__name__)
+        docking_scores = {}
 
     if docking_scores is None:
         docking_scores = {}
@@ -388,6 +520,10 @@ def run_screening(
     # Step 1: Target confidence check
     if target_structure and ALPHAFOLD_AVAILABLE:
         confidence = filter_target_by_confidence(target_structure)
+        # Rule N: isinstance guard on external function return
+        if not isinstance(confidence, dict):
+            logger.warning("filter_target_by_confidence returned non-dict: type=%s", type(confidence).__name__)
+            confidence = {}
         result.target_plddt_reliable = confidence.get("reliable", False)
         result.filters_applied.append(
             f"pLDDT check: {'PASS' if result.target_plddt_reliable else 'WARNING'}"
@@ -407,6 +543,8 @@ def run_screening(
     # Step 3: Score compounds
     hits = []
     for entry, _qed in passing:
+        # Rule N: isinstance guard for docking_scores
+        if not isinstance(docking_scores, dict): docking_scores = {}
         dock = docking_scores.get(entry.smiles, None)
 
         # Apply affinity filter if docking data exists
