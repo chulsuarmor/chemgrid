@@ -210,9 +210,9 @@ class HistoryManager:
                 entry_time = datetime.fromisoformat(e.timestamp)
                 if start <= entry_time <= end:
                     results.append(e)
-            except:
-                pass
-        
+            except (ValueError, TypeError):
+                continue
+
         return results
     
     def get_recent(self, limit: int = 10) -> List[CalculationEntry]:
