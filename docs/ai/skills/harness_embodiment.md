@@ -178,6 +178,26 @@ EMBODIMENT_KEYWORDS = [
 *최종 갱신: 2026-05-03 / Worker M647_W5_A8*
 ---
 
+## 추가 체화 패턴 (M1408_W_REGRESSION)
+
+| 패턴명 | 원칙 |
+|--------|------|
+| SMOKE-GATE-VS-TIMEOUT-001 | smoke test orchestrator notes의 "timeout" 기록은 실제 subprocess timeout과 gate block을 혼동할 수 있음. 구분법: mol_[name].json 존재 + draw=true이면 subprocess 정상 완료 → gate block. mol_[name].json 미존재 + draw=false이면 실제 subprocess timeout. orchestrator notes만 보고 판단 금지 — 반드시 개별 worker JSON 확인 필수. |
+
+*최종 갱신: 2026-05-18 / Worker M1408_W_REGRESSION*
+
+---
+
+## 추가 체화 패턴 (M1387_W_SMOKE)
+
+| 패턴명 | 원칙 |
+|--------|------|
+| SMOKE-SUBPROCESS-001 | 연기 테스트 하네스에서 분자별 오케스트레이터는 subprocess.run(timeout=N)으로 각 분자를 격리 실행 의무. Ollama(SynthesisRouteEngine.__init__ requests.get) / xtb subprocess / Gemini blocking call이 하나라도 있으면 단일 프로세스 하네스 전체 정지. 권장 타임아웃: 90초(xtb~10s + synthesis~60s 마진 포함). |
+| SMOKE-MSGBOX-AUTOCLOSE-001 | 분자별 worker 내에서 btn.click() 전에 QTimer.singleShot(300ms, _check_and_close) 설치 의무. 분석 게이트(polymer/DryLab/synthesis gate)가 QMessageBox.information() modal exec()를 실행하면 processEvents time-bounded drain이 modal event loop 내부에서 실행되어 _drain() 시간 제한이 무력화됨. |
+
+*최종 갱신: 2026-05-18 / Worker M1387_W_SMOKE*
+---
+
 ## 추가 체화 패턴 (M668_A50v2)
 
 | 패턴명 | 원칙 |
@@ -281,6 +301,17 @@ EMBODIMENT_KEYWORDS = [
 
 ---
 
+## 추가 체화 패턴 (M1422 / D-M1153-002-W_RC2_SMOKE_V2)
+
+| 패턴명 | 원칙 |
+|--------|------|
+| SMOKE-IMPORT-TIMEOUT-001 | smoke test subprocess 타임아웃 설정은 `import cost(측정값) + 최대 작업시간 + 30s 마진` 합산 의무. src/app의 첫 import는 39s 소요 가능(canvas RDKit cheminformatics transitive load). 90s/180s는 부족. 최소 240s. TimeoutExpired 핸들러에서 `result_json.exists()` rescue 필수 — SMOKE-GATE-VS-TIMEOUT-001 적용. |
+| SMOKE-PARALLEL-WORKER-001 | smoke 10분자 순차 실행은 10×240s = 40분 소요. 독립 분자는 병렬 subprocess 실행 가능(메모리 제약 확인 후). 각 worker는 격리 JSON 경로 사용 → 파일 충돌 없음. orchestrator는 worker JSON 파일 존재 여부로 partial rescue. |
+
+*최종 갱신: 2026-05-18 / Worker W_RC2_SMOKE_V2 / M1422*
+
+---
+
 ## 추가 체화 패턴 (M1369 / D-M1153-002-W191)
 
 | 패턴명 | 원칙 |
@@ -290,3 +321,27 @@ EMBODIMENT_KEYWORDS = [
 
 *최종 갱신: 2026-05-18 / Worker W191 / M1369*
 *연동: CLAUDE.md Rule M/K3 | popup_polymer.py _build_properties_tab/_init_ui*
+
+---
+
+## 추가 체화 패턴 (M1433_W_FIX_ELECTRON_H)
+
+| 패턴명 | 원칙 |
+|--------|------|
+| ELECTRON-H-001 | ElectronDist 레이어에서 Lewis 골격 opacity를 낮추면(≤0.40) H 텍스트가 흰 배경에 불가시. 최소 opacity=0.55 이상 유지. H 원자(`main=="H"`)는 `_render_atom_labels`에서 별도 opacity=1.0 재렌더링 의무. |
+| OPACITY-SKELETON-001 | `_render_lewis_grey` 같은 반투명 Lewis 재렌더링 함수의 opacity는 0.55~0.65 범위 유지. 0.40 이하는 H/Cl/Br 등 외곽 원자가 흰 배경에 사라짐. 0.70 이상은 전자분포 ESP cloud를 가림. |
+
+*최종 갱신: 2026-05-18 / Worker W_FIX_ELECTRON_H / M1433*
+*연동: CLAUDE.md Rule O | layer_logic.py _render_lewis_grey / _render_atom_labels | rendering.md M1433*
+
+---
+
+## 추가 체화 패턴 (M1424_W_PATROL_FINAL)
+
+| 패턴명 | 원칙 |
+|--------|------|
+| PATROL-FINAL-001 | patrol 통합 재검증(G7 FINAL sweep)은 최소 4항목 독립 측정 필수: G1(py_compile) + G2_sync(filecmp.cmp) + SC1(CT PENDING 경로×내용) + SC2(audit 3팀 glob). SC1 REJECT는 두 가지 원인 구분 필수: (a) 경로 미탐지(M1414 fix로 해소) vs (b) 내용 미기재(기존 파일 CT PENDING 없음). 혼동 시 해결 방향 오판. |
+| NEW-FILE-SYNC-001 | 신규 src/app/*.py 파일 추가 Worker는 _source/ mirror copy를 같은 commit에 포함 의무. feature_flags.py 패턴: 신규 파일이 src/app/에 추가됐으나 _source/에 없어 G2_sync WARN. patrol G2_sync 자동 탐지 — 수동 copy2 후 filecmp.cmp IDENTICAL 확인. |
+
+*최종 갱신: 2026-05-18 / Worker W_PATROL_FINAL / M1424*
+*연동: CLAUDE.md Rule J | patrol G2_sync | _source/ sync 의무*
