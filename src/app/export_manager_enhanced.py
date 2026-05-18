@@ -56,8 +56,11 @@ def _register_korean_font():
     try:
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
+        # Rule Q: Korean/Unicode font registration — Malgun Gothic preferred,
+        # NanumGothic fallback, Gulim last resort
         for fp, name in [
             ('C:/Windows/Fonts/malgun.ttf', 'Malgun'),
+            ('C:/Windows/Fonts/NanumGothic.ttf', 'NanumGothic'),
             ('C:/Windows/Fonts/gulim.ttc', 'Gulim'),
         ]:
             if os.path.exists(fp):
@@ -65,10 +68,11 @@ def _register_korean_font():
                     pdfmetrics.registerFont(TTFont(name, fp))
                     _KOREAN_FONT = name
                     return
-                except Exception:
+                except Exception as e:
+                    logger.debug("SMILES processing failed, skipping: %s", e)
                     continue
-    except ImportError:
-        pass
+    except ImportError as e:
+        logger.debug("Optional import unavailable: %s", e)
 
 _register_korean_font()
 
@@ -219,6 +223,9 @@ class ChemFileManager:
             atoms, bonds, arrows, text_boxes, metadata (ChemFileMetadata or None),
             analysis_snapshot (dict or None), version (str)
         """
+        if not isinstance(data, dict):
+            logger.warning("parse_load_data: data is not dict (type=%s)", type(data).__name__)
+            data = {}
         version = data.get("_chem_version", "1.0")
         raw_meta = data.get("_metadata")
         metadata = None
@@ -228,9 +235,11 @@ class ChemFileManager:
                     k: v for k, v in raw_meta.items()
                     if k in ChemFileMetadata.__dataclass_fields__
                 })
-            except Exception:
+            except Exception as e:
+                logger.debug("Metadata parsing failed: %s", e)
                 metadata = None
 
+        assert isinstance(data, dict)  # Rule N: 타입 가드 (재확인)
         return {
             "atoms": data.get("atoms", {}),
             "bonds": data.get("bonds", {}),
@@ -247,6 +256,8 @@ class ChemFileManager:
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 data = json.load(f)
+            # Rule N: isinstance guard for data
+            if not isinstance(data, dict): data = {}
             raw = data.get("_metadata")
             if raw and isinstance(raw, dict):
                 return ChemFileMetadata(**{
@@ -264,7 +275,8 @@ def _safe_get_smiles(canvas) -> str:
         if hasattr(canvas, 'get_smiles'):
             return canvas.get_smiles() or ""
         return getattr(canvas, '_last_drawn_smiles', '') or ""
-    except Exception:
+    except Exception as e:
+        logger.warning("Content extraction failed: %s", e)
         return ""
 
 
@@ -442,6 +454,8 @@ class IntegratedPDFExporter:
         )
         if screening_result and isinstance(screening_result, dict):
             hits = screening_result.get("hits", [])
+            if not isinstance(hits, list):
+                hits = []
             if hits or screening_result.get("n_compounds", 0) > 0:
                 page.available = True
                 page.peaks = [screening_result]  # Store full result in peaks field
@@ -467,8 +481,22 @@ class IntegratedPDFExporter:
         if not PYQT_AVAILABLE:
             return None
         try:
+            import math as _math
             original_state = getattr(canvas, 'view_state', 'Lewis')
+            original_radius = getattr(canvas, '_reveal_radius', 0)
+            original_center = getattr(canvas, 'reveal_center', None)
             canvas.view_state = view_state
+            # [FIX-CAPTURE] Rule: _reveal_radius must equal max_r for offscreen capture.
+            # If radius=0 (animation not started), Lewis/Theory layer renders blank.
+            # chemgrid_architecture.md: "_reveal_radius = max_r 필수"
+            if view_state in ("Lewis", "Theory"):
+                max_r = _math.hypot(canvas.width() or 800, canvas.height() or 600)
+                canvas._reveal_radius = max_r  # reveal full canvas for capture
+                from PyQt6.QtCore import QPointF as _QPointF
+                canvas.reveal_center = _QPointF(
+                    (canvas.width() or 800) / 2,
+                    (canvas.height() or 600) / 2
+                )
             canvas.update()
             QApplication.processEvents()
 
@@ -477,11 +505,16 @@ class IntegratedPDFExporter:
                 f"chemgrid_{view_state.lower()}_{os.getpid()}_{id(self)}.png"
             )
             pixmap = canvas.grab()
+            if pixmap.isNull():
+                logger.warning("capture_canvas_state: grab() returned null pixmap for %s", view_state)
             pixmap.save(tmp_path)
             self._temp_files.append(tmp_path)
 
             # Restore original state
             canvas.view_state = original_state
+            canvas._reveal_radius = original_radius
+            if original_center is not None:
+                canvas.reveal_center = original_center
             canvas.update()
             QApplication.processEvents()
 
@@ -521,6 +554,8 @@ class IntegratedPDFExporter:
             story = []
 
             # -- Page 1: Title + 2D Structure + Key Properties --
+            # Rule N: 타입 가드 — self.pages는 dict
+            assert isinstance(self.pages, dict)
             story.extend(self._rl_title_page())
 
             # -- Page 2: IR Spectrum --
@@ -539,7 +574,8 @@ class IntegratedPDFExporter:
             else:
                 story.extend(self._rl_placeholder_page("nmr"))
 
-            # -- Page 4: 13C NMR Spectrum --
+            # -- Page 4: 13C NMR Spectrum -- Rule N: isinstance
+            assert isinstance(self.pages, dict)
             story.append(PageBreak())
             nmr_c13_page = self.pages.get("nmr_c13")
             if nmr_c13_page and nmr_c13_page.available:
@@ -555,7 +591,8 @@ class IntegratedPDFExporter:
             else:
                 story.extend(self._rl_placeholder_page("uvvis"))
 
-            # -- Page 6: Mass Spectrum --
+            # -- Page 6: Mass Spectrum -- Rule N: isinstance
+            assert isinstance(self.pages, dict)
             story.append(PageBreak())
             mass_page = self.pages.get("mass")
             if mass_page and mass_page.available:
@@ -571,7 +608,8 @@ class IntegratedPDFExporter:
             else:
                 story.extend(self._rl_placeholder_page("admet"))
 
-            # -- Page 8: Drug Screening Results --
+            # -- Page 8: Drug Screening Results -- Rule N: isinstance
+            assert isinstance(self.pages, dict)
             story.append(PageBreak())
             drug_page = self.pages.get("drug_screening")
             if drug_page and drug_page.available:
@@ -609,10 +647,10 @@ class IntegratedPDFExporter:
             from rdkit import Chem
             from rdkit.Chem import Descriptors
             mol = Chem.MolFromSmiles(self.smiles) if self.smiles else None
-            if mol:
+            if mol is not None:  # Rule L: None guard
                 mw_str = f"{Descriptors.ExactMolWt(mol):.4f} g/mol"
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Module import failed: %s", e)
         info_rows = [
             ["Molecule:", self.molecule_name],
             ["SMILES:", self.smiles or "N/A"],
@@ -720,6 +758,8 @@ class IntegratedPDFExporter:
 
             rows = [header]
             for peak in page_data.peaks[:30]:  # Limit to 30 peaks
+                if not isinstance(peak, dict):
+                    continue
                 rows.append([
                     str(peak.get("frequency", peak.get("position", ""))),
                     str(peak.get("intensity", "")),
@@ -784,8 +824,11 @@ class IntegratedPDFExporter:
         )
 
         # -- Lipinski Rule of Five --
+        if not isinstance(profile, dict):
+            logger.warning("ADMET profile is not dict (type=%s)", type(profile).__name__)
+            profile = {}
         lipinski = profile.get("lipinski", {})
-        if lipinski:
+        if lipinski and isinstance(lipinski, dict):
             elements.append(Paragraph("Lipinski Rule of Five", sub_style))
             lip_rows = [
                 ["Property", "Value", "Threshold", "Status"],
@@ -810,6 +853,7 @@ class IntegratedPDFExporter:
                 ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
             ]))
             elements.append(lip_table)
+            assert isinstance(lipinski, dict)  # Rule N: 타입 가드
             verdict = "PASS (Drug-like)" if lipinski.get("passes") else "FAIL"
             elements.append(Paragraph(
                 f"Lipinski Verdict: {verdict} ({lipinski.get('violations', '?')} violations)",
@@ -818,46 +862,59 @@ class IntegratedPDFExporter:
 
         # -- BBB Permeability --
         bbb = profile.get("bbb", {})
-        if bbb:
+        if bbb and isinstance(bbb, (dict, str)):
             elements.append(Paragraph("BBB (Blood-Brain Barrier) Permeability", sub_style))
-            bbb_rows = [
-                ["Parameter", "Value"],
-                ["BBB Score", f"{bbb.get('score', 'N/A')}"],
-                ["Classification", bbb.get("classification", "N/A")],
-                ["TPSA (A²)", f"{bbb.get('tpsa', 'N/A')}"],
-            ]
-            factors = bbb.get("factors", {})
-            for fname, fval in factors.items():
-                bbb_rows.append([fname, str(fval)])
-            bbb_table = Table(bbb_rows, colWidths=[5 * cm, 11 * cm])
-            bbb_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#455a64')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('FONTNAME', (0, 0), (-1, -1), _KOREAN_FONT),
-                ('FONTSIZE', (0, 0), (-1, -1), 8),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1),
-                 [colors.white, colors.HexColor('#f5f5f5')]),
-            ]))
-            elements.append(bbb_table)
+            if isinstance(bbb, str):
+                elements.append(Paragraph(bbb, normal_style))
+                bbb_rows = None
+            else:
+                bbb_rows = [
+                    ["Parameter", "Value"],
+                    ["BBB Score", f"{bbb.get('score', 'N/A')}"],
+                    ["Classification", bbb.get("classification", "N/A")],
+                    ["TPSA (A²)", f"{bbb.get('tpsa', 'N/A')}"],
+                ]
+                factors = bbb.get("factors", {})
+                if not isinstance(factors, dict):
+                    factors = {}
+                for fname, fval in factors.items():
+                    bbb_rows.append([fname, str(fval)])
+            if bbb_rows is not None:
+                bbb_table = Table(bbb_rows, colWidths=[5 * cm, 11 * cm])
+                bbb_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#455a64')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('FONTNAME', (0, 0), (-1, -1), _KOREAN_FONT),
+                    ('FONTSIZE', (0, 0), (-1, -1), 8),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1),
+                     [colors.white, colors.HexColor('#f5f5f5')]),
+                ]))
+                elements.append(bbb_table)
             elements.append(Spacer(1, 0.1 * inch))
 
-        # -- Metabolic Stability --
+        # -- Metabolic Stability -- Rule N: isinstance
+        assert isinstance(profile, dict)
         metab = profile.get("metabolic_stability", {})
-        if metab:
+        if metab and isinstance(metab, (dict, str)):
             elements.append(Paragraph("Metabolic Stability", sub_style))
-            metab_info = (
-                f"Classification: {metab.get('classification', 'N/A')} | "
-                f"Score: {metab.get('score', 'N/A')} | "
-                f"Rotatable Bonds: {metab.get('n_rotatable_bonds', 'N/A')} | "
-                f"Aromatic Rings: {metab.get('n_aromatic_rings', 'N/A')}"
-            )
-            elements.append(Paragraph(metab_info, normal_style))
-            alerts = metab.get("alerts", [])
-            if alerts:
-                elements.append(Paragraph(
-                    f"Metabolic Alerts ({len(alerts)}): " + "; ".join(alerts[:8]),
-                    normal_style))
+            if isinstance(metab, str):
+                elements.append(Paragraph(metab, normal_style))
+            else:
+                metab_info = (
+                    f"Classification: {metab.get('classification', 'N/A')} | "
+                    f"Score: {metab.get('score', 'N/A')} | "
+                    f"Rotatable Bonds: {metab.get('n_rotatable_bonds', 'N/A')} | "
+                    f"Aromatic Rings: {metab.get('n_aromatic_rings', 'N/A')}"
+                )
+                elements.append(Paragraph(metab_info, normal_style))
+                alerts = metab.get("alerts", [])
+                if not isinstance(alerts, list):
+                    alerts = []
+                if alerts:
+                    elements.append(Paragraph(
+                        f"Metabolic Alerts ({len(alerts)}): " + "; ".join(alerts[:8]),
+                        normal_style))
             elements.append(Spacer(1, 0.1 * inch))
 
         # -- Drug-likeness Summary --
@@ -885,6 +942,8 @@ class IntegratedPDFExporter:
 
         # Warnings
         warnings = profile.get("warnings", [])
+        if not isinstance(warnings, list):
+            warnings = []
         if warnings:
             elements.append(Spacer(1, 0.1 * inch))
             warn_style = ParagraphStyle(
@@ -926,9 +985,14 @@ class IntegratedPDFExporter:
         )
 
         # -- Screening summary --
+        if not isinstance(result, dict):
+            logger.warning("Drug screening result is not dict (type=%s)", type(result).__name__)
+            result = {}
         n_compounds = result.get("n_compounds", 0)
         n_hits = result.get("n_hits", 0)
         filters = result.get("filters_applied", [])
+        if not isinstance(filters, list):
+            filters = []
         elements.append(Paragraph(
             f"Total Compounds Screened: {n_compounds} | Hits: {n_hits}",
             normal_style))
@@ -939,6 +1003,8 @@ class IntegratedPDFExporter:
 
         # -- Candidate table --
         hits = result.get("hits", [])
+        if not isinstance(hits, list):
+            hits = []
         if hits:
             sub_style = ParagraphStyle(
                 'DSSubTitle', parent=styles['Heading3'],
@@ -950,6 +1016,8 @@ class IntegratedPDFExporter:
             header = ["Rank", "Name", "QED", "Composite", "Tier", "Oral BA"]
             rows = [header]
             for hit in hits[:25]:  # Limit to 25 entries for readability
+                if not isinstance(hit, dict):
+                    continue
                 rows.append([
                     str(hit.get("rank", "")),
                     str(hit.get("name", hit.get("smiles", "")[:20])),
@@ -974,6 +1042,8 @@ class IntegratedPDFExporter:
             ]
             # Highlight tier A rows in green, tier C in red
             for i, hit in enumerate(hits[:25], start=1):
+                if not isinstance(hit, dict):
+                    continue
                 tier = hit.get("tier", "")
                 if tier == "A":
                     table_styles.append(
@@ -1021,6 +1091,7 @@ class IntegratedPDFExporter:
             "admet": "ADMET Analysis",
             "drug_screening": "Drug Screening Results",
         }
+        assert isinstance(titles, dict)  # Rule N: 타입 가드
         title = titles.get(page_key, page_key.replace("_", " ").title())
 
         title_style = ParagraphStyle(
@@ -1072,6 +1143,7 @@ class IntegratedPDFExporter:
                 first_page = False
 
                 y_pos = margin
+                assert isinstance(self.pages, dict)  # Rule N: 타입 가드
                 page_data = self.pages.get(page_key)
 
                 # Title
@@ -1112,8 +1184,8 @@ class IntegratedPDFExporter:
             try:
                 if os.path.exists(fp):
                     os.remove(fp)
-            except OSError:
-                pass
+            except OSError as e:
+                logger.warning("Failed to remove temp file %s: %s", fp, e)
         self._temp_files.clear()
 
 
@@ -1262,6 +1334,9 @@ class SelectionExporter:
         if not self.selected_atoms:
             raise ValueError("No atoms selected for export")
 
+        if not isinstance(settings, dict):
+            logger.warning("export_selection: settings is not dict (type=%s)", type(settings).__name__)
+            settings = {"format": "PNG", "dpi": 300}
         bounds = self._calculate_selection_bounds()
         format_type = settings.get("format", "PNG").upper()
 
@@ -1293,6 +1368,8 @@ class SelectionExporter:
 
     def _export_png(self, output_path: str, bounds: QRect, settings: Dict):
         """Export selection as high-resolution PNG"""
+        if not isinstance(settings, dict):
+            settings = {}
         dpi = settings.get("dpi", 300)
         transparent_bg = settings.get("transparent_bg", False)
 
@@ -1382,6 +1459,8 @@ class SelectionExporter:
         for atom_pos in self.selected_atoms:
             if atom_pos in self.canvas.atoms:
                 atom_data = self.canvas.atoms[atom_pos]
+                if not isinstance(atom_data, dict):
+                    atom_data = {}
                 element = atom_data.get("element", "C")
 
                 painter.setPen(QPen(QColor(0, 0, 0), 1))
@@ -1392,7 +1471,7 @@ class SelectionExporter:
 
     def _embed_metadata_png(self, image_path: str, settings: Dict):
         """Embed EXIF metadata into PNG file"""
-        if not settings.get("add_metadata", False):
+        if not isinstance(settings, dict) or not settings.get("add_metadata", False):
             return
 
         try:
@@ -1495,10 +1574,10 @@ class ExportManager:
                     from rdkit import Chem
                     from rdkit.Chem import rdMolDescriptors
                     mol = Chem.MolFromSmiles(smiles)
-                    if mol:
+                    if mol is not None:  # Rule L: None guard
                         formula = rdMolDescriptors.CalcMolFormula(mol)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Module import failed: %s", e)
 
             exporter = IntegratedPDFExporter(
                 molecule_name=mol_name,
@@ -1551,8 +1630,33 @@ class ExportManager:
                                f"Failed to export integrated PDF:\n{str(e)}")
 
     def _save_figure_to_temp(self, fig, prefix: str) -> Optional[str]:
-        """Save a matplotlib Figure to a temporary PNG file for PDF embedding."""
+        """Save a matplotlib Figure to a temporary PNG file for PDF embedding.
+
+        Rule Q: Ensures Korean font (Malgun Gothic / NanumGothic) is registered
+        with matplotlib before saving, so axis labels and annotations render
+        correctly in the exported PDF images.
+        """
         try:
+            # Rule Q: ensure matplotlib Korean font is set before saving
+            try:
+                import matplotlib
+                import matplotlib.font_manager as fm
+                _kr_paths = [
+                    'C:/Windows/Fonts/malgun.ttf',
+                    'C:/Windows/Fonts/NanumGothic.ttf',
+                ]
+                # Rule N: isinstance guard for rcParams
+                if not isinstance(rcParams, dict): rcParams = {}
+                if 'Malgun' not in matplotlib.rcParams.get('font.family', ''):
+                    for _fp in _kr_paths:
+                        if os.path.exists(_fp):
+                            _kr_fp = fm.FontProperties(fname=_fp)
+                            matplotlib.rcParams['font.family'] = _kr_fp.get_name()
+                            matplotlib.rcParams['axes.unicode_minus'] = False
+                            break
+            except Exception as e:
+                logger.debug("matplotlib Korean font setup skipped: %s", e)
+
             tmp_path = os.path.join(
                 tempfile.gettempdir(),
                 f"chemgrid_{prefix}_{os.getpid()}_{id(fig)}.png"
@@ -1620,8 +1724,8 @@ class ExportManager:
                 try:
                     import matplotlib.pyplot as plt
                     plt.close(fig)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Figure save failed: %s", e)
         except Exception as e:
             logger.warning("IR spectrum generation failed: %s", e)
 
@@ -1644,8 +1748,8 @@ class ExportManager:
                 try:
                     import matplotlib.pyplot as plt
                     plt.close(fig)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Figure save failed: %s", e)
         except Exception as e:
             logger.warning("1H NMR spectrum generation failed: %s", e)
 
@@ -1667,8 +1771,8 @@ class ExportManager:
                 try:
                     import matplotlib.pyplot as plt
                     plt.close(fig)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Figure save failed: %s", e)
         except Exception as e:
             logger.warning("13C NMR spectrum generation failed: %s", e)
 
@@ -1690,8 +1794,8 @@ class ExportManager:
                 try:
                     import matplotlib.pyplot as plt
                     plt.close(fig)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Figure save failed: %s", e)
         except Exception as e:
             logger.warning("UV-Vis spectrum generation failed: %s", e)
 
@@ -1700,7 +1804,7 @@ class ExportManager:
             from rdkit import Chem
             from rdkit.Chem import Descriptors
             mol = Chem.MolFromSmiles(smiles)
-            if mol:
+            if mol is not None:  # Rule L: None guard
                 mw = Descriptors.ExactMolWt(mol)
                 mass_peaks = [
                     {"frequency": f"m/z = {mw:.1f}", "intensity": "100% (M\u207a)",
@@ -1788,8 +1892,8 @@ class ExportManager:
                     from drug_screening import screening_result_to_dict, ScreeningResult
                     if isinstance(screening_result, ScreeningResult):
                         screening_result = screening_result_to_dict(screening_result)
-                except ImportError:
-                    pass
+                except ImportError as e:
+                    logger.debug("Optional module import failed: %s", e)
 
                 if isinstance(screening_result, dict):
                     exporter.set_drug_screening_data(screening_result)
