@@ -1,4 +1,4 @@
-﻿# spectrum_pdf_exporter.py (v1.1 - Professional Spectrum PDF Export)
+# spectrum_pdf_exporter.py (v1.1 - Professional Spectrum PDF Export)
 """
 ChemGrid Pro Phase 5/6: Spectrum PDF Exporter
 - Export IR, Raman, NMR, UV-Vis, MD, MolOrbital spectra to professional PDF
@@ -71,8 +71,8 @@ def _register_korean_font():
                     return name
                 except Exception:
                     continue
-    except ImportError:
-        pass
+    except ImportError as e:
+        logger.warning("[SpectrumPdfExporter] reportlab not available, Korean font skipped: %s", e)
     return 'Helvetica'
 
 KOREAN_FONT = _register_korean_font()
@@ -330,8 +330,8 @@ class SpectrumPDFExporter:
         if spectrum.image_path and os.path.exists(spectrum.image_path):
             try:
                 elements.append(Image(spectrum.image_path, width=5.5*inch, height=3*inch))
-            except:
-                pass
+            except Exception as e:
+                logger.warning("Failed to load spectrum image %s: %s", spectrum.image_path, e)
         
         elements.append(Spacer(1, 0.2*inch))
         
