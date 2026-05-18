@@ -197,6 +197,27 @@ def _init_receptor_database():
             pharmacology="SERM(Tamoxifen): 유방에서 길항, 뼈에서 작용 → 유방암+골다공증 동시 치료. SERD(Fulvestrant): 완전 분해 → 내성 ER+ 유방암",
         ),
         ReceptorMetadata(
+            pdb_id="4PE5",  # 매직넘버: 인간 GluN1/GluN2A NMDA 수용체 리간드-결합 도메인 (Karakas & Bhatt, 2014 Science)
+            name="NMDA Receptor (GluN1/GluN2A)",
+            gene="GRIN1/GRIN2A",
+            description="N-methyl-D-aspartate ionotropic glutamate receptor, GluN1/GluN2A heterodimer ligand-binding domain",
+            function="이온성 글루타메이트 수용체 — 글루타메이트/글리신 동시 결합 시 이온 채널 개방, Ca²⁺ 유입 → 시냅스 가소성(LTP/LTD) 핵심 매개자",
+            disease_relevance="알츠하이머병, 파킨슨병, 뇌졸중(흥분독성), 조현병, 우울증(케타민 타겟), 간질, 만성 통증, PTSD",
+            known_drugs=["Memantine (Namenda — 알츠하이머)", "Ketamine (마취/항우울)", "MK-801 (Dizocilpine)", "Amantadine", "PCP (phencyclidine)"],
+            organism="Homo sapiens",
+            uniprot_id="Q05586",  # GluN1
+            binding_site_residues=["Arg523", "Thr518", "Asp732", "Tyr647", "Lys211", "Glu413", "Ser688", "Phe636"],
+            pocket_character="친수성 (Arg/Asp/Glu 이온성 잔기) + 글리신/글루타메이트 이중 결합부위 (S1+S2 클램쉘 구조)",
+            pocket_volume_A3=520.0,
+            key_interactions=["수소결합 (Arg523↔글리신 카르복실)", "이온결합 (Asp732↔리간드 아민)", "소수성 (Phe636↔리간드 방향족)", "π-스태킹 (Tyr647)"],
+            selectivity_notes="GluN2A vs GluN2B 선택성: GluN2A 결합부위가 GluN2B보다 소수성 잔기 풍부 — Ifenprodil은 GluN2B 선택적 (N-말단 도메인 결합). 채널 차단제(Memantine)는 Mg²⁺ 차단 부위와 중복",
+            autodock_tips="Grid center: Arg523/Asp732 사이 (GluN1 글리신 결합 클램쉘) / Grid size: 24×24×24Å / 이중 결합부위(GluN1 글리신+GluN2 글루타메이트) 분리 도킹 권장",
+            tissue_location="중추신경계 전반 — 대뇌피질, 해마(CA1-CA3), 소뇌, 척수. 수상돌기 가시(dendritic spine)에 집중 발현",
+            nervous_system="LTP/LTD의 핵심 — 고주파 자극 시 Mg²⁺ 차단 해제 → Ca²⁺ 유입 → CaMKII 활성화 → 시냅스 강화. NMDA 과활성(흥분독성)은 뇌졸중/알츠하이머 신경세포사 원인",
+            bbb_notes="NMDA 수용체는 뇌에 위치 → 작용제/차단제 모두 BBB 통과 필수. Memantine은 아미노기 함유 친유성 → BBB 통과 양호. Ketamine: 고친유성 → 빠른 BBB 투과(마취 효과). PCP: 경구 BBB 투과 → 남용 위험",
+            pharmacology="채널 차단: Memantine(알츠하이머 — 병리적 과활성 억제, 정상 시냅스 기능 보존). 케타민(항우울 — 급속 효과 24h 이내, 해리 부작용). GluN2B 선택적 차단(Ifenprodil): 뇌졸중/통증 연구. 타닌류 폴리페놀은 NMDA 수용체에 직접 결합 연구 보고됨(Bhattacharya 2011)",
+        ),
+        ReceptorMetadata(
             pdb_id="4EY7",
             name="Beta-2 Adrenergic Receptor (B2AR)",
             gene="ADRB2",
@@ -366,6 +387,7 @@ class DockingPose:
     rmsd_ub: float = 0.0   # RMSD upper bound
     atom_coords: List[Tuple[float, float, float]] = field(default_factory=list)
     atom_elements: List[str] = field(default_factory=list)
+    smiles: str = ""  # 리간드 SMILES 문자열 — 결합 차수(bond order) 감지 및 2D↔3D 변환에 사용
 
 
 @dataclass
@@ -394,6 +416,8 @@ class Interaction:
             "salt_bridge": "Salt Bridge",
             "halogen_bond": "Halogen Bond",
         }
+        # Rule N: isinstance guard for labels
+        if not isinstance(labels, dict): labels = {}
         return labels.get(self.type, self.type)
 
 
