@@ -11,6 +11,7 @@ ChemGrid: 결합 변화 + 전자 구조 데이터 → ArrowData 자동 생성
 
 import logging
 import math
+import os
 from dataclasses import dataclass
 from typing import List, Dict, Tuple, Optional, Set
 
@@ -48,15 +49,24 @@ ELECTRONEGATIVITY = {
     53: 2.66,  # I
 }
 
-# 색상 팔레트 (전자 흐름 화살표)
-ARROW_COLORS = [
-    "#E53935",  # 빨강 (기본)
-    "#1E88E5",  # 파랑
-    "#43A047",  # 초록
-    "#FB8C00",  # 주황
-    "#8E24AA",  # 보라
-    "#00ACC1",  # 청록
-]
+# 4색 표준 (교과서 기준): 친전자=빨강 / 친핵=파랑 / 결합형성=초록 / 결합끊김=보라 (M442)
+# 5색 이상 사용 = Rule O 위반 (학생 가독성 저하) — 6색 팔레트 폐기
+_AC_NUCLEOPHILIC  = "#2980B9"  # 파랑: 친핵/론페어/음전하/외부 친핵체 출발
+_AC_BOND_FORM     = "#27AE60"  # 초록: 결합 형성/페리사이클릭 협주
+_AC_BOND_BREAK    = "#8E44AD"  # 보라: 결합 끊김/이탈기 이동/σ결합 이종분해
+_AC_DEFAULT       = "#E74C3C"  # 빨강: 기본/친전자/라디칼 동종분해 (1번 fishhook)
+
+# from_type → 4색 중 하나로 매핑 테이블
+_ARROW_COLOR_MAP: dict = {
+    "lone_pair":       _AC_NUCLEOPHILIC,   # 비공유전자쌍 출발 = 친핵
+    "negative_charge": _AC_NUCLEOPHILIC,   # 음전하 원자 출발 = 친핵
+    "pi_bond":         _AC_BOND_BREAK,     # π결합 전자 이동 = 결합 끊김/재배열
+    "aromatic_pi":     _AC_BOND_BREAK,     # 방향족 π = 결합 끊김/재배열
+    "sigma_bond":      _AC_BOND_BREAK,     # σ결합 이동 = 결합 끊김
+    "bond":            _AC_BOND_BREAK,     # 일반 결합 전자 = 결합 끊김
+    "bond_center":     _AC_BOND_BREAK,     # 결합 중심 = 결합 끊김
+    "pericyclic":      _AC_BOND_FORM,      # 페리사이클릭 협주 = 결합 형성
+}
 
 
 # ============================================================================
@@ -82,7 +92,16 @@ class ArrowGenerator:
         Returns:
             List[ArrowData] - CurvedArrowRenderer와 호환되는 화살표 목록
         """
-        if not RDKIT_AVAILABLE or result is None:
+        if not RDKIT_AVAILABLE:
+            logger.warning("ArrowGenerator.generate: RDKit not available")
+            return []
+        # Type guard: result must be BondChangeResult (Rule N)
+        if result is None:
+            logger.warning("ArrowGenerator.generate: result is None")
+            return []
+        if not isinstance(result, BondChangeResult):
+            logger.warning("ArrowGenerator.generate: invalid result type: %s",
+                           type(result).__name__)
             return []
 
         r_mol = result.r_mol
@@ -90,6 +109,16 @@ class ArrowGenerator:
         bond_changes = result.bond_changes
         charge_changes = result.charge_changes
         mapping = result.mapping
+
+        # Type guard: bond_changes must be a list (Rule N)
+        if not isinstance(bond_changes, list):
+            logger.warning("ArrowGenerator.generate: bond_changes is not a list: %s",
+                           type(bond_changes).__name__)
+            bond_changes = []
+        if not isinstance(charge_changes, list):
+            logger.warning("ArrowGenerator.generate: charge_changes is not a list: %s",
+                           type(charge_changes).__name__)
+            charge_changes = []
 
         if not bond_changes and not mapping.unmapped_reactant and not mapping.unmapped_product:
             logger.debug("결합 변화 및 원자 변화 없음 - 화살표 없음")
@@ -131,6 +160,10 @@ class ArrowGenerator:
         """
         charges: Dict[int, float] = {}
 
+        if mol is None:
+            logger.warning("_get_partial_charges: mol is None, returning empty charges")
+            return charges
+
         # Tier 1: ORCA Mulliken 전하 (설치된 경우)
         if self._orca_available:
             orca_charges = self._try_orca_charges(mol)
@@ -166,52 +199,98 @@ class ArrowGenerator:
 
             orca_path = find_orca_executable()
             if not orca_path:
+                if os.environ.get("CHEMGRID_DISABLE_ORCA", "0") == "1":
+                    logger.debug("ORCA charge calculation skipped because CHEMGRID_DISABLE_ORCA=1")
+                else:
+                    logger.info("ORCA executable not found; using non-ORCA charge fallback")
                 return None
 
             # SMILES → 3D 좌표 생성
-            smiles = Chem.MolToSmiles(mol)
             mol_3d = Chem.AddHs(mol)
-            res = AllChem.EmbedMolecule(mol_3d, randomSeed=42)
+            res = AllChem.EmbedMolecule(mol_3d, randomSeed=42)  # 42: 재현성 시드
             if res != 0:
+                logger.warning("3D 좌표 생성 실패 (EmbedMolecule 반환: %d)", res)
                 return None
-            AllChem.MMFFOptimizeMolecule(mol_3d, maxIters=200)
+            AllChem.MMFFOptimizeMolecule(mol_3d, maxIters=200)  # 200: MMFF 최적화 반복
+
+            # RDKit mol → generate_orca_input이 요구하는 atoms/bonds dict 변환
+            try:
+                conformer = mol_3d.GetConformer()
+                atoms_dict: Dict = {}
+                for i in range(mol_3d.GetNumAtoms()):
+                    atom = mol_3d.GetAtomWithIdx(i)
+                    pos = conformer.GetAtomPosition(i)
+                    coord_key = (pos.x, pos.y)
+                    atoms_dict[coord_key] = {"main": atom.GetSymbol()}
+
+                bonds_dict: Dict = {}
+                for bond in mol_3d.GetBonds():
+                    begin_idx = bond.GetBeginAtomIdx()
+                    end_idx = bond.GetEndAtomIdx()
+                    begin_pos = conformer.GetAtomPosition(begin_idx)
+                    end_pos = conformer.GetAtomPosition(end_idx)
+                    key = ((begin_pos.x, begin_pos.y), (end_pos.x, end_pos.y))
+                    bond_order = int(bond.GetBondTypeAsDouble())
+                    bonds_dict[key] = bond_order
+
+                # 분자 전체 전하 계산
+                total_charge = Chem.GetFormalCharge(mol_3d)
+            except Exception as e:
+                logger.warning("RDKit mol → ORCA dict 변환 실패: %s", e)
+                return None
 
             # ORCA 입력 생성 + 실행
-            import tempfile, os
+            import tempfile
+            import os
             with tempfile.TemporaryDirectory() as tmpdir:
-                inp_file = os.path.join(tmpdir, "charge_calc.inp")
-                inp_content = generate_orca_input(mol_3d, method="B3LYP",
-                                                   basis="6-31G(d)",
-                                                   job_type="SP")
-                with open(inp_file, "w") as f:
-                    f.write(inp_content)
+                from pathlib import Path as _Path
+                inp_path = _Path(tmpdir) / "charge_calc.inp"
+                # generate_orca_input은 atoms/bonds dict를 받아 Path를 반환
+                inp_file = generate_orca_input(
+                    atoms_dict, bonds_dict,
+                    charge=total_charge,
+                    multiplicity=1,  # 1: singlet (기본)
+                    output_path=inp_path,
+                )
 
-                executor = OrcaExecutor(str(orca_path))
-                out_file = executor.run(inp_file, timeout=120)
+                executor = OrcaExecutor(orca_exe=orca_path, timeout=120)  # 120초 타임아웃
+                out_file = executor.execute(inp_file)
 
-                if out_file and os.path.exists(out_file):
-                    parser = OrcaOutputParser()
-                    result = parser.parse(out_file)
-                    if result.converged and result.charges_mulliken:
-                        # 수소 제외, 중원자만 반환 (mol 인덱스 기준)
-                        heavy_charges: Dict[int, float] = {}
-                        heavy_idx = 0
-                        for i in range(mol_3d.GetNumAtoms()):
-                            atom = mol_3d.GetAtomWithIdx(i)
-                            if atom.GetAtomicNum() > 1:
-                                if i in result.charges_mulliken:
-                                    heavy_charges[heavy_idx] = result.charges_mulliken[i]
-                                heavy_idx += 1
-                        if heavy_charges:
-                            return heavy_charges
+                if not out_file or not os.path.exists(out_file):
+                    logger.warning("ORCA 실행 결과 파일 없음: out_file=%s", out_file)
+                    return None
+
+                parser = OrcaOutputParser()
+                result = parser.parse(out_file)
+                if not result.converged:
+                    logger.warning("ORCA 계산 수렴 실패")
+                    return None
+                if not result.charges_mulliken:
+                    logger.warning("ORCA 결과에 Mulliken 전하 데이터 없음")
+                    return None
+
+                # 수소 제외, 중원자만 반환 (mol 인덱스 기준)
+                heavy_charges: Dict[int, float] = {}
+                heavy_idx = 0
+                for i in range(mol_3d.GetNumAtoms()):
+                    atom = mol_3d.GetAtomWithIdx(i)
+                    if atom.GetAtomicNum() > 1:  # 1: 수소 원자번호
+                        if i in result.charges_mulliken:
+                            heavy_charges[heavy_idx] = result.charges_mulliken[i]
+                        heavy_idx += 1
+                if not heavy_charges:
+                    logger.warning("ORCA Mulliken 전하에서 중원자 전하 추출 실패")
+                    return None
+                return heavy_charges
 
         except Exception as e:
-            logger.debug(f"ORCA 전하 계산 실패: {e}")
+            logger.warning("ORCA 전하 계산 실패: %s", e)
 
         return None
 
     def _estimate_charge_from_en(self, mol, atom_idx: int) -> float:
         """전기음성도 기반 부분전하 추정 (Tier 3 fallback)"""
+        assert isinstance(ELECTRONEGATIVITY, dict)  # Rule N: 타입 가드
         atom = mol.GetAtomWithIdx(atom_idx)
         en_self = ELECTRONEGATIVITY.get(atom.GetAtomicNum(), 2.5)
 
@@ -258,6 +337,8 @@ class ArrowGenerator:
             adj.setdefault(bc.atom_i, set()).add(bc.atom_j)
             adj.setdefault(bc.atom_j, set()).add(bc.atom_i)
 
+        # Rule N: 타입 가드 — adj는 dict
+        assert isinstance(adj, dict)
         if all(len(adj.get(a, set())) == 2 for a in change_atoms):
             logger.debug(f"페리고리 반응 감지 (직접 순환): {len(change_atoms)}원자")
             return True
@@ -373,12 +454,14 @@ class ArrowGenerator:
         # 이탈기: 반응물에만 있는 원자 → 결합 끊김 화살표 (이미 처리될 수 있음)
         # 유입 원자: 생성물에만 있는 원자 → 새 결합 형성 화살표
         if mapping.unmapped_product and p_mol:
+            # Rule N: isinstance guard for mapping dict
+            _p2r = mapping.product_to_reactant if isinstance(mapping.product_to_reactant, dict) else {}
             for p_idx in mapping.unmapped_product:
                 # 생성물에서 이 원자의 이웃 중 매핑된 원자 찾기
                 p_atom = p_mol.GetAtomWithIdx(p_idx)
                 for neighbor in p_atom.GetNeighbors():
                     n_pidx = neighbor.GetIdx()
-                    r_idx = mapping.product_to_reactant.get(n_pidx)
+                    r_idx = _p2r.get(n_pidx)
                     if r_idx is not None:
                         # 유입 원자(external) → 매핑된 원자로의 결합 형성
                         r_atom = r_mol.GetAtomWithIdx(r_idx)
@@ -395,7 +478,7 @@ class ArrowGenerator:
                             from_atom_idx=-1,  # external
                             to_atom_idx=r_idx,
                             curvature=0.45,  # [v2.0] 외부→내부: 넓은 아치
-                            color="#1E88E5",
+                            color=_AC_NUCLEOPHILIC,  # 외부 친핵체 = 파랑 (M442)
                         ))
                         break  # 첫 이웃만
 
@@ -420,7 +503,8 @@ class ArrowGenerator:
                 to_label=f"이탈기 (전자쌍 수용)",
                 from_atom_idx=bc.atom_i,
                 to_atom_idx=-1,  # external (이탈기)
-                curvature=0.45,  # [v2.0] 이탈기: 넓은 아치
+                curvature=-0.45,  # Bug 1 Fix (M894): LG 이탈 = 음수 부호(아래 아치)
+                                  # 교과서 McMurry §7: LG 화살표는 반응 중심 아래를 통과
             )
 
         if bc.atom_i < 0 or bc.atom_j < 0:
@@ -434,6 +518,9 @@ class ArrowGenerator:
         en_i = ELECTRONEGATIVITY.get(atom_i.GetAtomicNum(), 2.5)
         en_j = ELECTRONEGATIVITY.get(atom_j.GetAtomicNum(), 2.5)
 
+        # Rule N: isinstance guard for charge_delta dict
+        if not isinstance(charge_delta, dict):
+            charge_delta = {}
         delta_i = charge_delta.get(bc.atom_i, 0)
         delta_j = charge_delta.get(bc.atom_j, 0)
 
@@ -456,7 +543,11 @@ class ArrowGenerator:
 
         # [v2.0] 세분류된 결합 소스 유형 + 적응형 곡률
         from_type = self._classify_bond_source(mol, bc.atom_i, bc.atom_j)
-        curvature = self._adaptive_curvature(mol, from_idx, to_idx, "polar")
+        # Bug 1 Fix (M894): bond_break = LG 이탈 방향 → 음수 curvature 부호로 설정
+        # 렌더러 cross product로 재결정되지만, from_type=="bond" 화살표가 LG 이탈임을 보존
+        raw_curv = self._adaptive_curvature(mol, from_idx, to_idx, "polar")
+        curvature = -abs(raw_curv)  # LG 이탈: 항상 음수 시작값(아래 아치 우선)
+                                    # 렌더러 cross product 없는 경우 fallback으로 동작
 
         return ArrowData(
             arrow_type="full",
@@ -489,6 +580,9 @@ class ArrowGenerator:
             return None
 
         # 전자 제공자(Nu) 결정: 더 음전하/전기음성 원자가 전자 제공
+        # Rule N: isinstance guard for charges dict
+        if not isinstance(charges, dict):
+            charges = {}
         charge_i = charges.get(bc.atom_i, 0.0)
         charge_j = charges.get(bc.atom_j, 0.0)
         en_i = ELECTRONEGATIVITY.get(atom_i.GetAtomicNum(), 2.5)
@@ -516,8 +610,10 @@ class ArrowGenerator:
             from_sym, to_sym = atom_j.GetSymbol(), atom_i.GetSymbol()
             from_type = "lone_pair" if lp_j else "negative_charge"
 
-        # [v2.0] 적응형 곡률
-        curvature = self._adaptive_curvature(r_mol, from_idx, to_idx, "polar")
+        # Bug 1 Fix (M894): Nu 공격 curvature = 양수 부호(위 아치)
+        # 교과서 McMurry §7: Nu 화살표는 반응 중심 위쪽을 통과
+        raw_curv = self._adaptive_curvature(r_mol, from_idx, to_idx, "polar")
+        curvature = +abs(raw_curv)  # Nu 공격: 항상 양수 시작값(위 아치 우선)
 
         return ArrowData(
             arrow_type="full",
@@ -641,7 +737,7 @@ class ArrowGenerator:
             from_idx = chain[idx]
             to_idx = chain[(idx + 1) % n]
             next_to = chain[(idx + 2) % n]
-            color_idx = (idx // 2) % len(ARROW_COLORS)
+            # 페리사이클릭 협주 반응 = 결합 형성색(초록) 고정 (M442 4색 표준)
 
             atom_from = mol.GetAtomWithIdx(from_idx)
             atom_to = mol.GetAtomWithIdx(to_idx)
@@ -668,7 +764,7 @@ class ArrowGenerator:
                 from_atom_idx=from_idx,
                 to_atom_idx=next_to,
                 curvature=peri_curvature,
-                color=ARROW_COLORS[color_idx],
+                color=_AC_BOND_FORM,  # 페리사이클릭 협주 = 초록(결합형성) (M442)
             ))
 
         return arrows
@@ -692,6 +788,8 @@ class ArrowGenerator:
             adj.setdefault(bc.atom_i, set()).add(bc.atom_j)
             adj.setdefault(bc.atom_j, set()).add(bc.atom_i)
 
+        # Rule N: isinstance guard — adj constructed as dict above
+        assert isinstance(adj, dict)
         degree_one = [a for a in change_atoms if len(adj.get(a, set())) == 1]
         if len(degree_one) != 2:
             return []
@@ -717,6 +815,9 @@ class ArrowGenerator:
                             adj: Dict[int, Set[int]],
                             atoms: Set[int]) -> List[int]:
         """결합 변화 그래프에서 start→end 경로 추출"""
+        # Rule N: isinstance guard for adj parameter
+        if not isinstance(adj, dict):
+            return []
         visited = {start}
         path = [start]
         current = start
@@ -790,7 +891,7 @@ class ArrowGenerator:
                 if bond_src == "pi_bond":
                     bond_label = f"{atom_i.GetSymbol()}={atom_j.GetSymbol()} \u03c0결합"
 
-                # 화살표 1: 결합 → 원자 i (반쪽 화살표 / fishhook)
+                # 화살표 1: 결합 → 원자 i (반쪽 화살표 / fishhook) — 결합끊김=보라 (M442)
                 arrows.append(ArrowData(
                     arrow_type="half",
                     from_type=bond_src,
@@ -800,10 +901,10 @@ class ArrowGenerator:
                     from_atom_idx=bc.atom_j,  # 결합 중심→원자 i
                     to_atom_idx=bc.atom_i,
                     curvature=rad_curv,
-                    color="#E53935",
+                    color=_AC_BOND_BREAK,  # 라디칼 동종분해 = 보라(결합끊김) (M442)
                 ))
 
-                # 화살표 2: 결합 → 원자 j (반쪽 화살표 / fishhook)
+                # 화살표 2: 결합 → 원자 j (반쪽 화살표 / fishhook) — 결합끊김=보라 (M442)
                 arrows.append(ArrowData(
                     arrow_type="half",
                     from_type=bond_src,
@@ -813,7 +914,7 @@ class ArrowGenerator:
                     from_atom_idx=bc.atom_i,
                     to_atom_idx=bc.atom_j,
                     curvature=-rad_curv,
-                    color="#1E88E5",
+                    color=_AC_BOND_BREAK,  # 라디칼 동종분해 = 보라(결합끊김) (M442)
                 ))
 
         return arrows
@@ -855,6 +956,8 @@ class ArrowGenerator:
         ordered: List[ArrowData] = []
         used: Set[int] = set()
 
+        # Rule N: isinstance guard — arrow_by_from is dict (built at L914)
+        assert isinstance(arrow_by_from, dict)
         for start in chain_starts:
             current = start
             while current and id(current) not in used:
@@ -876,10 +979,15 @@ class ArrowGenerator:
     # ────────────────────────────────────────────────────────────────────
 
     def _assign_colors(self, arrows: List[ArrowData]) -> List[ArrowData]:
-        """화살표에 순서대로 색상 할당"""
-        for i, arrow in enumerate(arrows):
-            if arrow.color == "#E53935":  # 기본색이면 변경
-                arrow.color = ARROW_COLORS[i % len(ARROW_COLORS)]
+        """from_type 기반 교과서 4색 표준 배정 (M442: 5색+ 금지, Rule O)
+        인덱스 순환 배정 폐기 — 의미론적 색상으로 학생 가독성 확보"""
+        for arrow in arrows:
+            # 이미 의미론적 색상이 명시된 경우(하드코딩) 유지 — 단 4색 표준 범위 확인
+            _known_colors = {_AC_NUCLEOPHILIC, _AC_BOND_FORM, _AC_BOND_BREAK, _AC_DEFAULT}
+            current = getattr(arrow, 'color', _AC_DEFAULT)
+            if current not in _known_colors:
+                # 4색 범위 밖 색상 → from_type 기반 재배정
+                arrow.color = _ARROW_COLOR_MAP.get(arrow.from_type, _AC_DEFAULT)
         return arrows
 
     # ────────────────────────────────────────────────────────────────────
@@ -898,7 +1006,8 @@ class ArrowGenerator:
         """
         arrows = self.generate(result)
 
-        if external_labels:
+        # Rule N: isinstance guard for external_labels dict
+        if external_labels and isinstance(external_labels, dict):
             for arrow in arrows:
                 if arrow.from_atom_idx in result.mapping.unmapped_reactant:
                     label = external_labels.get(arrow.from_atom_idx, "외부")
