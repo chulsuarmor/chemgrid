@@ -2,9 +2,12 @@
 ui_utils.py — ChemGrid UI 유틸리티 모듈
 VERSION, CanvasMode, get_coord_key(), load_icon()
 """
+import logging
 import os
 from PyQt6.QtGui import QPainter, QPen, QFont, QIcon, QPolygonF, QPixmap
 from PyQt6.QtCore import Qt, QPointF
+
+logger = logging.getLogger(__name__)
 
 
 # ==========================================
@@ -24,6 +27,15 @@ class CanvasMode:
 # ==========================================
 def get_coord_key(point):
     """0.01 단위 정밀도 복구: 붙여넣기 시 미세 소수점 오차로 인한 분자 찌그러짐 방지"""
+    # N-code: isinstance guard for external point data
+    if point is None:
+        logger.warning("get_coord_key: point is None, returning (0, 0)")
+        return (0.0, 0.0)
+    if not hasattr(point, 'x') or not hasattr(point, 'y'):
+        logger.warning("get_coord_key: point lacks x/y attributes, type=%s", type(point).__name__)
+        if isinstance(point, (tuple, list)) and len(point) >= 2:
+            return (round(float(point[0]), 2), round(float(point[1]), 2))
+        return (0.0, 0.0)
     return (round(point.x(), 2), round(point.y(), 2))
 
 
@@ -38,10 +50,14 @@ def load_icon(file_name, mode_name=None, symbol_text=None):
     # 1. 사진 파일 로드 (패딩을 줄여 로고 체감 크기 30% 확대)
     # [수정] 절대 경로 자동 계산: 스크립트 위치 기준으로 이미지 파일 찾기
     if file_name:
+        # N-code: isinstance guard for file_name
+        if not isinstance(file_name, str):
+            logger.warning("load_icon: file_name is not str, type=%s", type(file_name).__name__)
+            file_name = str(file_name) if file_name is not None else ""
         # [해결] __file__ 경로의 절대화를 통해 어떤 환경에서도 파일을 찾도록 보정
         script_dir = os.path.dirname(os.path.abspath(__file__))
         abs_file_name = os.path.normpath(os.path.join(script_dir, file_name))
-        
+
         if os.path.exists(abs_file_name):
             try:
                 img = QPixmap(abs_file_name)
@@ -50,11 +66,12 @@ def load_icon(file_name, mode_name=None, symbol_text=None):
                     painter.drawPixmap(pad, pad, 40-pad*2, 40-pad*2, img)
                     painter.end(); return QIcon(pixmap)
                 else:
-                    print(f"[load_icon] ⚠️ 이미지 파일 손상: {abs_file_name}")
+                    # M-code: no silent failure, use logger
+                    logger.warning("load_icon: image file corrupted: %s", abs_file_name)
             except Exception as e:
-                print(f"[load_icon] ⚠️ 이미지 로드 실패: {abs_file_name} - {e}")
+                logger.warning("load_icon: image load failed: %s - %s", abs_file_name, e)
         else:
-            print(f"[load_icon] ⚠️ 파일 없음: {abs_file_name}")
+            logger.warning("load_icon: file not found: %s", abs_file_name)
 
     # 2. 직접 그리기 (기호 10% 축소 및 대쉬 디자인 실물화)
     painter.setPen(QPen(Qt.GlobalColor.black, 3.2))
