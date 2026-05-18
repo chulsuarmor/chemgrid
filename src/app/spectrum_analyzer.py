@@ -188,9 +188,9 @@ def parse_orca_frequencies(out_path: Path) -> SpectrumData:
                         if part == "seconds" and j > 0:
                             comp_time = float(parts[j-1])
                             break
-                except:
-                    pass
-        
+                except (ValueError, IndexError) as e:
+                    logger.warning("[SpectrumAnalyzer] computation time parse failed: %s", e)
+
         logger.info(f"Parsed {len(modes)} vibrational modes")
         logger.info(f"Frequency range: {min_freq:.1f} - {max_freq:.1f} cm^-1")
         logger.info(f"Max IR intensity: {max(ir_ints) if ir_ints else 0:.2f} km/mol")
