@@ -8,9 +8,12 @@ ChemGrid: Pharmacophore Feature Mapper
 - Generates pharmacophore fingerprints for similarity
 """
 
+import logging
 import math
 from typing import Dict, List, Optional, Tuple, Set
 from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
 
 try:
     from rdkit import Chem
@@ -187,8 +190,8 @@ def _find_features_by_smarts(
                 if conf2d is not None and len(match) > 0:
                     pos = conf2d.GetAtomPosition(match[0])
                     feat.position_2d = (round(pos.x, 3), round(pos.y, 3))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("2D position extraction error: %s", e)
 
             features.append(feat)
 
@@ -279,15 +282,15 @@ def map_pharmacophore(
             try:
                 AllChem.Compute2DCoords(mol)
                 conf = mol.GetConformer(0)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("2D coord fallback computation error: %s", e)
 
     if conf is None:
         try:
             AllChem.Compute2DCoords(mol)
             conf = mol.GetConformer(0)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("2D coord computation error: %s", e)
 
     # Detect features
     all_features = []
