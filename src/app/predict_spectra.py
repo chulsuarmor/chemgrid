@@ -1,19 +1,51 @@
 """
-predict_spectra.py — SMILES 기반 예측 스펙트럼 생성기
+predict_spectra.py — 2-tier 스펙트럼 예측 생성기
 =======================================================
-ORCA 파일 없이 SMILES/분자 구조로부터 추정 스펙트럼 생성.
+Tier 1 (DFT): ORCA .out 파일의 실제 계산 결과를 파싱.
+Tier 2 (Empirical): SMILES/분자 구조로부터 SMARTS 기반 추정.
+
 spectra_assets/*/explanatory.txt 기준 준수:
   IR:     X=4000→400cm⁻¹, Y=Transmittance%, 피크↓(inverted)
   Raman:  X=0→4000cm⁻¹, Y=Intensity, 피크↑
   1H-NMR: X=12→0ppm, Integration line, Splitting
   13C-NMR: X=220→0ppm, Zone color (aliphatic/aromatic/carbonyl)
   UV-Vis: 듀얼 뷰 (ε linear + log ε), X=200→800nm
+
+  출력 스펙트럼 표기: "이론적 스펙트럼 (엔진 기반)" — CLAUDE.md Rule E-a, M532
+
+학술 인용:
+  Neese 2018 (ORCA quantum chemistry package, WIREs Comput. Mol. Sci. 8, e1327)
+  Mulliken 1955 (Mulliken population analysis, J. Chem. Phys. 23, 1833)
+  Lowdin 1950 (Lowdin orthogonalization, J. Chem. Phys. 18, 365)
+  Long 1977 (Raman Spectroscopy, McGraw-Hill)
+  Woodward 1942 (UV-Vis Woodward Rules, J. Am. Chem. Soc. 64, 72)
 """
 
 from __future__ import annotations
+import logging
 import math
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Dict, Optional, Tuple
+
+logger = logging.getLogger(__name__)
+
+# Academic-integrity guard:
+# This data-only module never submits remote ORCA work. DFT labels are allowed
+# only when a completed local ORCA .out file is supplied and parsed. Remote
+# health alone stays SIMULATION_MODE and must not be surfaced as [REMOTE_DFT].
+ORCA_AVAILABLE = False
+SIMULATION_MODE = True
+MATPLOTLIB_AVAILABLE = False  # data generator only; plotting modules own mpl imports.
+_ORCA_TAIL_BYTES = 65536  # [MAGIC] ORCA normal-termination marker is in file tail.
+_ORCA_TERMINATION_MARKER = "ORCA TERMINATED NORMALLY"
+SPECTRA_CITATIONS: Tuple[str, ...] = (
+    "Neese, F. (2018) WIREs Comput. Mol. Sci. 8:e1327.",
+    "Mulliken, R.S. (1955) J. Chem. Phys. 23:1833.",
+    "Lowdin, P.O. (1950) J. Chem. Phys. 18:365.",
+    "Long, D.A. (1977) Raman Spectroscopy, McGraw-Hill.",
+    "Woodward, R.B. (1942) J. Am. Chem. Soc. 64:72.",
+)
 
 # RDKit 임포트
 try:
@@ -25,6 +57,19 @@ try:
     RDKIT_OK = True
 except ImportError:
     RDKIT_OK = False
+
+# ORCA parser imports (optional — DFT tier degrades gracefully)
+try:
+    from spectrum_analyzer import parse_orca_frequencies
+    ORCA_IR_PARSER_OK = True
+except ImportError:
+    ORCA_IR_PARSER_OK = False
+
+try:
+    from popup_nmr import NMRParser
+    ORCA_NMR_PARSER_OK = True
+except ImportError:
+    ORCA_NMR_PARSER_OK = False
 
 # ─── 데이터 클래스 ────────────────────────────────────────
 
@@ -74,6 +119,14 @@ class PredictedSpectra:
     c13_peaks: List[C13Peak] = field(default_factory=list)
     uvvis_peaks: List[UVVisPeak] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
+    source_label: str = "[SIMULATION_MODE] SMARTS/RDKit heuristic spectra"
+    engine_route: str = "local_orca_out_absent"
+    engine_health: str = "not_checked"
+    calculation_completed_claimed: bool = False
+    orca_available: bool = False
+    simulation_mode: bool = True
+    matplotlib_available: bool = False
+    citations: Tuple[str, ...] = field(default_factory=lambda: SPECTRA_CITATIONS)
 
 # ─── IR 피크 룩업 테이블 (Hooke's Law 근사 + 경험치) ────────
 
@@ -102,9 +155,12 @@ IR_LOOKUP: Dict[str, List[Tuple]] = {
     "C-Br":         [(650, 20, "C-Br str.", 40)],
     "C-I":          [(500, 25, "C-I str.", 35)],
     "S-H":          [(2550, 35, "S-H str.", 25)],
+    "S-S":          [(480, 20, "S-S str. (disulfide)", 30)],
+    "S-C":          [(680, 30, "C-S str.", 30)],
     "S=O_sulfoxide":[(1050, 10, "S=O str. (sulfoxide)", 30)],
     "S=O_sulfone":  [(1300, 10, "S=O asym. str. (sulfone)", 30),
                      (1150, 12, "S=O sym. str. (sulfone)", 30)],
+    "S=O_sulfinic": [(1090, 15, "S=O str. (sulfinic acid)", 25)],
     "P=O":          [(1250, 15, "P=O str.", 35)],
     "NO2":          [(1540, 8, "N=O asym. str. (NO2)", 30),
                      (1350, 12, "N=O sym. str. (NO2)", 25)],
@@ -138,8 +194,11 @@ def _detect_functional_groups(mol) -> List[str]:
         "C-O":          "[CX4][OX2]",
         "C-N":          "[CX4][NX3]",
         "S-H":          "[SX2H]",
+        "S-S":          "[SX2][SX2,SX3]",     # disulfide bond (S-S)
+        "S-C":          "[SX2][CX4]",          # thioether C-S
         "S=O_sulfoxide": "[SX3](=O)",
         "S=O_sulfone":  "[SX4](=O)(=O)",
+        "S=O_sulfinic": "[SX3](=O)[OH]",       # sulfinic acid
         "P=O":          "[PX4](=O)",
         "NO2":          "[$([NX3](=O)=O),$([NX3+](=O)[O-])]",
         "C=N_imine":    "[CX3]=[NX2]",
@@ -150,8 +209,8 @@ def _detect_functional_groups(mol) -> List[str]:
             patt = Chem.MolFromSmarts(sma)
             if patt and mol.HasSubstructMatch(patt):
                 groups.append(name)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("[PredictSpectra] SMARTS substructure match failed for %s: %s", name, e)
 
     # C-H 판별
     has_aromatic = any(a.GetIsAromatic() for a in mol.GetAtoms())
@@ -178,19 +237,378 @@ def _detect_functional_groups(mol) -> List[str]:
     if has_sp2_ch:
         groups.append("C-H_sp2")
 
-    # 고리 크기
+    # 고리 크기 (모든 고리 탐지 — 이전 버전은 첫 고리만 감지하는 버그 있었음)
     ring_info = mol.GetRingInfo()
     for ring in ring_info.AtomRings():
         if len(ring) == 5:
             groups.append("ring_5")
         elif len(ring) == 6:
             groups.append("ring_6")
-        break  # 첫 고리만
 
     return list(set(groups))
 
-def predict_ir(smiles: str) -> List[IRPeak]:
-    """IR 스펙트럼 예측 (Transmittance %, 피크 ↓)"""
+
+def _predict_fingerprint_peaks(mol, groups: List[str], seen_wn: set) -> List[IRPeak]:
+    """Generate structure-dependent fingerprint region peaks (400-1500 cm-1).
+
+    Derives peaks from actual molecular features: skeletal C-C stretches,
+    CH2/CH3 rocking/wagging, ring deformations, and heteroatom bends.
+    Replaces the previous hardcoded 5-peak approach.
+
+    Args:
+        mol: RDKit Mol object
+        groups: Detected functional groups from _detect_functional_groups()
+        seen_wn: Set of wavenumbers already assigned (for dedup)
+
+    Returns:
+        List of IRPeak instances for the fingerprint region
+    """
+    fp_peaks: List[IRPeak] = []
+
+    def _add(wn: int, tr: int, asgn: str, w: int) -> None:
+        """Add peak if not overlapping with existing ones (within +/-40 cm-1)."""
+        if not any(abs(wn - s) < 40 for s in seen_wn):
+            fp_peaks.append(IRPeak(wn, tr, asgn, w))
+            seen_wn.add(wn)
+
+    # --- CH2 / CH3 deformation modes (depend on sp3 carbon count) ---
+    n_sp3_c = sum(
+        1 for a in mol.GetAtoms()
+        if a.GetSymbol() == "C"
+        and a.GetHybridization() == rdchem.HybridizationType.SP3
+    )
+    if n_sp3_c >= 1:
+        # CH3 symmetric deformation (umbrella mode)
+        _add(1375, 60, "CH3 sym. def.", 15)
+    if n_sp3_c >= 2:
+        # CH2 wagging (depends on chain length)
+        _add(1305, 70, "CH2 wag", 20)
+    if n_sp3_c >= 3:
+        # CH2 rocking (long chains)
+        _add(720, 65, "CH2 rock (skeletal)", 25)
+
+    # --- C-C skeletal stretching (800-1200 cm-1) ---
+    n_heavy = mol.GetNumHeavyAtoms()
+    n_single_cc = sum(
+        1 for b in mol.GetBonds()
+        if b.GetBondType() == Chem.rdchem.BondType.SINGLE
+        and b.GetBeginAtom().GetSymbol() == "C"
+        and b.GetEndAtom().GetSymbol() == "C"
+    )
+    if n_single_cc >= 1:
+        # C-C stretch frequency varies with molecular size
+        cc_wn = max(800, 1100 - n_heavy * 8)  # larger molecules: lower freq
+        _add(cc_wn, 75, "C-C skeletal str.", 20)
+    if n_single_cc >= 3:
+        _add(1040, 70, "C-C skeletal str.", 18)
+
+    # --- Ring deformations ---
+    ring_info = mol.GetRingInfo()
+    ring_sizes = [len(r) for r in ring_info.AtomRings()]
+    n_6ring = sum(1 for s in ring_sizes if s == 6)
+    n_5ring = sum(1 for s in ring_sizes if s == 5)
+
+    if n_6ring >= 1:
+        _add(1025, 65, "ring C-C str.", 20)
+        if n_6ring >= 2:
+            _add(835, 55, "ring def. (poly)", 25)
+    if n_5ring >= 1:
+        _add(930, 60, "5-ring def.", 22)
+
+    # --- Aromatic out-of-plane bending (substitution pattern) ---
+    if any(a.GetIsAromatic() for a in mol.GetAtoms()):
+        # Count aromatic H for substitution pattern
+        aromatic_h = sum(
+            a.GetTotalNumHs() for a in mol.GetAtoms() if a.GetIsAromatic()
+        )
+        if aromatic_h >= 4:
+            _add(750, 35, "Ar-H oop (mono-sub.)", 30)
+        elif aromatic_h >= 2:
+            _add(820, 40, "Ar-H oop (di-sub.)", 25)
+        elif aromatic_h >= 1:
+            _add(870, 50, "Ar-H oop (tri-sub.)", 20)
+
+    # --- Heteroatom-specific fingerprint modes ---
+    has_c_o = "C-O" in groups or "C=O_ester" in groups
+    has_c_n = "C-N" in groups or "C=O_amide" in groups
+
+    if has_c_o and not any(abs(1080 - s) < 40 for s in seen_wn):
+        _add(1045, 55, "C-O-C sym. str.", 25)
+    if has_c_n:
+        _add(1130, 60, "C-N str. (fingerprint)", 20)
+
+    # --- Phosphorus / Sulfur containing molecules ---
+    if "P=O" in groups:
+        _add(1030, 50, "P-O-C str.", 25)
+    if "S=O_sulfone" in groups or "S=O_sulfoxide" in groups:
+        _add(620, 55, "C-S str.", 25)
+
+    return fp_peaks
+
+
+# ============================================================================
+# DFT TIER: ORCA output parsing → IRPeak / NMRPeak / C13Peak
+# ============================================================================
+# These functions attempt to extract real DFT-calculated spectra from an ORCA
+# .out file. If the file is absent or parsing fails, they return None so the
+# caller can fall through to the empirical (SMARTS) tier.
+# ORCA_AVAILABLE guard is per-call: only _resolve_completed_orca_out() can
+# promote a local ORCA file; all other route/health states remain SIMULATION_MODE.
+
+def _safe_status_get(status: Optional[Dict[str, object]], key: str, default: object = None) -> object:
+    """Return a status value only after guarding external/AI data shape."""
+    if not isinstance(status, dict):
+        return default
+    return status.get(key, default)
+
+
+def _bool_status(status: Optional[Dict[str, object]], *keys: str) -> bool:
+    for key in keys:
+        value = _safe_status_get(status, key, None)
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true", "yes", "ok"}
+    return False
+
+
+def _status_text(status: Optional[Dict[str, object]], *keys: str, default: str = "not_checked") -> str:
+    for key in keys:
+        value = _safe_status_get(status, key, None)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return default
+
+
+def _orca_output_has_completion_marker(orca_path: Path) -> bool:
+    try:
+        size = orca_path.stat().st_size
+        with orca_path.open("rb") as fh:
+            if size > _ORCA_TAIL_BYTES:
+                fh.seek(-_ORCA_TAIL_BYTES, 2)
+            tail = fh.read().decode("utf-8", errors="replace")
+    except Exception as exc:
+        logger.warning("ORCA output completion check failed for %s: %s", orca_path, exc)
+        return False
+    return _ORCA_TERMINATION_MARKER in tail
+
+
+def _resolve_completed_orca_out(orca_out: Optional[Path], tier_name: str) -> Optional[Path]:
+    """Return an ORCA .out path only when it proves a completed calculation."""
+    if orca_out is None:
+        return None
+
+    orca_path = Path(orca_out)
+    if not orca_path.exists():
+        logger.warning("%s: ORCA output missing (%s); using SIMULATION_MODE fallback", tier_name, orca_path)
+        return None
+    if not orca_path.is_file():
+        logger.warning("%s: ORCA output is not a file (%s); using SIMULATION_MODE fallback", tier_name, orca_path)
+        return None
+    try:
+        if orca_path.stat().st_size <= 0:
+            logger.warning("%s: ORCA output is empty (%s); using SIMULATION_MODE fallback", tier_name, orca_path)
+            return None
+    except OSError as exc:
+        logger.warning("%s: ORCA output stat failed (%s): %s", tier_name, orca_path, exc)
+        return None
+
+    if not _orca_output_has_completion_marker(orca_path):
+        logger.warning(
+            "%s: ORCA output lacks normal termination marker (%s); "
+            "health/route evidence alone is degraded, using SIMULATION_MODE fallback",
+            tier_name,
+            orca_path,
+        )
+        return None
+    return orca_path
+
+
+def _build_source_metadata(
+    orca_out_path: Optional[Path],
+    engine_status: Optional[Dict[str, object]] = None,
+) -> Dict[str, object]:
+    health = _status_text(engine_status, "health", "orca_health", "status")
+    submit_called = _bool_status(engine_status, "orca_submit_called", "submit_called", "/orca/submit")
+    external_completed = _bool_status(engine_status, "calculation_completed_claimed")
+
+    if orca_out_path is not None:
+        return {
+            "source_label": f"[LOCAL_ORCA_OUTPUT] completed ORCA .out parsed: {orca_out_path}",
+            "engine_route": "local_orca_out",
+            "engine_health": health,
+            "calculation_completed_claimed": True,
+            "orca_available": True,
+            "simulation_mode": False,
+        }
+
+    route = "remote_health_only_no_submit" if health == "ok" and not submit_called else "local_orca_out_absent"
+    if isinstance(engine_status, dict) and external_completed:
+        logger.warning(
+            "predict_spectra received calculation_completed_claimed=True without a completed local ORCA output; "
+            "not promoting to REMOTE_DFT"
+        )
+
+    return {
+        "source_label": (
+            "[SIMULATION_MODE] SMARTS/RDKit heuristic spectra; no /orca/submit result "
+            "or completed ORCA .out loaded"
+        ),
+        "engine_route": route,
+        "engine_health": health,
+        "calculation_completed_claimed": False,
+        "orca_available": False,
+        "simulation_mode": True,
+    }
+
+
+def _dft_predict_ir(orca_out: Optional[Path]) -> Optional[List[IRPeak]]:
+    """Tier 1 IR: parse vibrational frequencies from ORCA output.
+
+    Returns list of IRPeak from actual DFT frequencies, or None if
+    ORCA data is unavailable (triggering fallback to empirical tier).
+    """
+    if orca_out is None:
+        return None
+    if not ORCA_IR_PARSER_OK:
+        logger.warning("DFT IR tier unavailable: spectrum_analyzer not imported; using SIMULATION_MODE fallback")
+        return None
+    orca_path = _resolve_completed_orca_out(orca_out, "DFT IR tier")
+    if orca_path is None:
+        return None
+
+    try:
+        spec_data = parse_orca_frequencies(orca_path)
+        if not spec_data.ir_frequencies:
+            logger.debug("DFT IR tier: no vibrational frequencies parsed")
+            return None
+
+        peaks: List[IRPeak] = []
+        max_intensity = max(spec_data.ir_intensities) if spec_data.ir_intensities else 1.0
+        if max_intensity <= 0:
+            max_intensity = 1.0
+
+        for freq, intensity in zip(spec_data.ir_frequencies, spec_data.ir_intensities):
+            if freq <= 0:
+                continue  # skip imaginary / zero modes
+            # Convert IR intensity (km/mol) to transmittance %
+            # Higher intensity = lower transmittance (deeper peak)
+            norm = intensity / max_intensity
+            transmittance = max(2.0, 100.0 * (1.0 - 0.95 * norm))
+            peaks.append(IRPeak(
+                wavenumber=round(freq, 1),
+                transmittance=round(transmittance, 1),
+                assignment=f"DFT mode ({freq:.0f} cm-1)",
+                width=15.0,
+            ))
+        logger.info("DFT IR tier: %d peaks from ORCA", len(peaks))
+        return sorted(peaks, key=lambda p: p.wavenumber, reverse=True) if peaks else None
+    except Exception as exc:
+        logger.warning("DFT IR tier failed: %s", exc)
+        return None
+
+
+def _dft_predict_h1(orca_out: Optional[Path]) -> Optional[List[NMRPeak]]:
+    """Tier 1 1H-NMR: parse chemical shifts from ORCA NMR output.
+
+    Returns list of NMRPeak from DFT shielding tensors, or None if
+    ORCA NMR data is unavailable (triggering fallback to empirical tier).
+    """
+    if orca_out is None:
+        return None
+    if not ORCA_NMR_PARSER_OK:
+        logger.warning("DFT 1H-NMR tier unavailable: popup_nmr.NMRParser not imported; using SIMULATION_MODE fallback")
+        return None
+    orca_path = _resolve_completed_orca_out(orca_out, "DFT 1H-NMR tier")
+    if orca_path is None:
+        return None
+
+    try:
+        nmr_data = NMRParser.parse_nmr_from_orca(orca_path)
+        if not isinstance(nmr_data, dict):
+            logger.warning("DFT 1H-NMR tier: parse_nmr_from_orca returned %s, expected dict", type(nmr_data).__name__)
+            return None
+        h1_signals = nmr_data.get("1H", [])
+        if not h1_signals:
+            logger.debug("DFT 1H-NMR tier: no 1H signals parsed from ORCA")
+            return None
+
+        peaks: List[NMRPeak] = []
+        for sig in h1_signals:
+            peaks.append(NMRPeak(
+                shift=round(sig.chemical_shift, 2),
+                integration=1,
+                multiplicity=sig.multiplicity if sig.multiplicity else "s",
+                assignment=f"DFT 1H ({sig.chemical_shift:.2f} ppm)",
+                neighbors=0,
+            ))
+        logger.info("DFT 1H-NMR tier: %d signals from ORCA", len(peaks))
+        return sorted(peaks, key=lambda p: p.shift) if peaks else None
+    except Exception as exc:
+        logger.warning("DFT 1H-NMR tier failed: %s", exc)
+        return None
+
+
+def _dft_predict_c13(orca_out: Optional[Path]) -> Optional[List[C13Peak]]:
+    """Tier 1 13C-NMR: parse chemical shifts from ORCA NMR output.
+
+    Returns list of C13Peak from DFT shielding tensors, or None if
+    ORCA NMR data is unavailable (triggering fallback to empirical tier).
+    """
+    if orca_out is None:
+        return None
+    if not ORCA_NMR_PARSER_OK:
+        logger.warning("DFT 13C-NMR tier unavailable: popup_nmr.NMRParser not imported; using SIMULATION_MODE fallback")
+        return None
+    orca_path = _resolve_completed_orca_out(orca_out, "DFT 13C-NMR tier")
+    if orca_path is None:
+        return None
+
+    try:
+        nmr_data = NMRParser.parse_nmr_from_orca(orca_path)
+        if not isinstance(nmr_data, dict):
+            logger.warning("DFT 13C-NMR tier: parse_nmr_from_orca returned %s, expected dict", type(nmr_data).__name__)
+            return None
+        c13_signals = nmr_data.get("13C", [])
+        if not c13_signals:
+            logger.debug("DFT 13C-NMR tier: no 13C signals parsed from ORCA")
+            return None
+
+        peaks: List[C13Peak] = []
+        for sig in c13_signals:
+            cs = sig.chemical_shift
+            # Classify zone from DFT shift value
+            if cs > 160:
+                zone = "carbonyl"
+            elif cs > 100:
+                zone = "aromatic"
+            else:
+                zone = "aliphatic"
+            peaks.append(C13Peak(
+                shift=round(cs, 1),
+                carbon_type="C",  # DFT does not distinguish CH3/CH2/CH/C directly
+                zone=zone,
+                assignment=f"DFT 13C ({cs:.1f} ppm)",
+            ))
+        logger.info("DFT 13C-NMR tier: %d signals from ORCA", len(peaks))
+        return sorted(peaks, key=lambda p: p.shift) if peaks else None
+    except Exception as exc:
+        logger.warning("DFT 13C-NMR tier failed: %s", exc)
+        return None
+
+
+def predict_ir(smiles: str, orca_out: Optional[Path] = None) -> List[IRPeak]:
+    """IR 스펙트럼 예측 (Transmittance %, 피크 ↓).
+
+    Tier 1: DFT — uses ORCA vibrational frequency output if orca_out is given.
+    Tier 2: Empirical — SMARTS lookup tables + fingerprint analysis.
+    """
+    # --- Tier 1: DFT ---
+    dft_result = _dft_predict_ir(orca_out)
+    if dft_result is not None:
+        return dft_result
+
+    # --- Tier 2: Empirical (SMARTS) ---
     peaks = []
     if not RDKIT_OK:
         # Fallback: C-H stretch 기본 피크만
@@ -223,15 +641,10 @@ def predict_ir(smiles: str) -> List[IRPeak]:
                     peaks.append(IRPeak(wn, tr_min, asgn, w))
                     seen_wn.add(wn)
 
-    # baseline: 지문 영역(400~1500) 에 복잡한 패턴 추가
-    baseline_peaks = [
-        IRPeak(1350, 75, "fingerprint region", 15),
-        IRPeak(1250, 65, "fingerprint region", 15),
-        IRPeak(1100, 60, "fingerprint region", 15),
-        IRPeak(900, 70, "fingerprint region", 20),
-        IRPeak(600, 65, "fingerprint region", 20),
-    ]
-    peaks.extend(baseline_peaks)
+    # Structure-dependent fingerprint region (400-1500 cm⁻¹)
+    # Instead of hardcoded peaks, derive from actual molecular features.
+    fingerprint_peaks = _predict_fingerprint_peaks(mol, groups, seen_wn)
+    peaks.extend(fingerprint_peaks)
     return sorted(peaks, key=lambda p: p.wavenumber, reverse=True)
 
 def predict_raman(smiles: str) -> List[RamanPeak]:
@@ -287,8 +700,18 @@ def _multiplicity_str(n_adj_h: int) -> str:
     mapping = {0: "s", 1: "d", 2: "t", 3: "q", 4: "quint"}
     return mapping.get(n_adj_h, "m")
 
-def predict_h1_nmr(smiles: str) -> List[NMRPeak]:
-    """¹H-NMR 예측 (Chemical Shift 0~12 ppm, 피크 ↑, Integration)"""
+def predict_h1_nmr(smiles: str, orca_out: Optional[Path] = None) -> List[NMRPeak]:
+    """1H-NMR 예측 (Chemical Shift 0~12 ppm, 피크 ↑, Integration).
+
+    Tier 1: DFT — uses ORCA NMR shielding tensor output if orca_out is given.
+    Tier 2: Empirical — atom environment heuristics.
+    """
+    # --- Tier 1: DFT ---
+    dft_result = _dft_predict_h1(orca_out)
+    if dft_result is not None:
+        return dft_result
+
+    # --- Tier 2: Empirical ---
     if not RDKIT_OK:
         return [NMRPeak(1.0, 3, "t", "CH3 (est.)")]
     mol = Chem.MolFromSmiles(smiles)
@@ -371,8 +794,18 @@ def predict_h1_nmr(smiles: str) -> List[NMRPeak]:
 
     return sorted(groups.values(), key=lambda p: p.shift)
 
-def predict_c13_nmr(smiles: str) -> List[C13Peak]:
-    """¹³C-NMR 예측 (Chemical Shift 0~220 ppm)"""
+def predict_c13_nmr(smiles: str, orca_out: Optional[Path] = None) -> List[C13Peak]:
+    """13C-NMR 예측 (Chemical Shift 0~220 ppm).
+
+    Tier 1: DFT — uses ORCA NMR shielding tensor output if orca_out is given.
+    Tier 2: Empirical — hybridization/electronegativity heuristics.
+    """
+    # --- Tier 1: DFT ---
+    dft_result = _dft_predict_c13(orca_out)
+    if dft_result is not None:
+        return dft_result
+
+    # --- Tier 2: Empirical ---
     if not RDKIT_OK:
         return [C13Peak(30, "CH3", "aliphatic", "C (aliphatic)")]
     mol = Chem.MolFromSmiles(smiles)
@@ -784,10 +1217,29 @@ def predict_uvvis(smiles: str) -> List[UVVisPeak]:
 
 # ─── 통합 예측 함수 ───────────────────────────────────────
 
-def predict_all(smiles: str) -> PredictedSpectra:
-    """모든 스펙트럼 예측 통합 함수"""
+def predict_all(
+    smiles: str,
+    orca_out: Optional[Path] = None,
+    engine_status: Optional[Dict[str, object]] = None,
+) -> PredictedSpectra:
+    """모든 스펙트럼 예측 통합 함수.
+
+    Args:
+        smiles: SMILES string for the molecule.
+        orca_out: Optional path to an ORCA .out file. When provided,
+                  DFT-tier parsing is attempted first for IR / 1H / 13C.
+                  Falls through to empirical tier if DFT data is absent.
+        engine_status: Optional guarded route/health metadata from external
+                  services. Health-only metadata never promotes to REMOTE_DFT.
+    """
     warnings = []
     formula = ""
+    if engine_status is not None and not isinstance(engine_status, dict):
+        logger.warning("predict_all: engine_status must be dict, got %s", type(engine_status).__name__)
+        engine_status = None
+
+    orca_out_path = _resolve_completed_orca_out(orca_out, "predict_all") if orca_out is not None else None
+    source_meta = _build_source_metadata(orca_out_path, engine_status)
 
     if RDKIT_OK:
         mol = Chem.MolFromSmiles(smiles)
@@ -798,15 +1250,28 @@ def predict_all(smiles: str) -> PredictedSpectra:
     else:
         warnings.append("RDKit 미설치 — 기본 예측만 제공")
 
+    if bool(source_meta["simulation_mode"]):
+        warnings.append(str(source_meta["source_label"]))
+        if source_meta["engine_route"] == "remote_health_only_no_submit":
+            warnings.append("ORCA remote health is OK only; /orca/submit was not called, so REMOTE_DFT is not claimed")
+
     return PredictedSpectra(
         smiles=smiles,
         formula=formula,
-        ir_peaks=predict_ir(smiles),
+        ir_peaks=predict_ir(smiles, orca_out=orca_out_path),
         raman_peaks=predict_raman(smiles),
-        h1_nmr_peaks=predict_h1_nmr(smiles),
-        c13_peaks=predict_c13_nmr(smiles),
+        h1_nmr_peaks=predict_h1_nmr(smiles, orca_out=orca_out_path),
+        c13_peaks=predict_c13_nmr(smiles, orca_out=orca_out_path),
         uvvis_peaks=predict_uvvis(smiles),
         warnings=warnings,
+        source_label=str(source_meta["source_label"]),
+        engine_route=str(source_meta["engine_route"]),
+        engine_health=str(source_meta["engine_health"]),
+        calculation_completed_claimed=bool(source_meta["calculation_completed_claimed"]),
+        orca_available=bool(source_meta["orca_available"]),
+        simulation_mode=bool(source_meta["simulation_mode"]),
+        matplotlib_available=MATPLOTLIB_AVAILABLE,
+        citations=SPECTRA_CITATIONS,
     )
 
 # ─── 간단한 테스트 ────────────────────────────────────────
