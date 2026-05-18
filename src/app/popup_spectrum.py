@@ -54,45 +54,79 @@ class SpectrumPopup(QDialog):
     def init_ui(self):
         """Initialize UI components"""
         main_layout = QVBoxLayout()
-        
+
         # ===== Title Section =====
         title_layout = QHBoxLayout()
         title_label = QLabel("Vibrational Spectrum Analysis")
         title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
         title_layout.addWidget(title_label)
-        
+
         # Info label
         self.info_label = QLabel()
         self.update_info_label()
         title_layout.addStretch()
         title_layout.addWidget(self.info_label)
-        
+
         main_layout.addLayout(title_layout)
-        
+
+        # [M646_ENDPOINTS] Rule GG: 데이터 출처 배너 — ORCA 있음/없음에 따라 색 분기 (Rule NN)
+        # ORCA(theory) 결과 있으면 파란 정보 배너, 없으면 노랑 SIMULATION 배너.
+        # NIST WebBook은 라이브 (M646_ENDPOINTS 검증 — chemical/x-jcamp-dx HTTP 200).
+        has_orca = bool(
+            self.spectrum_data
+            and getattr(self.spectrum_data, "modes", None)
+            and len(self.spectrum_data.modes) > 0
+        )
+        if has_orca:
+            source_banner = QLabel(
+                "[이론적 스펙트럼 — ORCA 기반] DFT vibrational frequencies + IR/Raman 강도. "
+                "외부 비교: NIST Chemistry WebBook (실측 데이터, "
+                "Linstrom & Mallard SRD 69, public domain)."
+            )
+            # [MAGIC] _LIVE_BANNER_BG=#d1ecf1, _LIVE_BANNER_FG=#0c5460 — Bootstrap info 톤
+            source_banner.setStyleSheet(
+                "QLabel { background-color: #d1ecf1; color: #0c5460; "
+                "border: 1px solid #bee5eb; border-radius: 4px; "
+                "padding: 6px 10px; font-weight: bold; font-size: 11px; }"
+            )
+        else:
+            source_banner = QLabel(
+                "[SIMULATION_MODE] ORCA 결과 미로드 — 데이터 없음. "
+                "NIST WebBook 실측 IR 스펙트럼 직접 조회 가능 (아래 'NIST WebBook' 버튼)."
+            )
+            # [MAGIC] _SIM_BANNER_BG=#fff3cd, _SIM_BANNER_FG=#856404 — Bootstrap warning 톤
+            source_banner.setStyleSheet(
+                "QLabel { background-color: #fff3cd; color: #856404; "
+                "border: 1px solid #ffeeba; border-radius: 4px; "
+                "padding: 6px 10px; font-weight: bold; font-size: 11px; }"
+            )
+        source_banner.setWordWrap(True)
+        main_layout.addWidget(source_banner)
+
         # ===== Tab Widget =====
         self.tabs = QTabWidget()
-        
+
         # Tab 1: Spectrum Viewer
         spectrum_tab = self.create_spectrum_tab()
         self.tabs.addTab(spectrum_tab, "Spectrum")
-        
+
         # Tab 2: Peak Table
         peak_tab = self.create_peak_table_tab()
         self.tabs.addTab(peak_tab, "Peaks & Frequencies")
-        
+
         # Tab 3: Analysis Info
         analysis_tab = self.create_analysis_tab()
         self.tabs.addTab(analysis_tab, "Analysis")
-        
+
         main_layout.addWidget(self.tabs)
-        
+
         # ===== Control Panel =====
         control_layout = self.create_control_panel()
         main_layout.addLayout(control_layout)
-        
+
         # ===== Button Panel =====
         button_layout = QHBoxLayout()
-        
+
         export_btn = QPushButton("Export Spectrum...")
         export_btn.clicked.connect(self.export_spectrum)
         button_layout.addWidget(export_btn)
@@ -100,6 +134,16 @@ class SpectrumPopup(QDialog):
         pdf_btn = QPushButton("PDF 저장")
         pdf_btn.clicked.connect(self.export_pdf_report)
         button_layout.addWidget(pdf_btn)
+
+        # [M646_ENDPOINTS] NIST WebBook 외부 링크 버튼 — Rule GG/NN
+        # 라이브 검증 완료: chemical/x-jcamp-dx, /cgi/cbook.cgi?JCAMP=...&Type=IR HTTP 200
+        nist_btn = QPushButton("NIST WebBook 검색")
+        nist_btn.setToolTip(
+            "NIST Chemistry WebBook에서 실측 IR/MS 스펙트럼 검색.\n"
+            "Linstrom & Mallard, NIST Standard Reference Database 69 (public domain)."
+        )
+        nist_btn.clicked.connect(self._open_nist_webbook)
+        button_layout.addWidget(nist_btn)
 
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
@@ -321,6 +365,44 @@ class SpectrumPopup(QDialog):
                     mode_type_str = "/".join(mode_type) if mode_type else "-"
                     self.peak_table.setItem(row, 4, QTableWidgetItem(mode_type_str))
     
+    def _open_nist_webbook(self):
+        """[M646_ENDPOINTS] NIST WebBook 외부 검색 — Rule GG/NN.
+
+        라이브 endpoint: https://webbook.nist.gov/cgi/cbook.cgi?Name=...&Units=SI
+        검증: M646_ENDPOINTS HTTP probes 2026-04-28 — HTTP 200, JCAMP-DX 사용 가능.
+        Rule M: webbrowser.open() 실패 시 logger.warning + 사용자 메시지.
+        Rule N: mol_name 타입 가드 (str 보장).
+        """
+        import webbrowser
+        # [MAGIC] _NIST_BASE: NIST Chemistry WebBook 공식 검색 페이지
+        nist_base = "https://webbook.nist.gov/cgi/cbook.cgi"
+        mol_name = ""
+        if self.spectrum_data and hasattr(self.spectrum_data, "mol_name"):
+            raw_name = self.spectrum_data.mol_name
+            if isinstance(raw_name, str):  # Rule N
+                mol_name = raw_name.strip()
+        if mol_name:
+            from urllib.parse import quote
+            url = f"{nist_base}?Name={quote(mol_name, safe='')}&Units=SI"
+        else:
+            url = f"{nist_base}?Units=SI"  # 검색 홈으로 이동
+        try:
+            opened = webbrowser.open(url, new=2)
+            if not opened:
+                logger.warning("[NIST] webbrowser.open() returned False: %s", url)
+                QMessageBox.information(
+                    self, "NIST WebBook",
+                    f"브라우저 열기 실패. 직접 방문: {url}\n\n"
+                    "Linstrom & Mallard, NIST Chemistry WebBook, "
+                    "NIST Standard Reference Database 69 (public domain)."
+                )
+        except Exception as e:
+            logger.warning("[NIST] webbrowser.open() failed (%s): %s", type(e).__name__, e)
+            QMessageBox.information(
+                self, "NIST WebBook",
+                f"브라우저 열기 실패: {e}\n직접 방문: {url}"
+            )
+
     def export_spectrum(self):
         """Export spectrum data to file"""
         if not self.spectrum_data or len(self.spectrum_data.modes) == 0:
@@ -385,11 +467,24 @@ class SpectrumPopup(QDialog):
             file_path += '.pdf'
 
         try:
+            import os
             import matplotlib
             matplotlib.use('Agg')
             import matplotlib.pyplot as plt
             from matplotlib.backends.backend_pdf import PdfPages
             import numpy as np
+            # ── Korean font for matplotlib ──
+            import matplotlib.font_manager as fm
+            for _fp in [
+                "C:/Windows/Fonts/malgun.ttf",
+                "C:/Windows/Fonts/NanumGothic.ttf",
+                "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+            ]:
+                if os.path.exists(_fp):
+                    _kr = fm.FontProperties(fname=_fp)
+                    matplotlib.rcParams["font.family"] = _kr.get_name()
+                    fm.fontManager.addfont(_fp)
+                    break
 
             modes = self.spectrum_data.modes
             ir_modes = [m for m in modes if m.intensity > 0.01]
