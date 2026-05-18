@@ -44,7 +44,7 @@ ELEMENT_COLORS: Dict[str, QColor] = {
     "Na": QColor(171, 92, 242),       # 보라
     "K":  QColor(143, 64, 212),       # 진보라
     "Ca": QColor(61, 255, 0),         # 연초록
-    "Fe": QColor(224, 102, 51),       # 주황갈색
+    "Fe": QColor(180, 80, 210),        # 보라색 (Heme 포르피린 Fe 식별 강조, 감사#7)
     "Mg": QColor(138, 255, 0),        # 밝은 초록
     "Zn": QColor(125, 128, 176),      # 회청색
     "Cu": QColor(200, 128, 51),       # 구리색
@@ -245,9 +245,8 @@ class CloudRenderer:
         ABS_SCALE = 0.35  # Gasteiger 전하 ±0.35 → 완전 RED/BLUE
         normalized = max(-1.0, min(1.0, charge / ABS_SCALE))
 
-        # 색상 임계값: |normalized| < 0.15 → 중성(녹색)으로 처리
-        # 작은 전하 차이를 색상으로 과장하지 않기 위함
-        NEUTRAL_ZONE = 0.15
+        # [MAGIC: 0.05] Shared neutral threshold with ESP surface renderers.
+        NEUTRAL_ZONE = 0.05
 
         if normalized < -NEUTRAL_ZONE:  # 전자 풍부 → RED (친핵부위)
             intensity = min(1.0, (abs(normalized) - NEUTRAL_ZONE) / (1.0 - NEUTRAL_ZONE))
@@ -362,14 +361,24 @@ class CloudRenderer:
         use_theory_coords=False → Drawing/Lewis 레이어용 (그리기 좌표)
         densities: Optional ORCA electronic density data
         """
-        if not results:
+        if not results or not isinstance(results, dict):  # Rule N
             return
 
         charges = results.get("charges", {})
+        if not isinstance(charges, dict):  # Rule N
+            charges = {}
         islands = results.get("islands", [])
+        if not isinstance(islands, list):  # Rule N
+            islands = []
         aromatic = results.get("aromatic", set())
+        if not isinstance(aromatic, (set, list, frozenset)):  # Rule N
+            aromatic = set()
         atoms = results.get("atoms", {})
+        if not isinstance(atoms, dict):  # Rule N
+            atoms = {}
         bonds = results.get("bonds", {})
+        if not isinstance(bonds, dict):  # Rule N
+            bonds = {}
 
         logger.debug(
             "draw_clouds called — atoms=%d, use_theory=%s",
@@ -406,7 +415,10 @@ class CloudRenderer:
             )
 
             # ── 2.5) 방향족 π 비편재화 halo (CHEM-7) ─────────────
-            _theory_map = results.get("theory_data", {}).get("map", {}) if use_theory_coords else {}
+            _td_halo = results.get("theory_data", {}) if use_theory_coords else {}
+            if not isinstance(_td_halo, dict):  # Rule N
+                _td_halo = {}
+            _theory_map = _td_halo.get("map", {}) if _td_halo else {}
             CloudRenderer.draw_pi_cloud_halo(
                 painter,
                 rings=results.get("rings", []),
@@ -448,35 +460,74 @@ class CloudRenderer:
         각 원자 위치에 큰 반투명 가우시안을 그리되, 반지름을 VdW 반지름 기준으로
         키워서 분자 표면처럼 겹치게 만듦.
         """
-        if not results:
+        if not results or not isinstance(results, dict):  # Rule N
             return
         charges = results.get("charges", {})
+        if not isinstance(charges, dict):  # Rule N
+            charges = {}
         atoms_data = results.get("atoms", {})
+        if not isinstance(atoms_data, dict):  # Rule N
+            atoms_data = {}
         if not charges:
             return
 
         painter.save()
         try:
-            theory_map = results.get("theory_data", {}).get("map", {}) if use_theory_coords else {}
+            _td = results.get("theory_data", {})
+            if not isinstance(_td, dict):  # Rule N
+                _td = {}
+            theory_map = _td.get("map", {}) if use_theory_coords else {}
+            if not isinstance(theory_map, dict):  # Rule N
+                theory_map = {}
             bonds = results.get("bonds", {})
+            if not isinstance(bonds, dict):  # Rule N
+                bonds = {}
+            # [B9-2 / M222] analyzer가 계산한 ESP 스타일 맵 조회.
+            # Rule N: dict 타입 가드 (구버전 analyzer/캐시 호환).
+            esp_style_map = results.get("esp_style_per_atom", {})
+            if not isinstance(esp_style_map, dict):
+                esp_style_map = {}
 
-            # 전하 범위 계산
+            # [M679 FIX] 사용자 LV.14 item 24 — ESP 단색 버그 + 색 대비 부족 해소
+            # 변경 전: c_range floor=0.05 → 작은 전하 분자도 0.05 normalize → 다 norm<|0.05| → 전체 green
+            # 변경 후: 실제 charge range로 정규화 + 적응적 floor (range/2 vs 0.02 vs c_range)
+            # 학술 표준: ESP 색상 대비는 분자별 charge 분포에 적응 (McMurry/Clayden 교과서 표준)
             all_charges = list(charges.values())
             min_c = min(all_charges) if all_charges else -0.1
             max_c = max(all_charges) if all_charges else 0.1
-            c_range = max(abs(min_c), abs(max_c), 0.05)
+            # 실제 분자별 ESP range 사용 — 작은 전하 분자도 색상 대비 보장
+            actual_range = max(abs(min_c), abs(max_c))
+            # [MAGIC: 0.02] floor 0.05→0.02 — 비극성 분자도 norm 차이 대비 가능
+            # 너무 작으면 div-by-zero 위험 → 0.02 = Gasteiger 최소 의미 단위
+            c_range = max(actual_range, 0.02)
 
             # 평균 결합 길이로 VdW 반지름 스케일 결정
-            bond_lengths = []
+            # [FIX-CONTOUR v1] 좌표계 혼용 방지: theory_map에 양쪽 끝점이 모두
+            # 있는 결합만 사용하여 bond length 계산. 한쪽만 있으면 혼합 좌표계가
+            # 되어 비정상적으로 큰 길이가 나올 수 있음.
+            bond_lengths: List[float] = []
             for (k1, k2) in bonds.keys():
-                p1 = theory_map.get(k1, QPointF(*k1)) if theory_map else QPointF(*k1)
-                p2 = theory_map.get(k2, QPointF(*k2)) if theory_map else QPointF(*k2)
+                if theory_map:
+                    k1_in = k1 in theory_map
+                    k2_in = k2 in theory_map
+                    # 양쪽 모두 theory_map에 있거나 양쪽 모두 없을 때만 사용
+                    if k1_in != k2_in:
+                        continue  # 혼합 좌표 → skip
+                    p1 = theory_map.get(k1, QPointF(*k1))
+                    p2 = theory_map.get(k2, QPointF(*k2))
+                else:
+                    p1 = QPointF(*k1)
+                    p2 = QPointF(*k2)
                 bl = math.hypot(p1.x() - p2.x(), p1.y() - p2.y())
-                if bl > 5:
+                if 5 < bl < 300:  # [FIX-CONTOUR v1] 비정상 길이 필터 (5~300px)
                     bond_lengths.append(bl)
             avg_bl = sum(bond_lengths) / len(bond_lengths) if bond_lengths else 50.0
-            # VdW 표면 반지름: 평균 결합 길이의 80% (겹치게)
+            # [FIX-CONTOUR v1] avg_bl 클램프: 최대 120px (일반 격자 40px의 3배)
+            avg_bl = min(avg_bl, 120.0)
+            # VdW 표면 반지름: 평균 결합 길이의 75% (겹치게)
             base_vdw = avg_bl * 0.75
+            # [FIX-CONTOUR v1] 최대 반지름 한도: 90px (화면을 넘지 않도록)
+            MAX_ESP_RADIUS = 90.0
 
             # 렌더링: 큰 반투명 원 (VdW 스케일)
             painter.setPen(Qt.PenStyle.NoPen)
@@ -484,19 +535,37 @@ class CloudRenderer:
                 atom_data = atoms_data.get(pt_key, {})
                 at_main = atom_data.get("main", "") or "C"
 
-                # [FIX-ESP v6] sp3 포화 탄화수소 필터 — draw_esp_isosurface에도 적용
-                # 순수 C-H만으로 이루어진 sp3 원자에는 전자구름 표시 안함
-                _is_hetero = at_main not in ('', 'C', 'H')
-                _has_charge = atom_data.get("charge", "") in ("+", "-")
-                _has_mult_bond = False
-                for (k1, k2), bdata in bonds.items():
-                    if k1 == pt_key or k2 == pt_key:
-                        bo = bdata if isinstance(bdata, (int, float)) else 1
-                        if bo >= 1.5:
-                            _has_mult_bond = True
-                            break
-                if not (_is_hetero or _has_charge or _has_mult_bond):
-                    continue
+                # [B9-2 / M222] analyzer ESP 스타일 조회 (sp3 halogen 규칙 우선 적용).
+                # Rule N: dict 타입 가드. show_esp=False → 구름 숨김.
+                _style = esp_style_map.get(pt_key, None)
+                _has_style = isinstance(_style, dict)
+                if _has_style:
+                    if not _style.get("show_esp", True):
+                        continue  # sp3 포화 탄화수소 등 숨김 원자
+                    _alpha_scale = float(_style.get("alpha_scale", 1.0))
+                    _radius_scale = float(_style.get("radius_scale", 1.0))
+                else:
+                    # 폴백: analyzer가 esp_style_per_atom 미제공 (구버전/캐시)
+                    # → 기존 동작 유지 (sp3 포화 필터 + 전체 표시)
+                    _alpha_scale = 1.0
+                    _radius_scale = 1.0
+
+                # [FIX-ESP v6] sp3 포화 탄화수소 필터 — draw_esp_isosurface에도 적용.
+                # [B9-2 / M222] esp_style_map에서 이미 show_esp=True로 판정됐으면
+                # 이 필터를 건너뜀 (benzene sp2 등 aromatic bond order=1 케이스 구제).
+                # esp_style 미제공 원자에만 폴백 적용.
+                if not _has_style:
+                    _is_hetero = at_main not in ('', 'C', 'H')
+                    _has_charge = atom_data.get("charge", "") in ("+", "-")
+                    _has_mult_bond = False
+                    for (k1, k2), bdata in bonds.items():
+                        if k1 == pt_key or k2 == pt_key:
+                            bo = bdata if isinstance(bdata, (int, float)) else 1
+                            if bo >= 1.5:
+                                _has_mult_bond = True
+                                break
+                    if not (_is_hetero or _has_charge or _has_mult_bond):
+                        continue
 
                 center = theory_map.get(pt_key, QPointF(*pt_key)) if theory_map else QPointF(*pt_key)
 
@@ -508,6 +577,14 @@ class CloudRenderer:
                 # H는 더 작게
                 if at_main == "H":
                     radius = base_vdw * 0.55
+
+                # [B9-2 / M222] ESP 스타일 radius_scale 적용 (sp3 halogen: 1.3x 넓게)
+                radius = radius * _radius_scale
+
+                # [FIX-CONTOUR v1] 반지름 클램프 — 화면 초과 방지
+                radius = min(radius, MAX_ESP_RADIUS)
+                if radius < 1.0:
+                    continue  # 너무 작은 원은 스킵
 
                 # 전하→색상 (연속 그라디언트)
                 norm = max(-1.0, min(1.0, charge / c_range))
@@ -521,9 +598,17 @@ class CloudRenderer:
                     r, g, b = 180, 220, 180
 
                 color = QColor(r, g, b)
-                # 반투명: 중심 55%, 가장자리 투명
-                color.setAlpha(140)
-                mid_color = QColor(r, g, b, 70)
+                # [D-4ab B1-2] ESP 구름 alpha 하향: 140→90 중심, 70→50 중간
+                # [B9-2 / M222] sp3 halogen은 추가로 alpha_scale 0.3 적용 → ~27 중심, ~15 중간.
+                # 사유: epinephrine Lewis에서 catechol ring C와 결합선이 ESP 구름에 가려짐.
+                # canvas.py paintEvent: ESP → LewisRenderer/TheoryRenderer 순서로 이미 z-order 올바름.
+                # alpha 감소로 원자 기호/결합선 가독성 회복 (Rule O 렌더링 품질).
+                _base_center_a = 90   # [D-4ab B1-2] 140→90
+                _base_mid_a = 50      # [D-4ab B1-2] 70→50
+                _center_a = max(0, min(255, int(_base_center_a * _alpha_scale)))
+                _mid_a = max(0, min(255, int(_base_mid_a * _alpha_scale)))
+                color.setAlpha(_center_a)
+                mid_color = QColor(r, g, b, _mid_a)
                 edge_color = QColor(r, g, b, 0)
 
                 grad = QRadialGradient(center, radius)
@@ -531,6 +616,8 @@ class CloudRenderer:
                 grad.setColorAt(0.5, mid_color)
                 grad.setColorAt(1.0, edge_color)
                 painter.setBrush(QBrush(grad))
+                # [FIX-CONTOUR v1] NoPen 재확인 — 상태 누출 방지
+                painter.setPen(Qt.PenStyle.NoPen)
                 painter.drawEllipse(center, radius, radius)
         finally:
             painter.restore()
@@ -559,17 +646,29 @@ class CloudRenderer:
             return
 
         charges = results.get("charges", {})
+        if not isinstance(charges, dict):  # Rule N
+            charges = {}
         atoms_data = results.get("atoms", {})
+        if not isinstance(atoms_data, dict):  # Rule N
+            atoms_data = {}
         bonds = results.get("bonds", {})
+        if not isinstance(bonds, dict):  # Rule N
+            bonds = {}
         if not charges:
             return
 
-        theory_map = results.get("theory_data", {}).get("map", {}) if use_theory_coords else {}
+        _td2 = results.get("theory_data", {})
+        if not isinstance(_td2, dict):  # Rule N
+            _td2 = {}
+        theory_map = _td2.get("map", {}) if use_theory_coords else {}
+        if not isinstance(theory_map, dict):  # Rule N
+            theory_map = {}
 
         # 원자 데이터 수집: position, charge, vdw radius
         atom_list = []  # [(x, y, charge, vdw_r)]
         for pt_key, charge in charges.items():
-            atom_data = atoms_data.get(pt_key, {})
+            _ad = atoms_data.get(pt_key, {})
+            atom_data = _ad if isinstance(_ad, dict) else {}  # Rule N
             at_main = atom_data.get("main", "") or "C"
 
             # sp3 포화 탄화수소 필터
@@ -598,14 +697,24 @@ class CloudRenderer:
             return
 
         # 평균 결합 길이로 스케일 결정
-        bond_lengths = []
+        # [FIX-CONTOUR v1] 좌표계 혼용 방지 + 비정상 길이 필터
+        bond_lengths: List[float] = []
         for (k1, k2) in bonds.keys():
-            p1 = theory_map.get(k1, QPointF(*k1)) if theory_map else QPointF(*k1)
-            p2 = theory_map.get(k2, QPointF(*k2)) if theory_map else QPointF(*k2)
+            if theory_map:
+                k1_in = k1 in theory_map
+                k2_in = k2 in theory_map
+                if k1_in != k2_in:
+                    continue  # 혼합 좌표 → skip
+                p1 = theory_map.get(k1, QPointF(*k1))
+                p2 = theory_map.get(k2, QPointF(*k2))
+            else:
+                p1 = QPointF(*k1)
+                p2 = QPointF(*k2)
             bl = math.hypot(p1.x() - p2.x(), p1.y() - p2.y())
-            if bl > 5:
+            if 5 < bl < 300:
                 bond_lengths.append(bl)
         avg_bl = sum(bond_lengths) / len(bond_lengths) if bond_lengths else 50.0
+        avg_bl = min(avg_bl, 120.0)  # [FIX-CONTOUR v1] 클램프
         base_vdw = avg_bl * 0.75
         sigma = avg_bl * 0.45  # Gaussian spread
 
@@ -664,9 +773,8 @@ class CloudRenderer:
         rgba = np.zeros((img_h, img_w, 4), dtype=np.uint8)
 
         # 음전하 (RED): esp_norm < -0.15
-        # 중성 (GREEN): -0.15 ~ +0.15
-        # 양전하 (BLUE): esp_norm > +0.15
-        neutral_zone = 0.15
+        # [MAGIC: 0.05] Shared neutral threshold with atom-cloud ESP renderers.
+        neutral_zone = 0.05
 
         neg_mask = esp_norm < -neutral_zone
         pos_mask = esp_norm > neutral_zone
@@ -726,9 +834,12 @@ class CloudRenderer:
             dict with keys: min_charge, max_charge, charge_range,
                             ring_avg_charge, ring_carbon_charges
         """
+        if not isinstance(atoms, dict):  # Rule N
+            atoms = {}
         ring_carbon_charges: List[float] = []
         for pt_key, charge in charges.items():
-            at_main = atoms.get(pt_key, {}).get("main", "C")
+            _ad_rc = atoms.get(pt_key, {})
+            at_main = _ad_rc.get("main", "C") if isinstance(_ad_rc, dict) else "C"  # Rule N
             is_ring = (pt_key in aromatic or atom_is_size.get(pt_key, 0) >= 2)
             # [BUG-3 FIX] carbon은 main=''로 저장됨 → at_main=="" ≠ "C" → 항상 False
             # 모든 탄소(main='', 'C' 모두) 포함해야 ring_carbon_charges 정상 수집
@@ -770,8 +881,10 @@ class CloudRenderer:
         if bonds:
             for (k1, k2), _ in bonds.items():
                 dist = math.sqrt((k1[0] - k2[0]) ** 2 + (k1[1] - k2[1]) ** 2)
-                bond_lengths.append(dist)
+                if 1 < dist < 300:  # [FIX-CONTOUR v1] 비정상 길이 필터
+                    bond_lengths.append(dist)
         avg = sum(bond_lengths) / len(bond_lengths) if bond_lengths else 40.0
+        avg = min(avg, 120.0)  # [FIX-CONTOUR v1] 클램프
         return {
             "avg_bond_length": avg,
             "max_cloud_radius": avg * 0.45,
@@ -800,11 +913,14 @@ class CloudRenderer:
         atom_is_size: Dict,
     ) -> list:
         """치환기 먼저, 고리 탄소 나중에 (고리가 위에 보임)."""
+        if not isinstance(atoms, dict):  # Rule N
+            atoms = {}
         substituent_atoms: List = []
         ring_atoms: List = []
 
         for pt_key in charges:
-            at_main = atoms.get(pt_key, {}).get("main", "C")
+            _ad_sub = atoms.get(pt_key, {})
+            at_main = _ad_sub.get("main", "C") if isinstance(_ad_sub, dict) else "C"  # Rule N
             is_ring = (pt_key in aromatic or atom_is_size.get(pt_key, 0) >= 2)
             if at_main in ("O", "N", "F", "Cl", "Br", "S", "P") and not is_ring:
                 substituent_atoms.append(pt_key)
@@ -857,9 +973,17 @@ class CloudRenderer:
     ) -> list:
         """_render_atom_clouds의 내부 구현 (save/restore 래퍼에서 호출)."""
         charges = results.get("charges", {})
+        if not isinstance(charges, dict):  # Rule N
+            charges = {}
         atoms = results.get("atoms", {})
+        if not isinstance(atoms, dict):  # Rule N
+            atoms = {}
         aromatic = results.get("aromatic", set())
+        if not isinstance(aromatic, (set, list, frozenset)):  # Rule N
+            aromatic = set()
         bonds = results.get("bonds", {})
+        if not isinstance(bonds, dict):  # Rule N
+            bonds = {}
 
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         # 🔴 명령 1: 공명구조 전자구름 균등화 — 고리 원자 전하 평균화
@@ -882,7 +1006,8 @@ class CloudRenderer:
         #   이전 20회 실패의 근본 원인: 이 fallback 없이 averaging 미적용
         if not ring_atoms_all and atom_is_size:
             for pt_key, is_size in atom_is_size.items():
-                at_sym = atoms.get(pt_key, {}).get("main", "C")
+                _ad_fb = atoms.get(pt_key, {})
+                at_sym = _ad_fb.get("main", "C") if isinstance(_ad_fb, dict) else "C"  # Rule N
                 # [BUG-3 FIX] carbon은 main=''로 저장됨 (not "C")
                 # at_sym == "C"는 절대 True가 되지 않는 버그 → in ('', 'C')로 수정
                 # [TASK-RENDER-003] 헤테로 원자(N, O, S)도 고리 구성원으로 포함
@@ -912,7 +1037,7 @@ class CloudRenderer:
                 has_pi_or_charge = False
                 for (k1, k2), bdata in bonds.items():
                     if k1 in ring_candidates and k2 in ring_candidates:
-                        bond_order = bdata if isinstance(bdata, (int, float)) else bdata.get("order", 1)
+                        bond_order = bdata if isinstance(bdata, (int, float)) else (bdata.get("order", 1) if isinstance(bdata, dict) else 1)  # Rule N
                         if bond_order >= 2:
                             has_pi_or_charge = True
                             break
@@ -972,7 +1097,8 @@ class CloudRenderer:
         if ring_atoms_all:
             ionic_bias = 0.0
             for pt_key in ring_atoms_all:
-                atom_data_check = atoms.get(pt_key, {})
+                _adc = atoms.get(pt_key, {})
+                atom_data_check = _adc if isinstance(_adc, dict) else {}  # Rule N
                 # charge는 문자열 "+"/"-" 또는 정수 formal_charge 두 형식 모두 지원
                 user_charge_flag = atom_data_check.get("charge", "")
                 formal_charge_val = atom_data_check.get("formal_charge", 0)
@@ -987,6 +1113,8 @@ class CloudRenderer:
                 # analyzer.py는 charge 정보를 attach[-1] = "+" 또는 "-"로 저장함
                 # "charge"/"formal_charge" 키로는 찾을 수 없어 ionic_bias 미작동
                 attach_dict = atom_data_check.get("attach", {})
+                if not isinstance(attach_dict, dict):  # Rule N
+                    attach_dict = {}
                 attach_charge_sign = attach_dict.get(-1, "")
                 if attach_charge_sign == "-":
                     formal_charge_val = -1
@@ -1051,15 +1179,33 @@ class CloudRenderer:
 
         electron_rich_carbons: list = []
 
+        # [B9-2 / M222] analyzer ESP 스타일 맵 조회 (sp3 halogen 특화).
+        # Rule N: dict 타입 가드.
+        esp_style_map_inner = results.get("esp_style_per_atom", {})
+        if not isinstance(esp_style_map_inner, dict):
+            esp_style_map_inner = {}
+
         for pt_key in render_order:
             # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             # 🔴 명령 2: 사용자 비공유전자쌍 전자구름 제외
             #   user_lp 플래그(사용자가 수동 추가한 비공유전자쌍)나
             #   원소 기호 "LP"는 전자구름 계산에서 완전 스킵
             # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            atom_data = atoms.get(pt_key, {})
+            _ad_lp = atoms.get(pt_key, {})
+            atom_data = _ad_lp if isinstance(_ad_lp, dict) else {}  # Rule N
             if atom_data.get("user_lp") or atom_data.get("main") == "LP":
                 continue
+
+            # [B9-2 / M222] ESP 스타일 조회 (show_esp=False → 조기 skip)
+            _style_inner = esp_style_map_inner.get(pt_key, None)
+            if isinstance(_style_inner, dict):
+                if not _style_inner.get("show_esp", True):
+                    continue
+                _alpha_scale_inner = float(_style_inner.get("alpha_scale", 1.0))
+                _radius_scale_inner = float(_style_inner.get("radius_scale", 1.0))
+            else:
+                _alpha_scale_inner = 1.0
+                _radius_scale_inner = 1.0
 
             charge = charges[pt_key]
             at_main = atom_data.get("main", "C")
@@ -1082,7 +1228,12 @@ class CloudRenderer:
 
             # ── 좌표 선택 ──
             if use_theory_coords:
-                t_map = results.get("theory_data", {}).get("map", {})
+                _td_lp = results.get("theory_data", {})
+                if not isinstance(_td_lp, dict):  # Rule N
+                    _td_lp = {}
+                t_map = _td_lp.get("map", {})
+                if not isinstance(t_map, dict):  # Rule N
+                    t_map = {}
                 lookup_key = (round(pt_key[0], 2), round(pt_key[1], 2))
                 center = t_map.get(lookup_key, QPointF(*pt_key))
             else:
@@ -1097,31 +1248,61 @@ class CloudRenderer:
             raw_strength = 2.2 if (pt_key in aromatic or pt_key in ring_atoms_all) else (0.85 if isl_size >= 2 else 0.0)
             strength = math.sqrt(raw_strength) * 1.3
 
-            # [FIX-ESP v5] sp3 포화 탄화수소(ethane, propane 등)에는 전자구름 표시 안함
-            # 전자구름은 π전자계(방향족, 이중/삼중결합), 헤테로원자(O,N,F,Cl...),
-            # 형식전하가 있는 원자에만 표시 — 순수 sp3 C-H는 ESP 관점에서 무의미
+            # [FIX-ESP v6] Hybridization-based ESP cloud gating:
+            #   sp2/sp atoms: always show cloud (pi system)
+            #   sp3 + halogen neighbor (F,Cl,Br,I): faint wide cloud (inductive effect)
+            #   sp3 without EDG/EWG neighbors: NO cloud
             is_heteroatom = at_main not in ('', 'C', 'H')
             is_in_pi_system = (pt_key in aromatic or pt_key in ring_atoms_all or isl_size >= 2)
             has_formal_charge = atom_data.get("charge", "") in ("+", "-")
 
-            # 이 원자에 연결된 결합 중 이중/삼중 결합이 있는지 확인
+            # Check bonds for multiple bond or halogen neighbor
             has_multiple_bond = False
+            has_halogen_neighbor = False
+            _HALOGENS = {'F', 'Cl', 'Br', 'I'}
             for (k1, k2), bdata in bonds.items():
                 if k1 == pt_key or k2 == pt_key:
                     bo = bdata if isinstance(bdata, (int, float)) else 1
                     if bo >= 1.5:
                         has_multiple_bond = True
-                        break
+                    # Check if neighbor is a halogen
+                    neighbor_key = k2 if k1 == pt_key else k1
+                    _nd = atoms.get(neighbor_key, {})
+                    neighbor_data = _nd if isinstance(_nd, dict) else {}  # Rule N
+                    neighbor_sym = neighbor_data.get("main", "")
+                    if neighbor_sym in _HALOGENS:
+                        has_halogen_neighbor = True
 
-            if not (is_heteroatom or is_in_pi_system or has_formal_charge or has_multiple_bond):
-                # sp3 탄화수소 원자 → 전자구름 스킵
+            # Determine if this is an sp3 carbon (no pi bonds, no aromaticity)
+            is_sp3_carbon = (at_main in ('', 'C') and not is_in_pi_system
+                             and not has_multiple_bond and not has_formal_charge)
+
+            # sp3 carbon gating: skip unless it has a halogen neighbor
+            _sp3_halogen_faint = False  # flag for faint cloud rendering
+            if is_sp3_carbon:
+                if has_halogen_neighbor:
+                    # sp3 + halogen: allow but mark for faint rendering
+                    _sp3_halogen_faint = True
+                elif not is_heteroatom:
+                    # Pure sp3 C-H with no special neighbors: skip cloud
+                    continue
+
+            # Non-carbon sp3 atoms (O, N, S etc.) without pi/charge: skip cloud
+            # unless they ARE heteroatoms (lone pairs create ESP effects)
+            if not (is_heteroatom or is_in_pi_system or has_formal_charge
+                    or has_multiple_bond or _sp3_halogen_faint):
                 continue
 
             charge_intensity = abs(charge - ring_avg_charge) * 100.0 * d_scale
             charge_intensity = min(charge_intensity, 5.0)
 
-            if charge_intensity < 0.1 and strength < 0.1:
+            # [FIX-ESP v6] sp3+halogen atoms always pass the intensity check
+            # (their inductive effect cloud is handled via _sp3_halogen_faint flag)
+            if charge_intensity < 0.1 and strength < 0.1 and not _sp3_halogen_faint:
                 continue
+            # For sp3+halogen, ensure minimum charge_intensity for visible cloud
+            if _sp3_halogen_faint and charge_intensity < 0.5:
+                charge_intensity = 0.5  # minimum inductive effect visibility
 
             # ── 반응성 가중치 (v3.2) ──
             # [BUG-3 FIX] at_main=="" (빈 문자열) = 탄소 (ChemGrid 규칙)
@@ -1141,7 +1322,7 @@ class CloudRenderer:
                 + math.log1p(charge_intensity) * 15.0
                 + strength * 7.5
             ) * c_scale
-            radius = min(base_radius, max_cloud_radius)
+            radius = min(base_radius, max_cloud_radius, 90.0)  # [FIX-CONTOUR v1] 절대 한도
 
             # [FIX-ESP v4] 고리 탄소 반지름 차이 제거 — 균일 전자구름
             # 방향족 고리의 π전자는 비편재화 → 모든 위치 동일 크기
@@ -1157,6 +1338,21 @@ class CloudRenderer:
                 base_alpha, strength, charge_intensity,
                 reactivity_weight,
             )
+
+            # [FIX-ESP v6] sp3 + halogen neighbor: faint wide cloud (inductive effect)
+            # Reduce alpha by 60% and increase radius by 30% for diffuse inductive cloud
+            if _sp3_halogen_faint:
+                alpha = int(alpha * 0.4)   # 40% of normal opacity — faint
+                radius = radius * 1.3      # 30% wider — diffuse inductive effect
+
+            # [B9-2 / M222] analyzer 제공 ESP 스타일 스케일 적용 (sp3 halogen 원자 자체 얕게).
+            # Rule I: alpha_scale 0.3 = 교과서 관찰 기반 매직넘버 (낮은 유효 전하 대비
+            # 적정 가시성 유지). 두 플래그(_sp3_halogen_faint + esp_style)는 서로 다른
+            # 상황에 적용되므로 누적 가능 — halogen 이웃 탄소 + 자신도 halogen인 드문 경우.
+            if _alpha_scale_inner != 1.0:
+                alpha = int(alpha * _alpha_scale_inner)
+            if _radius_scale_inner != 1.0:
+                radius = radius * _radius_scale_inner
 
             # ── 가우시안 렌더링 (3-stop gradient: 중심→중간→가장자리) ──
             alpha = max(0, min(255, alpha))  # [FIX] clamp to valid range
@@ -1186,14 +1382,19 @@ class CloudRenderer:
     ) -> Tuple[float, float]:
         """원자별 (cloud_scale, density_scale) 반환."""
         bonds = results.get("bonds", {})
+        if not isinstance(bonds, dict):  # Rule N
+            bonds = {}
         atoms = results.get("atoms", {})
+        if not isinstance(atoms, dict):  # Rule N
+            atoms = {}
 
         if at_main == "H":
             is_polar_h = False
             for bond_pair in bonds.keys():
                 if pt_key in bond_pair:
                     neighbor = bond_pair[1] if bond_pair[0] == pt_key else bond_pair[0]
-                    n_main = atoms.get(neighbor, {}).get("main", "")
+                    _nd_h = atoms.get(neighbor, {})
+                    n_main = _nd_h.get("main", "") if isinstance(_nd_h, dict) else ""  # Rule N
                     if n_main in ("N", "O", "F"):
                         is_polar_h = True
                         break
@@ -1339,8 +1540,10 @@ class CloudRenderer:
         if not rings or not aromatic_nodes:
             return
 
-        if theory_map is None:
+        if not isinstance(theory_map, dict):  # Rule N
             theory_map = {}
+        if not isinstance(charges, dict):  # Rule N
+            charges = {}
 
         painter.save()
         try:
@@ -1374,7 +1577,7 @@ class CloudRenderer:
                 # 반지름 (무게중심 ~ 원자 평균 거리)
                 radii = [math.sqrt((p.x() - cx) ** 2 + (p.y() - cy) ** 2) for p in pts]
                 avg_radius = sum(radii) / len(radii) if radii else 30.0
-                halo_radius = avg_radius * 1.35
+                halo_radius = min(avg_radius * 1.35, 120.0)  # [FIX-CONTOUR v1] 클램프
 
                 # 전자 분포 비대칭 감지 (EDG → 전자 풍부 위치 찾기)
                 ring_charges = {node: charges.get(node, 0.0) for _, node in positions_with_nodes}
@@ -1440,13 +1643,24 @@ class CloudRenderer:
         - 각 원자에서 pi결합 방향의 평균 수직 벡터 계산
         - 결합축에 수직(= 분자면에 수직의 2D 투영) 방향으로 로브 배치
         """
-        if not results:
+        if not results or not isinstance(results, dict):  # Rule N
             return
 
         atoms_data = results.get("atoms", {})
+        if not isinstance(atoms_data, dict):  # Rule N
+            atoms_data = {}
         bonds = results.get("bonds", {})
+        if not isinstance(bonds, dict):  # Rule N
+            bonds = {}
         aromatic = results.get("aromatic", set())
-        theory_map = results.get("theory_data", {}).get("map", {}) if use_theory_coords else {}
+        if not isinstance(aromatic, (set, list, frozenset)):  # Rule N
+            aromatic = set()
+        _td_pi = results.get("theory_data", {})
+        if not isinstance(_td_pi, dict):  # Rule N
+            _td_pi = {}
+        theory_map = _td_pi.get("map", {}) if use_theory_coords else {}
+        if not isinstance(theory_map, dict):  # Rule N
+            theory_map = {}
 
         if not bonds:
             return
@@ -1530,6 +1744,7 @@ class CloudRenderer:
                     perp_y /= mag
 
                 # 4) 평균 결합 길이로 로브 크기 결정
+                # [FIX-CONTOUR v1] 비정상 길이 필터 + 클램프
                 bond_lengths = []
                 for nb_key, _order in neighbors:
                     if use_theory_coords and theory_map:
@@ -1538,10 +1753,11 @@ class CloudRenderer:
                     else:
                         nb_pos = QPointF(*nb_key)
                     bl = math.hypot(nb_pos.x() - center.x(), nb_pos.y() - center.y())
-                    if bl > 1:
+                    if 1 < bl < 300:  # [FIX-CONTOUR v1] 비정상 길이 필터
                         bond_lengths.append(bl)
 
                 avg_bl = sum(bond_lengths) / len(bond_lengths) if bond_lengths else 40.0
+                avg_bl = min(avg_bl, 120.0)  # [FIX-CONTOUR v1] 클램프
                 lobe_offset = avg_bl * 0.32   # 로브 중심까지 거리 (결합 길이의 32%)
                 lobe_rx = avg_bl * 0.18        # 로브 가로 반경 (결합 방향)
                 lobe_ry = avg_bl * 0.28        # 로브 세로 반경 (수직 방향, 더 길게)
@@ -1582,10 +1798,12 @@ class CloudRenderer:
     # ==================================================================
     @staticmethod
     def draw_crosshairs_v32(painter, results):
-        if not results:
+        if not results or not isinstance(results, dict):  # Rule N
             return
 
         crosshair_data = results.get("crosshairs_v32", [])
+        if not isinstance(crosshair_data, list):  # Rule N
+            crosshair_data = []
         if not crosshair_data:
             return
 
@@ -1623,9 +1841,11 @@ class CloudRenderer:
     @staticmethod
     def draw_stereo_labels(painter, results):
         """[해결] 입체 중심 라벨 전용 렌더링: 9pt 적색, 최상단 배치 고정."""
-        if not results:
+        if not results or not isinstance(results, dict):  # Rule N
             return
         stereo_data = results.get("stereo", {})
+        if not isinstance(stereo_data, dict):  # Rule N
+            stereo_data = {}
         if not stereo_data:
             return
 
@@ -1661,12 +1881,18 @@ class CloudRenderer:
             painter: QPainter 인스턴스
             results: analysis_results 딕셔너리
         """
-        if not results:
+        if not results or not isinstance(results, dict):  # Rule N
             return
 
         charges = results.get("charges", {})
+        if not isinstance(charges, dict):  # Rule N
+            charges = {}
         atoms_data = results.get("atoms", {})
+        if not isinstance(atoms_data, dict):  # Rule N
+            atoms_data = {}
         bonds = results.get("bonds", {})
+        if not isinstance(bonds, dict):  # Rule N
+            bonds = {}
         if not charges:
             return
 
@@ -1701,10 +1927,10 @@ class CloudRenderer:
 
                 # delta 기호 및 색상
                 if charge < 0:
-                    symbol = "\u03b4\u2212"  # delta-minus (δ−)
+                    symbol = "δ⁻"  # delta-minus
                     color = QColor(200, 30, 30, 180)  # 적색 반투명
                 else:
-                    symbol = "\u03b4+"  # delta-plus (δ+)
+                    symbol = "δ⁺"  # delta-plus
                     color = QColor(30, 80, 200, 180)  # 청색 반투명
 
                 painter.setPen(color)
