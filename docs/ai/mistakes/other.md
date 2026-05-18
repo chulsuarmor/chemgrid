@@ -1,101 +1,66 @@
-# Process / Testing / Other Mistakes (58 entries)
+# Process / Testing / Other Mistakes (51 entries)
+<!-- LAST_M_NUMBER: M1439 -->
+
+### [2026-05-18] M1428 — install.vbs VBScript downloader (W_INSTALLER_VBS)
+- **상황:** PowerShell/curl 환경 의존성으로 학생 PC 설치 실패 사례 누적. VBScript 대안 필요.
+- **실수:** 이전 install.ps1/install.bat는 환경 의존적 — PowerShell 실행 정책 제한 or curl 미내장 Windows에서 실패.
+- **올바른 방법:** MSXML2.XMLHTTP + ADODB.Stream은 Windows 기본 내장 컴포넌트. VBScript 파일은 더블클릭(wscript)/cscript 양방향 실행. ASCII 전용으로 인코딩 이슈 0건.
+- **체화:** INSTALLER-VBS-001 — Windows 배포 스크립트는 환경 의존 낮은 순 (VBScript > bat > ps1)으로 우선순위 제공.
+
+### [2026-05-18] M1397 — main repo _source DESYNC 8파일 누적 → W_SYNC3 dispatch (SOURCE-SYNC-DEFER-001 반복)
+- **상황:** W_AV M1392 발견. main repo C:\chemgrid에서 diff -q 전수 결과 8파일 DIFFER (drylab_report_exporter +93KB, popup_synthesis +28KB 등). worktree W_SYNC2는 별도 10파일 IDENTICAL 완료였으나 main repo는 별도 스트림.
+- **실수:** W184/W189/W191 등 이전 Worker들이 src/app 수정 후 _source 동기화를 누락 또는 worktree에서만 처리. main repo는 미반영.
+- **올바른 방법:** src/app/*.py 수정 즉시 main repo _source에도 shutil.copy2. worktree와 main repo는 별개 — 두 곳 모두 동기화 확인 의무.
+- **체화:** SOURCE-SYNC-DEFER-001 3차 반복. W_SYNC 계열 dispatch 시 worktree + main repo 양쪽 diff -q 필수.
 > 2 critical serial violations (audit bypass -> user got broken deliverables).
 > Key lesson: Worker -> audit 3 teams -> AV -> CT -> user. Skip any step = instant reject.
 > except:pass 262 incidents. SMILES pipeline loss. See: CLAUDE.md Rule A, M, T
 
-### [2026-05-18] M1384 — git push HTTP 500 RPC failed (GIT-PUSH-LFS-001)
-- **상황:** W_PUSH 임무. git config postBuffer=524MB/compression=0/lowSpeedTime=600 설정 후에도 HTTP 500 RPC failed 반복.
-- **실수 (시스템 결함):** git history에 Orca zip (3.6GB/3.5GB/1.9GB) + 교재 PDF 포함으로 pack 16GB. GitHub HTTPS 2GB 한도 초과. 단 1커밋 push도 2.17GB 전송 후 abort.
-- **올바른 방법:** (1) Contents API PUT 파일별 업로드 (60개 완료). (2) 근본 해결: git filter-repo + force push (CT 결정). (3) 장기: SSH 키 등록.
-- **체화:** GITHUB-API-FALLBACK-001 패턴 등록. SC108 pack 1GB+ WARN 예약.
+### [2026-05-18] M1383 — SHELL evidence archive 미완료: W_CLEAN이 파일 존재를 CLEAN으로 오판 (SHELL-CLEANUP-001-r)
+- **상황:** W_CLEAN_r 임무 — W_CLEAN이 D-M1091-W117/W213, D-M1090-W46을 "CLEAN"으로 표시했으나 이들은 최상위 파일 0건(서브폴더 captures/에만 파일 존재). 임무 지시서 SHELL 21건 중 12건이 미완료로 남음.
+- **실수:** W_CLEAN에서 `find -type f | wc -l` 총 파일수로만 확인 → 최상위 0건(captures/ 서브폴더에만 있음)인 경우를 CLEAN으로 오판. D889 7건/D888_W11은 파일 있어 archive 대상인데 SHELL이 아니라는 이유로 이동 생략.
+- **올바른 방법:** evidence 디렉터리는 최상위 파일 1건 이상 필수. captures/만 있는 것은 메인 evidence 미기록 = FP-38 대상. archive 이동 대상은 "SHELL여부"가 아니라 "이전 cycle 완료 여부"로 판단.
+- **체화:** SHELL-CLEANUP-001 패턴 강화 — archive 이동 시 `총파일수>0` 확인만으로는 불충분. 최상위 파일 1건 이상 확인 필수. 이전 cycle 항목은 SHELL 여부와 무관하게 archive 이동.
 
-### [2026-05-18] M1393 — README worktree 신규 생성 + orphan branch commit-tree 패턴
-- **상황:** D-M1153-002-W_README. worktree `jovial-lamarr-4ee118`에 README.md 없음. HEAD 커밋 오브젝트 missing(51d3a671 dangling). git status "fatal: bad object HEAD".
-- **실수:** `git add` + `git commit` 불가. `git write-tree` 실패 (인덱스 오브젝트 missing).
-- **올바른 방법:** (1) `git hash-object -w` 로 새 파일 등록 → (2) `git read-tree master` 로 베이스 인덱스 로드 → (3) `git update-index --add --cacheinfo` → (4) `git write-tree` → (5) `git commit-tree <tree> -p <master_sha>` → (6) `git update-ref refs/heads/<branch> <new_commit>`. 이후 `git read-tree master` 로 main repo 인덱스 복구.
-- **체화:** worktree orphan 상태에서 commit-tree 직접 사용 패턴 확립.
+### [2026-05-18] M1372 — _is_protected_name rstrip('.exe') 문자집합 오탐 → claude.exe 보호 우회
+- **Situation:** D-M1153-002-W9 force_kill_pids 실행 중 _is_protected_name('claude.exe')=False 오탐. claude.exe 5개가 보호 없이 kill됨 (CT 승인 kill이었으나 설계 버그는 즉시 수정 의무).
+- **근본 원인:** `name.lower().rstrip(".exe")` — `rstrip`은 문자 집합(character set)으로 동작. `"claude.exe"` → 오른쪽에서 `.`, `e`, `x` 제거 → `"claud"`. `"claud".startswith("claude")` = False.
+- **올바른 방법:** `endswith(".exe")` 체크 후 `[:-4]` 슬라이싱으로 정확한 접미사 제거.
+- **체화 4단계 (Rule H):**
+  - H-1: `str.rstrip(suffix)` != `str.removesuffix(suffix)`. rstrip은 문자 집합, removesuffix는 정확한 접미사 제거.
+  - H-2: docs/ai/skills/cmd_hidden_strict.md 하단 M1372 패턴 추가 — `rstrip(".<ext>")` 사용 금지
+  - H-3: patrol 탐지 가능: `rstrip\(['"].*\.[a-z]+['"]\)` 패턴 grep (비차단 WARN)
+  - H-4: CLAUDE.md Rule N 강화 불필요 (기존 커버). Rule M 위반 없음 (즉시 수정됨).
 
-### [2026-05-18] M1394 — _source DESYNC 10파일 재누적 → W_SYNC2 재dispatch (허위 동기 선언)
-- **상황:** W_SYNC (1차) 처리 후 W184/W188/W189/W191/W7r/W_FONT 변경분이 _source에 흡수 안 됨. audit_integration M1375 REJECT 블로커. 10파일 DIFFER 잔존.
-- **실수:** W184/W189/W191 commit message에 "_source 동기화 완료" 허위 선언. filecmp 미검증 후 commit.
-- **올바른 방법:** src/app/*.py 수정 즉시 shutil.copy2 + filecmp.cmp(shallow=False) IDENTICAL 확인 후 같은 commit에 포함. commit message에 diff -q IDENTICAL N/N 근거 명시.
-- **체화:** SOURCE-SYNC-DEFER-001 패턴 반복. W_SYNC2 결과: 10/10 IDENTICAL, py_compile 95/95 PASS.
-
-### [2026-05-18] M1389 — _source DESYNC 6파일 누적 → COND_PASS BLOCKING (W_SYNC 별도 dispatch)
-- **상황:** D-M1153-002 audit_theory M1376 COND_PASS — src/app 6파일 수정 후 _source 미동기화. W_SYNC 별도 dispatch 필요.
-- **실수:** Rule J "_source 즉시 복사" 미이행. Worker가 src/app commit 후 _source sync를 빠뜨림.
-- **올바른 방법:** src/app/*.py 수정 즉시 shutil.copy2 후 diff -q IDENTICAL 확인을 같은 commit에 포함.
-- **체화:** SOURCE-SYNC-DEFER-001 패턴 재확인. MENU.md Pre-work diff -q 항목 준수 의무.
-
-### [2026-05-18] M1385 — deploy trigger 사전 준비 패턴 (W_BUILD 대기)
-- **상황:** W_DEPLOY rc2 — W_BUILD 완료 전 gh release create 실행 차단 필요.
-- **패턴:** precondition 3종(log존재+exe mtime>BUILD_SPAWN_EPOCH+exe size>=100MB) 미충족 시 exit=2 반환. silent return 금지(Rule M).
-- **올바른 방법:** release_trigger_rc2.py precondition → create → upload → sha256 → evidence 순. Rule JJ creationflags=CREATE_NO_WINDOW 필수.
-- **체화:** deploy 스크립트는 항상 precondition 3종 + Rule JJ + exit코드 의미 명시.
-
-### [2026-05-18] M1379-W193 — engine_dashboard.html data:image/svg hook 차단 (M1359 미적용)
-- **상황:** W193 임무 — 38 엔진 health dashboard HTML 생성. 초안 작성 시 img src를 data:image/svg+xml URI로 삽입.
-- **실수:** user_env_verify.py hook L82 `HTML_PLACEHOLDER_OR_DATA_SVG_PROMOTION` 즉시 차단. M1359 교훈("data:image/* 완전 금지") 미적용.
-- **올바른 방법:** housing/evidence/D-M1034-W32/captures/*.png 실존 파일 상대경로 사용. hook 차단 후 즉시 전체 data URI → 실존 PNG 교체.
-- **체화:** M1359 체화 완료 확인 의무 — engine_dashboard 등 독립 HTML도 동일 rule 적용.
-
-### [2026-05-18] M1383 — SHELL-CLEANUP-001: evidence 빈 디렉터리 누적 방치 패턴
-- **상황:** W_CLEAN 임무 — D-M1153-002 cycle 진행 중 housing/evidence에 빈 디렉터리(SHELL) 10건 발견. W20r INDEX 기준 21건 검출 중 이미 채워진 11건 제외. D-M1091(6건)/D-M1090(2건) archive 이동, M1376/M1382 .gitkeep 처리.
-- **실수:** Worker가 evidence 디렉터리 mkdir 후 내부 파일 기록 없이 종료. 빈 디렉터리가 git에 잔존하여 FP-38 깡통 패턴 누적. M1366(evidence SHELL 21건)에서 최초 기록되었으나 정리 Worker 미발동.
-- **올바른 방법:** evidence 디렉터리 생성 즉시 evidence.md 또는 .json 1건 이상 기록. 완료된 cycle (D-M1091/D-M1090)의 SHELL은 archive/YYYY-MM-DD/SHELL_cleanup_M번호/ 이동 후 MANIFEST.md 작성.
-- **체화:** SHELL-CLEANUP-001 패턴 — evidence 생성 즉시 내부 파일 필수. patrol.py evidence_shell_check SC 신설 권고. H-4: Rule V 완료 조건에 "evidence 파일 1건+" 추가 검토.
-
-### [2026-05-18] M1371 — tools/ChemGrid.spec excludes=[] 공백 패턴
-- **상황:** W192 PyInstaller spec audit — tools/ChemGrid.spec의 excludes 리스트가 완전히 비어 있음. torch(1164MB), transformers(86MB), pyarrow(84MB) 등 ML/dev 패키지가 env에 설치되어 있어 빌드 시 번들될 위험.
-- **실수:** spec 신규 생성 시 기본 exclude list 없이 `excludes=[]` 그대로 방치. ChemGrid_Lite.spec은 잘 채워져 있으나 tools/ChemGrid.spec은 미관리.
-- **올바른 방법:** spec 생성/수정 시 ML(torch/transformers/accelerate/bitsandbytes) + dev(pytest/black/ruff/mypy) + Jupyter(IPython/jupyter/notebook) + sinktank 대용량(pyarrow/selenium/sklearn/grpcio/kornia) 일괄 exclude 의무화.
-- **체화:** tools/ChemGrid.spec에 55줄 exclude list 패치 완료. ChemGrid_Lite.spec 패턴 참조.
-
-### [2026-05-18] M1378 — alphafold_interface.py dead isinstance guard (NameError crash)
-- **상황:** ColabFold 결과 폴링 루프 status_code==200 분기에서 `if not isinstance(headers, dict): headers = {}` 존재.
-- **실수:** `headers` 변수는 해당 스코프에 미정의. NameError runtime crash. 실제 사용은 `resp.headers` (urllib 객체). 잘못된 Rule N 적용.
-- **올바른 방법:** 스코프에 없는 변수에 isinstance guard 추가 금지. dead code 가드는 삭제. Rule N-e: guard insertion requires variable scope verification.
-- **체화:** DEAD-GUARD-001 패턴 — isinstance guard 추가 전 변수가 해당 스코프에 실제로 정의되어 있는지 확인 필수.
-
-### [2026-05-18] M1369 — popup_polymer property tab 미완성 + 비중합성 가드 누락
-- **상황:** D-M1153-002 G5 spec — Tab1 물성에 Tg 예측 근거 없음, r1/r2 반응성 비율 표 없음, 비중합성 단량체 시 탭 비활성화 미적용
-- **실수:** property tab에 Van Krevelen 이론 조견표와 Mayo-Lewis r1/r2 조견표가 없어 학생이 계산 근거를 파악 불가. `poly_result.possible=False` 시 연쇄중합/AI/구조최적화 탭 그대로 활성 → 빈 화면 혼란
-- **올바른 방법:** `_build_properties_tab()` 말미에 Tg(Van Krevelen Yg 13기능기) + r1/r2(Odian 8쌍) 2개 QGroupBox 추가. `_init_ui()` addTab 직후 `_NON_POLY_TABS {4,5,6,7}` setTabEnabled(False) + setTabToolTip() 적용
-- **체화:** POLYMER-PROP-001 패턴 — property탭에 이론 조견표 3종(Tg/PDI/r1r2) 필수. M992 패턴 재확인.
-
-### [2026-05-18] M1359 — cycle_html에 data:image/svg+xml base64 사용 → user_env_verify hook 차단
-- **상황:** W11 cycle_D-M1153.html 초안 작성 시 img 태그 src를 data:image/svg+xml base64로 채움.
-- **실수:** user_env_verify.py hook L82: `"data:image/svg" in lower` → HTML_PLACEHOLDER_OR_DATA_SVG_PROMOTION 즉시 차단. 실제 PNG 캡처 없이 SVG 플레이스홀더로 이미지 요건(25+)을 맞추려 한 것이 근본 원인.
-- **올바른 방법:** housing/evidence/ 또는 docs/reports/ 하위에 실존하는 PNG 파일을 상대경로로 참조. D-M1034-W32/captures/ 캡처 29개 활용. data:image/* 완전 금지.
-- **체화:** cycle_html 작성 시 img src는 반드시 실존 파일 상대경로. 플레이스홀더 SVG = hook 차단 = 즉시 반려.
-
-### [2026-05-18] M1363 — SSLEOFError 방어 없이 None 반환 (pubchem_client._get + RCSB calls)
-- **Situation:** W17 임무 — SSL 인증서/프록시/방화벽 진단 + 엔진 회복. D888_W17 capture.log에서 SSLEOFError 반복 발생 (pubchem_client.py _get 함수, api_key URL 전달).
-- **실수:** `requests.get()` SSL 오류 시 `logger.warning` 후 `verify=False` 재시도 없이 `None` 반환. Rule M 준수이나 회복 불가.
-- **올바른 방법:** SSLEOFError 감지 시 1차 실패 → verify=False 재시도 2차 → 2차도 실패 시 logger.warning + None. 5개 파일 동일 패턴 적용.
-- **체화:** skills/external_api_audit.md PUBCHEM-SSL-001 + RCSB-SSL-001 패턴 등록.
-- **재발 방지:** `grep "requests.get|requests.post" src/app/*.py | grep -v "verify="` → WARN 패턴 권고.
-
-### [2026-05-18] M1366 — evidence SHELL 21건 (W20r 전수 재검사)
-- **Situation:** W20r INDEX 생성 중 housing/evidence 빈 디렉터리 전수 검사. W20(9건) 대비 신규 12건 추가 총 21건 SHELL 확인.
-- **실수:** Worker가 evidence 디렉터리만 mkdir하고 내부 파일 기록 없이 종료. M1403_W18r_16task_dispatch 등 당일 생성 포함.
-- **올바른 방법:** evidence 디렉터리 생성 즉시 evidence.md 또는 .json 1건 이상 기록 필수. 빈 채 종료 = FP-38 깡통.
-- **체화:** patrol.py evidence_shell_check 신설 권고. misc/M1366_EVIDENCE_SHELL_21_W20R.txt 참조.
-
-### [2026-05-18] M1358 — schtasks MISSING 상태 + ct_hourly --run-once 인수 미지원 버그
-- **Situation:** W8r 임무: ChemGrid_CronAV_20min + ChemGrid_CronAV_CT_20min 22일 비활성. schtasks /Query 시 "system cannot find file" = MISSING 상태. PC 부하 없음, cron 신뢰도 의심.
-- **실수 (기존 시스템 결함):** cron_20min_dispatcher.py Phase 3에서 ct_hourly_review.py 호출 시 `--run-once` 인자 전달 → ct_hourly_review.py는 `--dry-run`, `--no-spawn`만 허용 → rc=2 반환 → HTML 미생성. 태스크 자체는 실행 성공(rc=0)이나 Phase 3 내부 스크립트 rc=2로 ct_hourly HTML 생성 실패.
+### [2026-05-18] M1160 — WMI CreationDate /Date(epoch_ms)/ 형식 미처리 → uptime 계산 실패
+- **Situation:** zombie_process_cleaner.py 신규 작성 후 1차 실행 시 bash PID 3건 전부 "uptime 계산 실패 — 제외" WARNING. 좀비 판정 불가.
+- **근본 원인:** PowerShell ConvertTo-Json이 WMI DateTime을 ISO 문자열이 아닌 `/Date(epoch_ms)/` JSON 형식으로 직렬화. 코드는 "20260518153045.000000+540" 형식만 가정.
 - **올바른 방법:**
-  1. schtasks 재등록: schtasks /Create /XML 방식 (M543) + Hidden=true + PT15M ExecutionTimeLimit (M1266) + StopAtDurationEnd=false
-  2. Action: wscript.exe //B run_hidden.vbs python <script> (Rule JJ)
-  3. cron_20min_dispatcher.py L142: `--run-once` → `--no-spawn` 수정 (ct_hourly_review.py 허용 인자 확인 후 변경)
-  4. 검증: schtasks /Query Status=Ready + Last Result=0 + ct_hourly_20260518_0354.html 119660 bytes 생성 확인
-- **체화 4단계:**
-  - H-1: `--run-once` 인자 미지원 silent failure = cron_20min_dispatcher.py가 ct_hourly_review.py 허용 인자를 확인하지 않고 전달한 것이 근본 원인
-  - H-2: schtask 등록 시 XML 방식 의무 + 스크립트 인자 사전 --help 확인 패턴을 cmd_hidden_strict.md에 추가
-  - H-3: patrol SC57 기존 탐지로 충분 (JJ 위반 0건 유지)
-  - H-4: 없음 (CLAUDE.md JJ + M543 교훈 충분)
-- **재발 방지:** schtask 호출 전 python <script> --help로 허용 인자 확인 의무화
+  1. `isinstance(creation_raw, str)` + `s.startswith("/Date(")` 분기 추가
+  2. `/Date(epoch_ms)/` 내 숫자 추출 → `float(epoch_str) / 1000.0` → uptime 계산
+  3. `isinstance(creation_raw, (int, float))` 분기도 추가 (숫자 직렬화 대응)
+- **체화 4단계 (Rule H):**
+  - H-1: WMI DateTime은 환경/PS 버전에 따라 ISO 문자열 OR /Date()/ 형식 혼재 — 단일 형식 가정 금지
+  - H-2: docs/ai/skills/cmd_hidden_strict.md 하단 M1160 패턴 추가 권장
+  - H-3: zombie_process_cleaner.py 자체 로그에서 WARNING 0건 = 파싱 정상 자동 확인
+  - H-4: CLAUDE.md Rule N 강화 — "WMI/외부 날짜 파싱 시 형식 2종(ISO/epoch) 분기 필수"
+- **결과:** 3차 실행(수정 후) WARNING 0건, scanned=11, zombies=0, killed=0, skipped=1 정상.
+
+### [2026-05-17] M1034-W15 — reaction analysis 무한 스피너: IBM RXN init 30s blocking + 스레드 abort 부재
+- **Situation:** 격분 #35 — 반응 분석 탭 열면 분석이 발동되나 ASKCOS/IBM RXN endpoint에 네트워크 응답 없을 때 무한 스피너 발생. RetrosynthesisThread가 종료되지 않아 progress_bar가 계속 visible.
+- **근본 원인 (2건):**
+  1. `RetrosynthesisThread.run()` 내 `engine._get_ibm_rxn_client()` 호출이 `IBMRXNClient.is_available()` timeout=30s 소켓 대기를 그대로 사용. find_routes() 시작 전에 이미 30s 소진 가능.
+  2. `_watchdog_hide_progress` (timeout+5s)는 progress_bar만 숨기고 스레드는 살아 있어 — 이후 `finished_all` 시그널이 발화되면 UI 상태 불일치. 스레드 강제 종료 로직 부재.
+- **올바른 방법 (M1034-W15 fix):**
+  1. `concurrent.futures.ThreadPoolExecutor` + `fut.result(timeout=5.0)` 로 IBM RXN init을 5s 이내로 cap. TimeoutError → `logger.warning` + skip (Rule M).
+  2. `_watchdog_abort_thread()` 신설 — timeout+10s 후 `_thread.quit()` → `wait(3s)` → `terminate()` 순서. 스레드 종료 후 Rule M fallback 메시지 표시.
+  3. `_start_search()` 에 `QTimer.singleShot(abort_ms, self._watchdog_abort_thread)` 추가.
+- **체화 4단계 (Rule H):**
+  - H-1: IBM RXN timeout=30s 소켓이 QThread 안에서 무방비 상태 → 무한 스피너
+  - H-2: REACTION-001 패턴: 외부 API init을 QThread에서 직접 호출 시 반드시 probe timeout cap 필수
+  - H-3: patrol SC97 검사 대상 추가 — `_get_ibm_rxn_client()` / `_get_askcos_client()` 직접 호출 패턴 탐지
+  - H-4: CLAUDE.md Rule M 강화 필요 없음 (이미 커버). skills/reaction_analysis_thread.md 갱신 권장.
+- **결과:** py_compile PASS, _source/ IDENTICAL, 3 SMILES headless < 0.1s each, thread abort timer + IBM 5s probe cap 정상 작동.
 
 ### [2026-04-28] M645-W29 — PyInstaller 재빌드 시 실행 중 exe 잠금 + conda PATH 부재 패턴
 - **Situation:** W22~W27 fix 통합 후 PyInstaller 재빌드 시도. 기존 dist/ChemGrid_Lite/ChemGrid.exe가 실행 중이라 덮어쓰기 불가 (Device or resource busy). 또한 bash 환경에서 `conda` 명령 없음.
