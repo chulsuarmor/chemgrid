@@ -1,6 +1,9 @@
-# engine_core.py (v2.80 - Interface Unified + Type Hints)
+# engine_core.py (v2.81 - Interface Unified + Type Hints + N-guard)
+import logging
 import math
 from typing import Optional, List, Set, Dict, Tuple
+
+logger = logging.getLogger(__name__)
 
 # 타입 별칭: 좌표 키 (x, y) 튜플
 CoordKey = Tuple[float, float]
@@ -54,9 +57,13 @@ class ConjugationEngine:
         """
         pi_islands = []
         visited = set()
-        
+
         for node in mol:
             at = atoms.get(node, {})
+            # N-guard: at이 dict인지 검증
+            if not isinstance(at, dict):
+                logger.warning("get_pi_islands_in_mol: atoms[%s]가 dict가 아닙니다: type=%s", node, type(at).__name__)
+                continue
             # 전이금속은 π 공액에 참여하지 않음 (d-오비탈 상호작용)
             elem = at.get("main", "") or ""  # '' = carbon
             if elem in self.TRANSITION_METALS:
@@ -65,9 +72,24 @@ class ConjugationEngine:
             # ferrocene의 Cp- 고리: [cH-] 원자가 charge="-"로 저장되지만
             # attach에는 없을 수 있음 → charge 필드 직접 체크 추가
             has_charge_field = at.get("charge", "") in ("+", "-")
+            attach_vals = at.get("attach", {})
+            if not isinstance(attach_vals, dict):
+                attach_vals = {}
+            # [M504 FIX] lone-pair π-donor 원자 (N/O/S) 인접 pi-participant 감지
+            # 아닐린 NH2, 페놀 OH, 티오페놀 SH: 단일결합만 있어도 lone pair로 ring π에 기여.
+            # 기존 조건(이중결합 or 전하)만으로는 감지 불가 → ring 탄소에 결합된 N/O/S 추가
+            _LP_DONORS = frozenset(("N", "O", "S"))  # [MAGIC] lone-pair π-donors
+            is_lp_donor = (
+                elem in _LP_DONORS and
+                any(
+                    (atoms.get(nb, {}) or {}).get("main", "") in ("", "C")
+                    for nb, _ in adj.get(node, [])
+                )  # 인접 원자 중 탄소(ring)가 있어야 함
+            )
             is_participant = (any(o >= 2 for _, o in adj.get(node, [])) or
-                             any(s in ["+", "-", "·", ".."] for s in at.get("attach", {}).values()) or
-                             has_charge_field)
+                             any(s in ["+", "-", "·", ".."] for s in attach_vals.values()) or
+                             has_charge_field or
+                             is_lp_donor)  # [M504] lone-pair donor 포함
 
             if node not in visited and is_participant:
                 island = set()
@@ -80,14 +102,29 @@ class ConjugationEngine:
                         for n, _ in adj.get(curr, []):
                             if n in mol:
                                 n_at = atoms.get(n, {})
+                                # N-guard: n_at 타입 검증
+                                if not isinstance(n_at, dict):
+                                    continue
                                 # 전이금속을 통한 BFS 전파 차단
                                 n_elem = n_at.get("main", "") or ""
                                 if n_elem in self.TRANSITION_METALS:
                                     continue
                                 n_has_charge = n_at.get("charge", "") in ("+", "-")
+                                n_attach = n_at.get("attach", {})
+                                if not isinstance(n_attach, dict):
+                                    n_attach = {}
+                                # [M504 FIX] BFS 전파: lone-pair π-donor(N/O/S) 방향도 전파
+                                n_is_lp_donor = (
+                                    n_elem in _LP_DONORS and
+                                    any(
+                                        (atoms.get(nb2, {}) or {}).get("main", "") in ("", "C")
+                                        for nb2, _ in adj.get(n, [])
+                                    )
+                                )
                                 if (any(o >= 2 for _, o in adj.get(n, [])) or
-                                    any(s in ["+", "-", "·", ".."] for s in n_at.get("attach", {}).values()) or
-                                    n_has_charge):
+                                    any(s in ["+", "-", "·", ".."] for s in n_attach.values()) or
+                                    n_has_charge or
+                                    n_is_lp_donor):  # [M504] lone-pair donor 전파
                                     stack.append(n)
                 if len(island) >= 2:
                     pi_islands.append(island)
@@ -105,10 +142,15 @@ class ConjugationEngine:
         """
         rings = []
 
+        # [M152 FIX] 로컬 재할당 금지: adj는 outer scope에서 이미 dict임.
+        # 중첩함수 내에서 'adj = {}' 대입하면 Python이 전체 함수 스코프를 로컬로 처리 → UnboundLocalError.
+        # 이 분자(히포수도릭산)처럼 pi-island가 20원자인 경우 반드시 호출되어 크래시 발생.
+        _adj_safe = adj if isinstance(adj, dict) else {}
+
         def dfs(curr, start, path):
             if len(path) > 15:
                 return
-            for n, _ in adj.get(curr, []):
+            for n, _ in _adj_safe.get(curr, []):
                 if n == start and len(path) >= 3:
                     if tuple(sorted(path)) not in [tuple(sorted(r)) for r in rings]:
                         rings.append(path[:])
@@ -132,11 +174,28 @@ class ConjugationEngine:
         Returns:
             Hückel 규칙 만족 여부
         """
+        # Rule N: isinstance guard for adj/atoms parameters
+        if not isinstance(adj, dict):
+            adj = {}
+        if not isinstance(atoms, dict):
+            atoms = {}
         pi = 0
         for i in range(len(r)):
             u, v = r[i], r[(i + 1) % len(r)]
-            if any(neighbor == v and order >= 2 for neighbor, order in adj[u]):
+            if any(neighbor == v and order >= 2 for neighbor, order in adj.get(u, [])):
                 pi += 2
-        ex = sum(2 for n in r if any(s in ["-", ".."] for s in atoms[n].get("attach", {}).values()))
-        rad = sum(1 for n in r if "·" in atoms[n].get("attach", {}).values())
+        # N-guard: atoms[n]이 dict인지 검증 후 attach 접근
+        ex = 0
+        rad = 0
+        for n in r:
+            n_at = atoms.get(n, {})
+            if not isinstance(n_at, dict):
+                continue
+            n_attach = n_at.get("attach", {})
+            if not isinstance(n_attach, dict):
+                continue
+            if any(s in ["-", ".."] for s in n_attach.values()):
+                ex += 2
+            if "·" in n_attach.values():
+                rad += 1
         return (pi + ex + rad) in [2, 6, 10, 14, 18, 22, 26]
