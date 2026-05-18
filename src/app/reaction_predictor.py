@@ -68,6 +68,8 @@ class ReactionPathway:
 # (name_kr, name_en, SMARTS, role)
 FUNCTIONAL_GROUP_PATTERNS = [
     # === 할로겐화물 ===
+    ("1차 알킬 할로겐화물", "Methyl Alkyl Halide",
+     "[CH3X4][F,Cl,Br,I]", "electrophile"),
     ("1차 알킬 할로겐화물", "Primary Alkyl Halide",
      "[CH2X4][F,Cl,Br,I]", "electrophile"),
     ("2차 알킬 할로겐화물", "Secondary Alkyl Halide",
@@ -206,17 +208,31 @@ REACTION_RULES: List[Dict] = [
 
     # ═══ 첨가 반응 (Addition) ═══
     {
+        "name": "Br₂ 반부가 (Bromonium Anti-Addition)",
+        "name_en": "Bromine Anti-Addition via Bromonium Ion",
+        "category": "첨가",
+        "mechanism_type": "br2_anti_addition",
+        "substrate_fg": ["알켄"],
+        "reagent_fg": ["이원자 할로겐"],
+        "conditions": [
+            ReactionCondition("Br2", "RT", "CCl4 또는 CH2Cl2"),
+        ],
+        "confidence": 0.93,
+        "description": "알켄 π 전자가 Br₂를 분극시켜 bromonium ion을 형성하고, Br⁻가 후면 공격하여 anti/trans-1,2-dibromide를 만든다.",
+        "regiochemistry": "비대칭 알켄에서는 더 안정한 bromonium opening 경향",
+        "stereochemistry": "Anti addition (trans)",
+    },
+    {
         "name": "친전자 첨가 (Markovnikov)",
         "name_en": "Electrophilic Addition (Markovnikov)",
         "category": "첨가",
         "mechanism_type": "electrophilic_addition",
         "substrate_fg": ["알켄"],
-        "reagent_fg": ["물", "할로겐 음이온", "이원자 할로겐"],
+        "reagent_fg": ["물", "할로겐 음이온"],
         "conditions": [
             ReactionCondition("HBr", "RT", "—"),
             ReactionCondition("H2SO4/H2O", "RT", "H2O"),
             ReactionCondition("HCl", "RT", "—"),
-            ReactionCondition("Br2/CCl4 (할로겐 첨가)", "RT", "CCl4"),
         ],
         "confidence": 0.80,
         "description": "친전자체(H⁺)가 이중결합을 공격 → 카르보카티온 → 친핵체 첨가. Markovnikov 법칙 따름.",
@@ -457,6 +473,92 @@ REACTION_RULES: List[Dict] = [
         "regiochemistry": "β-위치에 아릴기 도입 (trans 생성물 우선)",
         "stereochemistry": "trans 알켄 선호 (열역학적 안정성)",
     },
+
+    # ═══ [M708 F5-9] 추가 규칙: Grignard, Aldol, Wittig, 에폭사이드 개환 ═══
+    {
+        "name": "Grignard 반응",
+        "name_en": "Grignard Reaction",
+        "category": "첨가",
+        "mechanism_type": "grignard_addition",
+        "substrate_fg": ["알데히드", "케톤", "에스터"],
+        "reagent_fg": [
+            "1차 알킬 할로겐화물", "2차 알킬 할로겐화물", "아릴 할로겐화물"],
+        "conditions": [
+            ReactionCondition("Mg / Et2O, then H3O+", "-78C -> RT", "Et2O (무수)"),
+            ReactionCondition("Mg / THF, then NH4Cl(aq)", "0C -> RT", "THF (무수)"),
+        ],
+        "confidence": 0.80,
+        "description": (
+            "RMgBr(Grignard 시약, March 16.24)이 카르보닐 탄소를 공격"
+            " → 마그네슘 알콕사이드 → 수성 처리 후 알코올 생성."
+            " 케톤 → 3차 알코올, 알데히드 → 2차 알코올."
+        ),
+        "regiochemistry": "",
+        "stereochemistry": "혼합 (카르보닐 카이럴 시 라세미)",
+    },
+    {
+        "name": "Aldol 반응/축합",
+        "name_en": "Aldol Addition / Condensation",
+        "category": "축합",
+        "mechanism_type": "aldol",
+        "substrate_fg": ["알데히드", "케톤"],
+        "reagent_fg": ["알데히드", "케톤"],
+        "conditions": [
+            ReactionCondition("NaOH (aq)", "RT", "H2O"),
+            ReactionCondition("LDA / THF, then NH4Cl(aq)", "-78C -> RT", "THF"),
+            ReactionCondition("TiCl4 / Et3N (Evans)", "-78C -> RT", "CH2Cl2"),
+        ],
+        "confidence": 0.75,
+        "description": (
+            "알파-탄소의 친핵성 공격으로 베타-히드록시카르보닐 생성 (Aldol 부가, March 16.37)."
+            " 이어서 가열 시 탈수 → 알파,베타-불포화 카르보닐 (Aldol 축합)."
+        ),
+        "regiochemistry": "알파-탄소 위치 (가장 산성적 알파-H 기준)",
+        "stereochemistry": "Zimmermann-Traxler 모델: E-엔올레이트→anti, Z-엔올레이트→syn",
+    },
+    {
+        "name": "Wittig 반응",
+        "name_en": "Wittig Reaction",
+        "category": "축합",
+        "mechanism_type": "wittig",
+        "substrate_fg": ["알데히드", "케톤"],
+        "reagent_fg": ["에스터", "니트릴"],
+        "conditions": [
+            ReactionCondition("Ph3P=CH2 (ylide) / Et2O", "RT -> Reflux", "Et2O"),
+            ReactionCondition("Ph3P=CHR / THF", "0C -> RT", "THF"),
+        ],
+        "confidence": 0.70,
+        "description": (
+            "포스포늄 일라이드(Ph3P=CHR)가 카르보닐에 [2+2] 부가 → 옥세탄"
+            " → 레트로[2+2] → 알켄 + Ph3P=O (March 16.44)."
+            " 비안정화 일라이드→Z, 안정화 일라이드→E."
+        ),
+        "regiochemistry": "",
+        "stereochemistry": "비안정화: cis(Z) 선호; 안정화: trans(E) 선호",
+    },
+    {
+        "name": "에폭사이드 개환",
+        "name_en": "Epoxide Ring Opening",
+        "category": "치환",
+        "mechanism_type": "epoxide_opening",
+        "substrate_fg": ["에폭사이드"],
+        "reagent_fg": [
+            "1차 아민", "2차 아민", "하이드록사이드",
+            "할로겐 음이온", "티올"],
+        "conditions": [
+            ReactionCondition("Nu-H / EtOH", "RT", "EtOH"),
+            ReactionCondition("BF3.Et2O / Nu-H (산성)", "0C -> RT", "CH2Cl2"),
+            ReactionCondition("NaOH (aq) (염기성)", "RT", "H2O"),
+        ],
+        "confidence": 0.80,
+        "description": (
+            "에폭사이드 (March 10.57): 산성 조건 → 더 치환된 탄소 공격;"
+            " 염기성 → 덜 치환된 탄소 공격(SN2 유사)."
+            " 생성물: trans-베타-아미노알코올 등."
+        ),
+        "regiochemistry": "산성: 더 치환된 탄소; 염기성: 덜 치환된 탄소",
+        "stereochemistry": "Anti-attack → trans 생성물",
+    },
 ]
 
 # ═══ 추가 작용기 패턴 (TASK-RXTN-002 확장분) ═══
@@ -484,15 +586,84 @@ FUNCTIONAL_GROUP_PATTERNS_EXTENDED = [
 class ReactionPredictor:
     """두 분자의 SMILES를 받아 가능한 반응 경로 목록을 반환"""
 
+    # [M708 F5-9] mechanism_type → forward reaction SMARTS (RDKit rdChemReactions)
+    # 학술 출처: March's Advanced Organic Chemistry (7th ed.), Smith & March
+    # [M769 A73-W1 F5-9] _FORWARD_SMARTS 확장 — grignard/aldol/wittig/sn1/reductive_amination
+    # 학술 출처: March's Advanced Organic Chemistry 7th ed. + Clayden Organic Chemistry 2nd ed.
+    # Rule M: product_smiles="" 빈 반환이 많아 사용자 "계산되는건 아무것도 없다" 격분 (F5-9).
+    # 해결: 주요 mechanism_type 8종 추가 → _compute_product_smiles 커버리지 확장.
+    _FORWARD_SMARTS: Dict[str, str] = {
+        # SN2: RX + Nu- → RNu + X- (March 10.1)
+        "sn2": "[C:1][Br,Cl,I:2].[#7,#8,#16:3]>>[C:1][*:3]",
+        # E2: R-CHR-CX + base → alkene (March 17.2)
+        "e2": "[C:1][C:2][Br,Cl,I:3]>>[C:1]=[C:2]",
+        # Esterification: RCOOH + R'OH → RCOOR' (March 16.63)
+        "esterification": "[CX3:1](=O)[OH:2].[OX2H:3][CX4:4]>>[CX3:1](=O)[OX2:3][CX4:4]",
+        # Amidation: RCOCl + RNH2 → RCONHR (March 16.72)
+        "amidation": "[CX3:1](=O)[Cl,Br,I].[NX3H2:2]>>[CX3:1](=O)[NX3H:2]",
+        # EAS halogenation: ArH + Br2 → ArBr + HBr (March 11.2)
+        "eas": "[c:1][H]>>[c:1][Br]",
+        # Electrophilic addition: C=C + HBr → C-C-Br (Markovnikov, March 15.2)
+        "electrophilic_addition": "[C:1]=[C:2].[Br,Cl,I:3]>>[C:1][C:2][*:3]",
+        # Bromination of alkene: C=C + Br2 → vicinal dibromide via bromonium ion (anti).
+        "br2_anti_addition": "[C:1]=[C:2].[Br:3][Br:4]>>[C:1]([Br:3])[C:2]([Br:4])",
+        # Oxidation of primary alcohol → aldehyde (PCC, March 19.3)
+        "oxidation": "[CH2:1][OH]>>[CH:1]=O",
+        # Nucleophilic addition to carbonyl: R2C=O → R2CHOH (NaBH4, March 16.24)
+        "nucleophilic_addition": "[C:1]=O>>[C:1][OH]",
+        # [M769] Grignard addition: RMgBr + R'CHO → R-CH(OH)-R' (March 16.24)
+        # 알데히드 기질 + 알킬 마그네슘 브로마이드 → 2차 알코올
+        "grignard_addition": "[C:1]=O.[C:2][MgBr]>>[C:1]([OH])[C:2]",
+        # [M769] Aldol addition: 2×R-CH2-CHO → β-hydroxy aldehyde (March 16.37 NaOH/H2O)
+        # 케톤 α-H 친핵성 공격 → β-히드록시카르보닐
+        "aldol": "[CX4:1][C:2]=O.[C:3][C:4]=O>>[C:3]([OH])[C:4][C:1][C:2]=O",
+        # [M769] Wittig: Ph3P=CH2 + RCHO → RCH=CH2 (March 16.44)
+        # 포스포늄 일라이드 + 알데히드/케톤 → 알켄 + Ph3P=O
+        "wittig": "[C:1]=O.[C:2]=[P]>>[C:1]=[C:2]",
+        # [M769] SN1: 3차 RX → R+ → ROH (March 10.1 — tert-alkyl halide + H2O)
+        "sn1": "[CX4:1]([!H])([!H])([!H])[Br,Cl,I]>>[CX4:1]([!H])([!H])([!H])[OH]",
+        # [M769] Reductive amination: R-CHO + R'NH2 → R-CH2-NHR' (NaBH3CN, March 16.72)
+        # 알데히드/케톤 + 아민 → 이민 → 환원 → 2차 아민
+        "reductive_amination": "[C:1]=O.[NX3H2:2]>>[C:1][NX3H:2]",
+        # [M769] Diels-Alder: diene + dienophile → cyclohexene (March 15.56)
+        # [4+2] 환화첨가
+        "diels_alder": "[C:1]=[C:2]-[C:3]=[C:4].[C:5]=[C:6]>>[C:1]1[C:2]=[C:3][C:4][C:5][C:6]1",
+        # [M769] Acid halide + alcohol → ester (March 16.63 acylation)
+        "acylation": "[CX3:1](=O)[Cl,F].[OX2H:2]>>[CX3:1](=O)[OX2:2]",
+    }
+
     def __init__(self):
         self._compiled_patterns = {}  # SMARTS 캐시
+        # [M708 F5-9] 전향 반응 SMARTS 사전 컴파일 (Rule L: None guard 필수)
+        self._compiled_forward: Dict[str, object] = {}
+        if RDKIT_AVAILABLE:
+            try:
+                from rdkit.Chem import rdChemReactions as _rxn_module
+                for mtype, sma in self._FORWARD_SMARTS.items():
+                    try:
+                        rxn = _rxn_module.ReactionFromSmarts(sma)
+                        if rxn is not None:
+                            self._compiled_forward[mtype] = rxn
+                    except Exception as _ce:
+                        logger.warning(
+                            "[M708 F5-9] _FORWARD_SMARTS compile failed mtype=%s: %s",
+                            mtype, _ce)
+            except Exception as _ie:
+                logger.warning("[M708 F5-9] rdChemReactions import failed: %s", _ie)
 
     def detect_functional_groups(self, smiles: str) -> List[FunctionalGroup]:
         """분자의 작용기 감지"""
         if not RDKIT_AVAILABLE:
+            logger.warning("detect_functional_groups: RDKit not available")
             return []
+
+        if not isinstance(smiles, str) or not smiles.strip():
+            logger.warning("detect_functional_groups: invalid SMILES input (type=%s, value=%r)", type(smiles).__name__, smiles)
+            return []
+
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
+            logger.warning("detect_functional_groups: failed to parse SMILES=%s", smiles)
             return []
 
         # 기본 + 확장 패턴 결합
@@ -525,18 +696,31 @@ class ReactionPredictor:
             신뢰도 내림차순 정렬된 ReactionPathway 리스트
         """
         if not RDKIT_AVAILABLE:
+            logger.warning("predict: RDKit not available")
+            return []
+
+        if not isinstance(smiles_a, str) or not smiles_a.strip():
+            logger.warning("predict: invalid smiles_a (type=%s, value=%r)", type(smiles_a).__name__, smiles_a)
+            return []
+
+        if not isinstance(smiles_b, str) or not smiles_b.strip():
+            logger.warning("predict: invalid smiles_b (type=%s, value=%r)", type(smiles_b).__name__, smiles_b)
             return []
 
         fg_a = self.detect_functional_groups(smiles_a)
         fg_b = self.detect_functional_groups(smiles_b)
 
         if not fg_a and not fg_b:
+            logger.info("predict: no functional groups detected in either molecule (A=%s, B=%s)", smiles_a, smiles_b)
             return []
 
         pathways = []
 
         # 양방향 매칭: A가 기질이고 B가 시약인 경우 + 반대
         for rule in REACTION_RULES:
+            # Rule N: 타입 가드 — rule은 dict
+            if not isinstance(rule, dict):
+                continue
             # Case 1: A = substrate, B = reagent
             matches_a = self._match_fg_list(fg_a, rule.get("substrate_fg", []))
             matches_b = self._match_fg_list(fg_b, rule.get("reagent_fg", []))
@@ -571,17 +755,71 @@ class ReactionPredictor:
                 matched.append(fg)
         return matched
 
+    def _compute_product_smiles(self, mechanism_type: str,
+                                substrate_smiles: str,
+                                reagent_smiles: str) -> str:
+        """[M708 F5-9] RDKit rdChemReactions으로 생성물 SMILES 계산.
+
+        _FORWARD_SMARTS에 등록된 반응만 처리 가능.
+        실패 시 빈 문자열 반환 (Rule M: logger.warning 기록, silent return 허용은 반환값""뿐).
+        Rule L: MolFromSmiles + None 체크 의무.
+        """
+        if not RDKIT_AVAILABLE:
+            return ""  # silent-ok: 엔진 미설치 케이스
+        rxn = self._compiled_forward.get(mechanism_type)
+        if rxn is None:
+            return ""  # 미등록 mechanism_type → 빈 반환 (정상 케이스)
+        try:
+            # Rule L: None 체크
+            sub_mol = Chem.MolFromSmiles(substrate_smiles) if isinstance(substrate_smiles, str) else None
+            if sub_mol is None:
+                logger.warning("[M708 F5-9] substrate parse fail: %r", substrate_smiles)
+                return ""
+            rea_mol = None
+            if isinstance(reagent_smiles, str) and reagent_smiles.strip():
+                rea_mol = Chem.MolFromSmiles(reagent_smiles)
+                if rea_mol is None:
+                    logger.warning("[Rule L] MolFromSmiles 실패: %r", reagent_smiles)
+            # 2-반응물 시도 먼저, 실패 시 1-반응물
+            reactant_sets = [(sub_mol, rea_mol)] if rea_mol is not None else []
+            reactant_sets.append((sub_mol,))
+            for reactants in reactant_sets:
+                try:
+                    products = rxn.RunReactants(reactants)
+                    if products:
+                        prod_mol = products[0][0]
+                        Chem.SanitizeMol(prod_mol)
+                        smi = Chem.MolToSmiles(prod_mol)
+                        if smi:
+                            return smi
+                except Exception:
+                    continue
+        except Exception as _e:
+            logger.warning(
+                "[M708 F5-9] product compute failed mtype=%s sub=%r rea=%r: %s",
+                mechanism_type, substrate_smiles, reagent_smiles, _e)
+        return ""
+
     def _create_pathway(self, rule: Dict, substrate_fg: FunctionalGroup,
                         reagent_fg: Optional[FunctionalGroup],
                         substrate_smiles: str, reagent_smiles: str,
                         sub_label: str, rea_label: str) -> ReactionPathway:
         """규칙으로부터 ReactionPathway 생성"""
+        # Rule N: isinstance guard (function-level)
+        if not isinstance(rule, dict):
+            return ReactionPathway(name="", name_en="", category="", mechanism_type="",
+                                   conditions=[], product_smiles="", confidence=0.0,
+                                   description="invalid rule type")
+        mtype = rule["mechanism_type"]
+        # [M708 F5-9] 생성물 SMILES 계산 (실패 시 "" — silent ok for product field)
+        product_smi = self._compute_product_smiles(mtype, substrate_smiles, reagent_smiles)
         return ReactionPathway(
             name=rule["name"],
             name_en=rule["name_en"],
             category=rule["category"],
-            mechanism_type=rule["mechanism_type"],
+            mechanism_type=mtype,
             conditions=rule.get("conditions", []),
+            product_smiles=product_smi,
             confidence=rule.get("confidence", 0.5),
             description=rule.get("description", ""),
             reactant_a_role=f"분자 {sub_label}: {substrate_fg.name} (기질)",
@@ -607,16 +845,25 @@ class ReactionPredictor:
             분자가 1개이면 빈 리스트 반환 (자기 반응은 미지원).
             분자가 3개 이상이면 모든 2-분자 조합을 시도.
         """
-        if not RDKIT_AVAILABLE or not combined_smiles:
+        if not RDKIT_AVAILABLE:
+            logger.warning("predict_from_combined_smiles: RDKit not available")
+            return []
+
+        if not isinstance(combined_smiles, str) or not combined_smiles.strip():
+            logger.warning("predict_from_combined_smiles: invalid combined_smiles (type=%s, value=%r)",
+                           type(combined_smiles).__name__, combined_smiles)
             return []
 
         # Parse and separate fragments
         mol = Chem.MolFromSmiles(combined_smiles)
         if mol is None:
+            logger.warning("predict_from_combined_smiles: failed to parse SMILES=%s", combined_smiles)
             return []
 
         frags = Chem.GetMolFrags(mol, asMols=True)
         if len(frags) < 2:
+            logger.info("predict_from_combined_smiles: fewer than 2 fragments in SMILES=%s (self-reaction not supported)",
+                        combined_smiles)
             return []
 
         # Get canonical SMILES for each fragment
@@ -626,10 +873,12 @@ class ReactionPredictor:
                 smi = Chem.MolToSmiles(frag)
                 if smi:
                     frag_smiles.append(smi)
-            except Exception:
+            except Exception as e:
+                logger.warning("predict_from_combined_smiles: failed to convert fragment to SMILES: %s", e)
                 continue
 
         if len(frag_smiles) < 2:
+            logger.warning("predict_from_combined_smiles: fewer than 2 valid fragments after conversion")
             return []
 
         # 2 fragments: direct predict
@@ -667,10 +916,19 @@ class ReactionPredictor:
             lines.append(f"입체선택성: {pathway.stereochemistry}")
         lines.append(f"")
         lines.append(f"설명: {pathway.description}")
+        # [M751 F5-9 FIX] 생성물 SMILES 명시 — 사용자: "계산되는건 아무것도 없냐"
+        # product_smiles 있으면 표시, 없으면 명시적으로 "미계산" 안내 (Rule M)
+        lines.append(f"")
+        if pathway.product_smiles:
+            lines.append(f"예측 생성물 SMILES: {pathway.product_smiles}")
+        else:
+            lines.append(f"생성물 SMILES: 미계산 (복잡 반응 또는 템플릿 미등록)")
         if pathway.conditions:
             lines.append(f"")
-            lines.append(f"가능한 반응 조건:")
+            lines.append(f"가능한 반응 조건 ({len(pathway.conditions)}종):")
             for i, cond in enumerate(pathway.conditions, 1):
                 lines.append(f"  {i}. {cond.reagent} / {cond.temperature} / {cond.solvent}"
                              + (f" / cat. {cond.catalyst}" if cond.catalyst else ""))
+        else:
+            lines.append(f"반응 조건: 표준 조건 참조 (conditions 미등록)")
         return "\n".join(lines)
