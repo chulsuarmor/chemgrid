@@ -134,9 +134,23 @@ class ProgressTracker:
             try:
                 with open(filepath, 'r') as f:
                     state = json.load(f)
-                
-                self.MODULES = state.get("modules", self.MODULES)
-                self.current_points = state.get("current_points", self.current_points)
+
+                if not isinstance(state, dict):
+                    print(f"[ProgressTracker] Invalid state type: {type(state).__name__}, expected dict")
+                    return
+
+                modules = state.get("modules", self.MODULES)
+                if isinstance(modules, dict):
+                    self.MODULES = modules
+                else:
+                    print(f"[ProgressTracker] Invalid modules type: {type(modules).__name__}")
+
+                points = state.get("current_points", self.current_points)
+                if isinstance(points, (int, float)):
+                    self.current_points = points
+                else:
+                    print(f"[ProgressTracker] Invalid current_points type: {type(points).__name__}")
+
                 print("[ProgressTracker] Loaded previous state")
             except Exception as e:
                 print(f"[ProgressTracker] Failed to load state: {e}")
@@ -159,10 +173,13 @@ def report_to_discord(message: str, channel_name: str = "general"):
     Send progress message to Discord
     This would integrate with the message tool if available
     """
+    import sys
+    encoding = getattr(sys.stdout, 'encoding', 'utf-8') or 'utf-8'
+    safe_msg = message.encode(encoding, errors='replace').decode(encoding)
     print(f"\n{'='*60}")
     print(f"[DISCORD REPORT - {datetime.now().strftime('%H:%M:%S')}]")
     print(f"{'='*60}")
-    print(message)
+    print(safe_msg)
     print(f"{'='*60}\n")
     
     # In real integration, this would call the message tool
