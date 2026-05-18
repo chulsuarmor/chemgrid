@@ -1,4 +1,4 @@
-# batch_processor.py (v1.00 - Phase 4 ORCA Batch Processing)
+# batch_processor.py (v1.01 - Phase 4 ORCA Batch Processing + N-guard)
 """
 ChemGrid Pro Phase 4: ORCA Batch Processor
 - Sequential calculation of multiple molecules
@@ -12,6 +12,7 @@ ChemGrid Pro Phase 4: ORCA Batch Processor
 """
 
 import json
+import logging
 import os
 import time
 from pathlib import Path
@@ -19,6 +20,8 @@ from typing import List, Dict, Optional, Tuple, Callable
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from enum import Enum
+
+logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import QThread, pyqtSignal, QObject
 
@@ -139,30 +142,58 @@ class BatchProcessor(QObject):
             if filepath.endswith('.json'):
                 with open(filepath, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                
+
+                # N-guard: 외부 JSON 데이터 타입 검증
+                if not isinstance(data, dict):
+                    logger.warning("배치 JSON 파일이 dict 형식이 아닙니다: type=%s", type(data).__name__)
+                    return 0
+
+                molecules = data.get('molecules', [])
+                if not isinstance(molecules, list):
+                    logger.warning("JSON 'molecules' 필드가 list가 아닙니다: type=%s", type(molecules).__name__)
+                    return 0
+
                 count = 0
-                for mol in data.get('molecules', []):
-                    self.add_job(mol['smiles'], mol['formula'])
+                for mol in molecules:
+                    if not isinstance(mol, dict):
+                        logger.warning("molecules 항목이 dict가 아닙니다 (skip): type=%s", type(mol).__name__)
+                        continue
+                    smiles = mol.get('smiles')
+                    formula = mol.get('formula')
+                    if not isinstance(smiles, str) or not smiles:
+                        logger.warning("molecules 항목에 유효한 'smiles' 없음 (skip)")
+                        continue
+                    if not isinstance(formula, str):
+                        formula = str(formula) if formula is not None else ""
+                    self.add_job(smiles, formula)
                     count += 1
-                
-                print(f"[INFO] Loaded {count} molecules from JSON")
+
+                logger.info("Loaded %d molecules from JSON", count)
                 return count
-            
+
             elif filepath.endswith('.csv'):
                 import csv
-                
+
                 count = 0
                 with open(filepath, 'r', encoding='utf-8') as f:
                     reader = csv.DictReader(f)
                     for row in reader:
-                        self.add_job(row['smiles'], row['formula'])
+                        if not isinstance(row, dict):
+                            logger.warning("CSV 행이 dict가 아닙니다 (skip): type=%s", type(row).__name__)
+                            continue
+                        smiles = row.get('smiles', '')
+                        formula = row.get('formula', '')
+                        if not smiles:
+                            logger.warning("CSV 행에 'smiles' 없음 (skip)")
+                            continue
+                        self.add_job(str(smiles), str(formula))
                         count += 1
-                
-                print(f"[INFO] Loaded {count} molecules from CSV")
+
+                logger.info("Loaded %d molecules from CSV", count)
                 return count
         except Exception as e:
-            print(f"[ERROR] Failed to load from file: {e}")
-        
+            logger.warning("Failed to load from file '%s': %s", filepath, e)
+
         return 0
     
     def run_batch(self, orca_calculator: Callable = None) -> Dict:
@@ -370,73 +401,115 @@ class BatchProcessorThread(QThread):
 def export_batch_results_json(summary: Dict, output_path: str) -> bool:
     """
     배치 결과를 JSON으로 내보내기
-    
+
     Args:
         summary: 배치 완료 요약
         output_path: 저장 경로
-    
+
     Returns:
         성공 여부
     """
+    # N-guard: summary 타입 검증
+    if not isinstance(summary, dict):
+        logger.warning("export_batch_results_json: summary가 dict가 아닙니다: type=%s", type(summary).__name__)
+        return False
     try:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(summary, f, indent=2, ensure_ascii=False)
-        
-        print(f"[INFO] Batch results exported: {output_path}")
+
+        logger.info("Batch results exported: %s", output_path)
         return True
     except Exception as e:
-        print(f"[ERROR] Export failed: {e}")
+        logger.warning("JSON export failed: %s", e)
         return False
 
 
 def export_batch_results_csv(summary: Dict, output_path: str) -> bool:
     """
     배치 결과를 CSV로 내보내기
-    
+
     Args:
         summary: 배치 완료 요약
         output_path: 저장 경로
-    
+
     Returns:
         성공 여부
     """
     try:
         import csv
-        
+
+        # N-guard: summary 타입 검증
+        if not isinstance(summary, dict):
+            logger.warning("export_batch_results_csv: summary가 dict가 아닙니다: type=%s", type(summary).__name__)
+            return False
+
         results = summary.get('results', {})
-        
+        if not isinstance(results, dict):
+            logger.warning("export_batch_results_csv: 'results'가 dict가 아닙니다: type=%s", type(results).__name__)
+            return False
+
         with open(output_path, 'w', newline='', encoding='utf-8') as f:
             fieldnames = ['job_id', 'smiles', 'formula', 'status', 'computation_time_sec', 'error']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
-            
+
             for job_id, job_data in results.items():
+                # N-guard: job_data 타입 검증
+                if not isinstance(job_data, dict):
+                    logger.warning("export_batch_results_csv: job_data가 dict가 아닙니다 (skip): job_id=%s", job_id)
+                    continue
                 writer.writerow({
-                    'job_id': job_data['id'],
-                    'smiles': job_data['smiles'],
-                    'formula': job_data['formula'],
-                    'status': job_data['status'],
-                    'computation_time_sec': job_data['computation_time_sec'],
-                    'error': job_data['error_message']
+                    'job_id': job_data.get('id', job_id),
+                    'smiles': job_data.get('smiles', ''),
+                    'formula': job_data.get('formula', ''),
+                    'status': job_data.get('status', 'unknown'),
+                    'computation_time_sec': job_data.get('computation_time_sec', 0.0),
+                    'error': job_data.get('error_message', '')
                 })
-        
-        print(f"[INFO] Batch results exported: {output_path}")
+
+        logger.info("Batch results exported: %s", output_path)
         return True
     except Exception as e:
-        print(f"[ERROR] CSV export failed: {e}")
+        logger.warning("CSV export failed: %s", e)
         return False
 
 
 def generate_batch_report(summary: Dict) -> str:
     """
     배치 완료 보고서 생성
-    
+
     Args:
         summary: 배치 완료 요약
-    
+
     Returns:
         보고서 텍스트
     """
+    # N-guard: summary 타입 검증
+    if not isinstance(summary, dict):
+        logger.warning("generate_batch_report: summary가 dict가 아닙니다: type=%s", type(summary).__name__)
+        return "(보고서 생성 실패: 요약 데이터가 올바른 형식이 아닙니다)"
+
+    total_jobs = summary.get('total_jobs', 1)
+    if not isinstance(total_jobs, (int, float)) or total_jobs == 0:
+        total_jobs = 1  # 0으로 나누기 방지
+    completed = summary.get('completed', 0)
+    if not isinstance(completed, (int, float)):
+        completed = 0
+
+    # N-guard: 숫자 필드 타입 검증
+    total_time = summary.get('total_time_sec', 0.0)
+    if not isinstance(total_time, (int, float)):
+        total_time = 0.0
+    failed = summary.get('failed', 0)
+    if not isinstance(failed, (int, float)):
+        failed = 0
+    cancelled = summary.get('cancelled', 0)
+    if not isinstance(cancelled, (int, float)):
+        cancelled = 0
+    avg_time = summary.get('avg_time_per_job', 0.0)
+    if not isinstance(avg_time, (int, float)):
+        avg_time = 0.0
+
     report = f"""
 ====================================
 ORCA Batch Processing Report
@@ -444,17 +517,17 @@ ORCA Batch Processing Report
 
 Start Time: {summary.get('start_time', 'N/A')}
 End Time: {summary.get('end_time', 'N/A')}
-Total Time: {summary.get('total_time_sec', 0.0):.2f} sec
+Total Time: {total_time:.2f} sec
 
 Results:
   Total Jobs: {summary.get('total_jobs', 0)}
-  Completed: {summary.get('completed', 0)}
-  Failed: {summary.get('failed', 0)}
-  Cancelled: {summary.get('cancelled', 0)}
-  Success Rate: {(summary.get('completed', 0) / summary.get('total_jobs', 1) * 100):.1f}%
+  Completed: {completed}
+  Failed: {failed}
+  Cancelled: {cancelled}
+  Success Rate: {(completed / total_jobs * 100):.1f}%
 
 Performance:
-  Average Time/Job: {summary.get('avg_time_per_job', 0.0):.2f} sec
+  Average Time/Job: {avg_time:.2f} sec
 
 ====================================
 """
