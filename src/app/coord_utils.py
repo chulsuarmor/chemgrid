@@ -5,101 +5,158 @@ Ensures all coordinates are consistently rounded to 0.01 precision
 throughout all phases (A-D)
 """
 
+import logging
 from typing import Tuple, Dict, Any
 from PyQt6.QtCore import QPointF
+
+logger = logging.getLogger(__name__)
 
 def round_coord(value: float, precision: int = 2) -> float:
     """
     Round a single coordinate value to specified precision
     Default: 2 decimal places (0.01 unit)
-    
+
     Args:
         value: Coordinate value to round
         precision: Decimal places (default: 2)
-        
+
     Returns:
         Rounded value
     """
+    # N-code: type guard for external data
+    if value is None:
+        logger.warning("round_coord: value is None, returning 0.0")
+        return 0.0
+    if not isinstance(value, (int, float)):
+        logger.warning("round_coord: value is not numeric, type=%s", type(value).__name__)
+        try:
+            value = float(value)
+        except (ValueError, TypeError):
+            return 0.0
     return round(value, precision)
 
 def round_point(point: Tuple[float, float], precision: int = 2) -> Tuple[float, float]:
     """
     Round a 2D point (x, y) to specified precision
-    
+
     Args:
         point: Tuple of (x, y) coordinates
         precision: Decimal places
-        
+
     Returns:
         Tuple of rounded coordinates
     """
+    # N-code: type guard
+    if point is None:
+        logger.warning("round_point: point is None, returning (0.0, 0.0)")
+        return (0.0, 0.0)
+    if not isinstance(point, (tuple, list)) or len(point) < 2:
+        logger.warning("round_point: invalid point type=%s, returning (0.0, 0.0)", type(point).__name__)
+        return (0.0, 0.0)
     return (round(point[0], precision), round(point[1], precision))
 
 def round_point_3d(point: Tuple[float, float, float], precision: int = 2) -> Tuple[float, float, float]:
     """
     Round a 3D point (x, y, z) to specified precision
-    
+
     Args:
         point: Tuple of (x, y, z) coordinates
         precision: Decimal places
-        
+
     Returns:
         Tuple of rounded 3D coordinates
     """
+    # N-code: type guard
+    if point is None:
+        logger.warning("round_point_3d: point is None, returning (0.0, 0.0, 0.0)")
+        return (0.0, 0.0, 0.0)
+    if not isinstance(point, (tuple, list)) or len(point) < 3:
+        logger.warning("round_point_3d: invalid point type=%s len=%s", type(point).__name__, len(point) if hasattr(point, '__len__') else 'N/A')
+        return (0.0, 0.0, 0.0)
     return (round(point[0], precision), round(point[1], precision), round(point[2], precision))
 
 def qpointf_to_tuple(qpoint: QPointF, precision: int = 2) -> Tuple[float, float]:
     """
     Convert QPointF to rounded tuple
-    
+
     Args:
         qpoint: PyQt6 QPointF object
         precision: Decimal places
-        
+
     Returns:
         Tuple of rounded coordinates
     """
+    # N-code: type guard
+    if qpoint is None:
+        logger.warning("qpointf_to_tuple: qpoint is None, returning (0.0, 0.0)")
+        return (0.0, 0.0)
+    if not isinstance(qpoint, QPointF):
+        logger.warning("qpointf_to_tuple: expected QPointF, got %s", type(qpoint).__name__)
+        if isinstance(qpoint, (tuple, list)) and len(qpoint) >= 2:
+            return (round(float(qpoint[0]), precision), round(float(qpoint[1]), precision))
+        return (0.0, 0.0)
     return (round(qpoint.x(), precision), round(qpoint.y(), precision))
 
 def tuple_to_qpointf(point: Tuple[float, float]) -> QPointF:
     """
     Convert tuple to QPointF (coordinates already rounded)
-    
+
     Args:
         point: Tuple of coordinates
-        
+
     Returns:
         QPointF object
     """
+    # N-code: type guard
+    if point is None:
+        logger.warning("tuple_to_qpointf: point is None, returning QPointF(0, 0)")
+        return QPointF(0.0, 0.0)
+    if not isinstance(point, (tuple, list)) or len(point) < 2:
+        logger.warning("tuple_to_qpointf: invalid point type=%s", type(point).__name__)
+        return QPointF(0.0, 0.0)
     return QPointF(point[0], point[1])
 
 def round_atoms_dict(atoms: Dict, precision: int = 2) -> Dict:
     """
     Round all atom position keys to specified precision
-    
+
     Args:
         atoms: Atoms dictionary {position: {data}}
         precision: Decimal places
-        
+
     Returns:
         Atoms dictionary with rounded position keys
     """
+    # N-code: type guard for external dict data
+    if atoms is None:
+        logger.warning("round_atoms_dict: atoms is None, returning empty dict")
+        return {}
+    if not isinstance(atoms, dict):
+        logger.warning("round_atoms_dict: atoms is not dict, type=%s", type(atoms).__name__)
+        return {}
     return {
-        round_point(pos, precision): data 
+        round_point(pos, precision): data
         for pos, data in atoms.items()
     }
 
 def round_bonds_dict(bonds: Dict, precision: int = 2) -> Dict:
     """
     Round all bond endpoint keys to specified precision
-    
+
     Args:
         bonds: Bonds dictionary {(k1, k2): order/data}
         precision: Decimal places
-        
+
     Returns:
         Bonds dictionary with rounded position keys
     """
+    # N-code: type guard for external dict data
+    if bonds is None:
+        logger.warning("round_bonds_dict: bonds is None, returning empty dict")
+        return {}
+    if not isinstance(bonds, dict):
+        logger.warning("round_bonds_dict: bonds is not dict, type=%s", type(bonds).__name__)
+        return {}
     result = {}
     for (k1, k2), value in bonds.items():
         rk1 = round_point(k1, precision)
@@ -119,15 +176,22 @@ def round_bonds_dict(bonds: Dict, precision: int = 2) -> Dict:
 def validate_coordinate_precision(atoms: Dict, bonds: Dict, precision: int = 2) -> bool:
     """
     Validate that all coordinates in atoms and bonds are properly rounded
-    
+
     Args:
         atoms: Atoms dictionary
         bonds: Bonds dictionary
         precision: Expected decimal places
-        
+
     Returns:
         True if all coordinates are properly rounded, False otherwise
     """
+    # N-code: type guard
+    if not isinstance(atoms, dict):
+        logger.warning("validate_coordinate_precision: atoms is not dict, type=%s", type(atoms).__name__)
+        return False
+    if not isinstance(bonds, dict):
+        logger.warning("validate_coordinate_precision: bonds is not dict, type=%s", type(bonds).__name__)
+        return False
     # Check atom positions
     for pos in atoms.keys():
         if len(pos) != 2:
@@ -137,7 +201,7 @@ def validate_coordinate_precision(atoms: Dict, bonds: Dict, precision: int = 2) 
         y_rounded = round(pos[1], precision) == pos[1]
         
         if not (x_rounded and y_rounded):
-            print(f"[coord_utils] Atom position not properly rounded: {pos}")
+            logger.warning("validate_coordinate_precision: atom position not properly rounded: %s", pos)
             return False
     
     # Check bond positions
@@ -147,7 +211,7 @@ def validate_coordinate_precision(atoms: Dict, bonds: Dict, precision: int = 2) 
             y_rounded = round(pos[1], precision) == pos[1]
             
             if not (x_rounded and y_rounded):
-                print(f"[coord_utils] Bond position not properly rounded: {pos}")
+                logger.warning("validate_coordinate_precision: bond position not properly rounded: %s", pos)
                 return False
     
     return True
@@ -189,6 +253,8 @@ def find_shortest_ring_through_bond(
     visited = {k1}
     queue = deque()
 
+    # Rule N: isinstance guard for adj
+    if not isinstance(adj, dict): adj = {}
     for neighbor in adj.get(k1, set()):
         if neighbor != k2:
             visited.add(neighbor)
@@ -255,12 +321,12 @@ class CoordValidator:
     def __enter__(self):
         self.valid = validate_coordinate_precision(self.atoms, self.bonds, self.precision)
         if not self.valid:
-            print(f"[CoordValidator] Coordinate validation failed")
+            logger.warning("CoordValidator: coordinate validation failed")
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not self.valid:
-            print(f"[CoordValidator] Warning: exiting with invalid coordinates")
+            logger.warning("CoordValidator: exiting with invalid coordinates")
     
     def is_valid(self) -> bool:
         """Check if coordinates are valid"""
