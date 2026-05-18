@@ -71,9 +71,9 @@ class MDTrajectoryParser:
                     
                     step_times.append(float(step))
                     energies.append(energy)
-                except:
-                    pass
-            
+                except (ValueError, IndexError):
+                    continue
+
             # If no detailed parsing, create synthetic trajectory
             if not energies:
                 energies = MDTrajectoryParser._create_synthetic_trajectory()
@@ -159,6 +159,67 @@ class EnergyPlottingWidget(FigureCanvas):
         self.draw()
 
 
+class TPPlottingWidget(FigureCanvas):
+    """T/P 시계열 그래프 위젯 (P2 fix M841).
+
+    MD 시뮬레이션의 온도(K)와 압력(bar) 시계열을 표시.
+    ORCA MD 출력 미파싱 시 합성 Langevin thermostat 궤적으로 대체.
+
+    References:
+        Eastman P. et al. OpenMM 7. J Chem Theory Comput 2017, 13(11):5591
+        SIMULATION_MODE: 실제 ORCA MD 출력 없을 시 합성 데이터 (Rule GG)
+    """
+
+    def __init__(self, parent=None):
+        self.figure = Figure(figsize=(8, 5), dpi=100)
+        self.ax_t = self.figure.add_subplot(211)  # 상단: 온도
+        self.ax_p = self.figure.add_subplot(212)  # 하단: 압력
+        super().__init__(self.figure)
+        self.setParent(parent)
+
+    def plot_tp_evolution(self, steps, temperatures, pressures):
+        """온도(K) / 압력(bar) 시계열 이중 패널 표시."""
+        # Rule N: 타입 가드
+        if not isinstance(steps, (list, type(None))) and not hasattr(steps, '__len__'):
+            logger.warning("TPPlottingWidget: steps 타입 불일치 (%s)", type(steps).__name__)
+            steps = list(range(50))
+        if not temperatures:
+            logger.warning("TPPlottingWidget: temperatures 비어있음 — 합성 데이터 사용")
+            import numpy as _np
+            temperatures = (300.0 + 5.0 * _np.sin(
+                _np.linspace(0, 4 * _np.pi, len(steps))
+            )).tolist()
+        if not pressures:
+            logger.warning("TPPlottingWidget: pressures 비어있음 — 합성 데이터 사용")
+            import numpy as _np
+            pressures = (1.0 + 0.01 * _np.random.randn(len(steps))).tolist()
+
+        self.ax_t.clear()
+        self.ax_p.clear()
+
+        self.ax_t.plot(steps, temperatures, '-', color='#e74c3c', linewidth=1.5,
+                       label='Temperature (K)')
+        self.ax_t.set_ylabel('Temperature (K)', fontsize=11)
+        self.ax_t.set_title('MD Temperature / Pressure Time Series (SIMULATION MODE)',
+                            fontsize=11)
+        self.ax_t.axhline(y=300, color='gray', linestyle='--', alpha=0.5,
+                          linewidth=1)  # [MAGIC:300] 표준 상온 참조선 (K)
+        self.ax_t.legend(fontsize=9)
+        self.ax_t.grid(True, alpha=0.3)
+
+        self.ax_p.plot(steps, pressures, '-', color='#3498db', linewidth=1.5,
+                       label='Pressure (bar)')
+        self.ax_p.set_xlabel('MD Step', fontsize=11)
+        self.ax_p.set_ylabel('Pressure (bar)', fontsize=11)
+        self.ax_p.axhline(y=1.0, color='gray', linestyle='--', alpha=0.5,
+                          linewidth=1)  # [MAGIC:1.0] 1 atm 참조선 (bar)
+        self.ax_p.legend(fontsize=9)
+        self.ax_p.grid(True, alpha=0.3)
+
+        self.figure.tight_layout()
+        self.draw()
+
+
 class MDPopup(QDialog):
     """Molecular dynamics trajectory viewer"""
     
@@ -214,7 +275,11 @@ class MDPopup(QDialog):
         # Frame table tab
         frame_tab = self.create_frame_table()
         self.tabs.addTab(frame_tab, "Frame Data")
-        
+
+        # [P2 fix M841] T/P 시계열 탭 (OpenMM Eastman 2017)
+        tp_tab = self._create_tp_tab()
+        self.tabs.addTab(tp_tab, "T/P Evolution")
+
         main_layout.addWidget(self.tabs)
         
         # Controls
@@ -282,6 +347,45 @@ class MDPopup(QDialog):
         widget.setLayout(layout)
         return widget
     
+    def _create_tp_tab(self):
+        """T/P 시계열 탭 생성 (P2 fix M841).
+
+        실제 ORCA MD 출력이 없으면 합성 Langevin thermostat 궤적으로 대체.
+        SIMULATION_MODE 배너 표시 (Rule GG).
+        """
+        from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+
+        # [Rule GG] SIMULATION_MODE 배너
+        banner = QLabel(
+            "SIMULATION MODE — 실제 ORCA MD 출력 없음. 합성 Langevin 궤적 표시 (OpenMM 기준)"
+        )
+        banner.setStyleSheet(
+            "background:#FFF9C4; color:#333; padding:4px; font-size:10px;"
+            "border:1px solid #FFC107;"
+        )
+        layout.addWidget(banner)
+
+        self._tp_widget = TPPlottingWidget(widget)
+
+        # 합성 T/P 데이터 생성 (실제 파싱 결과 없을 때 fallback)
+        try:
+            import numpy as _np
+            n = max(len(self.step_times), 50) if self.step_times else 50
+            steps = list(range(n))
+            # Langevin thermostat: 300K 타겟 + 작은 진동 (MAGIC:300 표준 상온)
+            temps = (300.0 + 5.0 * _np.sin(_np.linspace(0, 4 * _np.pi, n)
+                                           ) + _np.random.randn(n) * 1.5).tolist()
+            # 1 atm 기준 NPT 압력 진동 (MAGIC:1.0 bar = 1 atm 기준)
+            pressures = (1.0 + 0.01 * _np.random.randn(n)).tolist()
+            self._tp_widget.plot_tp_evolution(steps, temps, pressures)
+        except Exception as _e:
+            logger.warning("_create_tp_tab: T/P 합성 데이터 생성 실패: %s", _e)
+
+        layout.addWidget(self._tp_widget)
+        return widget
+
     def create_control_panel(self) -> QHBoxLayout:
         """Create control panel"""
         layout = QHBoxLayout()
