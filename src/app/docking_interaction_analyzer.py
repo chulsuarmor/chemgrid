@@ -16,9 +16,12 @@ v2.0 changes:
   - Added halogen bond detection
 """
 
+import logging
 import math
 from typing import Dict, List, Tuple, Optional, Set
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 
 try:
     import numpy as np
@@ -147,7 +150,18 @@ class InteractionAnalyzer:
         """Detect all interactions for a single docking pose"""
         interactions = []
 
+        # Type guard: ensure pose and receptor are valid types (Rule N)
+        if not isinstance(pose, DockingPose):
+            logger.warning("analyze_pose: invalid pose type: %s", type(pose).__name__)
+            return interactions
+        if not isinstance(receptor, ReceptorData):
+            logger.warning("analyze_pose: invalid receptor type: %s", type(receptor).__name__)
+            return interactions
+
         if not pose.atom_coords or not receptor.atoms:
+            logger.warning("analyze_pose: empty atom_coords (%s) or receptor.atoms (%s)",
+                           len(pose.atom_coords) if pose.atom_coords else 0,
+                           len(receptor.atoms) if receptor.atoms else 0)
             return interactions
 
         # Build spatial hash for O(n) proximity queries (BUG-DOCK-005)
@@ -439,7 +453,9 @@ class InteractionAnalyzer:
                             (lx, ly, lz),          # X (halogen, vertex)
                             (patom.x, patom.y, patom.z),  # Acceptor (vertex end)
                         )
-                    except Exception:
+                    except Exception as e:
+                        logger.warning("Halogen bond angle calculation failed for "
+                                       "lig_idx=%d, patom=%s: %s", lig_idx, patom.name, e)
                         angle = None
 
                     # Reject if angle is outside valid halogen bond range
@@ -476,7 +492,15 @@ class InteractionAnalyzer:
     def generate_2d_interaction_map(interactions: List[Interaction],
                                      ligand_name: str = "Ligand") -> Optional['Figure']:
         """Generate 2D circular interaction diagram using matplotlib"""
-        if not MATPLOTLIB_AVAILABLE or not interactions:
+        if not MATPLOTLIB_AVAILABLE:
+            logger.warning("generate_2d_interaction_map: matplotlib not available")
+            return None
+        if not isinstance(interactions, list):
+            logger.warning("generate_2d_interaction_map: invalid interactions type: %s",
+                           type(interactions).__name__)
+            return None
+        if not interactions:
+            logger.warning("generate_2d_interaction_map: empty interactions list")
             return None
 
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
@@ -793,7 +817,14 @@ def extract_binding_site_residues(
     is_hbond_donor: residue has atoms that can donate H-bonds (N-H, O-H)
     is_hbond_acceptor: residue has atoms that can accept H-bonds (O, N, S, F)
     """
+    if not isinstance(pose, DockingPose):
+        logger.warning("extract_binding_site_residues: invalid pose type: %s", type(pose).__name__)
+        return []
+    if not isinstance(receptor, ReceptorData):
+        logger.warning("extract_binding_site_residues: invalid receptor type: %s", type(receptor).__name__)
+        return []
     if not pose.atom_coords or not receptor.atoms:
+        logger.warning("extract_binding_site_residues: empty coords or atoms")
         return []
 
     # Build spatial hash for efficient proximity queries
