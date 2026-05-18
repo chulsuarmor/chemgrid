@@ -16,10 +16,13 @@ Cube format reference:
   Remaining: volumetric data (N1 * N2 * N3 values)
 """
 
+import logging
 import numpy as np
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Tuple, Optional
+
+logger = logging.getLogger(__name__)
 
 BOHR_TO_ANGSTROM = 0.529177249
 
@@ -82,11 +85,11 @@ def parse_cube_file(filepath: Path) -> Optional[CubeData]:
     """
     filepath = Path(filepath)
     if not filepath.exists():
-        print(f"[CubeParser] File not found: {filepath}")
+        logger.warning("Cube file not found: %s", filepath)
         return None
 
     try:
-        with open(filepath, 'r') as f:
+        with open(filepath, 'r', encoding="utf-8", errors="replace") as f:
             lines = f.readlines()
 
         cube = CubeData()
@@ -131,29 +134,29 @@ def parse_cube_file(filepath: Path) -> Optional[CubeData]:
             for v in vals:
                 try:
                     all_values.append(float(v))
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    logger.warning("Failed to parse cube voxel value: %s", e)
 
         expected = int(n_steps[0]) * int(n_steps[1]) * int(n_steps[2])
         if len(all_values) < expected:
-            print(f"[CubeParser] Warning: got {len(all_values)} values, expected {expected}")
+            logger.warning("Cube voxel count short: got %d values, expected %d",
+                           len(all_values), expected)
             all_values.extend([0.0] * (expected - len(all_values)))
 
         cube.data = np.array(all_values[:expected]).reshape(
             int(n_steps[0]), int(n_steps[1]), int(n_steps[2])
         )
 
-        print(f"[CubeParser] Parsed {filepath.name}: "
-              f"grid={n_steps[0]}x{n_steps[1]}x{n_steps[2]}, "
-              f"atoms={cube.n_atoms}, "
-              f"data range=[{cube.data.min():.4e}, {cube.data.max():.4e}]")
+        logger.info(
+            "Parsed cube %s: grid=%dx%dx%d, atoms=%d, data range=[%.4e, %.4e]",
+            filepath.name, n_steps[0], n_steps[1], n_steps[2],
+            cube.n_atoms, cube.data.min(), cube.data.max(),
+        )
 
         return cube
 
     except Exception as e:
-        print(f"[CubeParser] Error parsing {filepath}: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.warning("Error parsing cube %s: %s", filepath, e)
         return None
 
 
@@ -186,10 +189,10 @@ def extract_isosurface(cube: CubeData, isovalue: float = 0.02) -> Tuple[np.ndarr
         return verts_scaled, faces
 
     except ImportError:
-        print("[CubeParser] scikit-image not available, using fallback contour extraction")
+        logger.warning("scikit-image not available, using fallback contour extraction")
         return _fallback_isosurface(cube, isovalue)
     except Exception as e:
-        print(f"[CubeParser] marching_cubes error: {e}, using fallback")
+        logger.warning("marching_cubes error: %s, using fallback", e)
         return _fallback_isosurface(cube, isovalue)
 
 
@@ -219,8 +222,8 @@ def _fallback_isosurface(cube: CubeData, isovalue: float) -> Tuple[np.ndarray, n
         verts, faces = _numpy_marching_cubes(data, isovalue, origin, step_sizes)
         if len(verts) > 0 and len(faces) > 0:
             return verts, faces
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Numpy marching cubes fallback failed: %s", e)
 
     # --- Attempt 2: Edge-crossing points + triangulation ---
     points = _collect_edge_crossing_points(data, isovalue, origin, step_sizes)
@@ -243,16 +246,16 @@ def _fallback_isosurface(cube: CubeData, isovalue: float) -> Tuple[np.ndarray, n
             surface_faces = [list(f) for f, count in face_count.items() if count == 1]
             if surface_faces:
                 return verts, np.array(surface_faces, dtype=int)
-        except (ImportError, Exception):
-            pass
+        except (ImportError, Exception) as e:
+            logger.warning("Delaunay triangulation fallback failed: %s", e)
 
         # Try ConvexHull
         try:
             from scipy.spatial import ConvexHull
             hull = ConvexHull(verts)
             return verts, hull.simplices.copy()
-        except (ImportError, Exception):
-            pass
+        except (ImportError, Exception) as e:
+            logger.warning("ConvexHull fallback failed: %s", e)
 
     # Final fallback: scatter points (no faces)
     return verts, np.zeros((0, 3), dtype=int)
