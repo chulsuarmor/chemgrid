@@ -106,6 +106,8 @@ class LassoSelectionRenderer:
         self.selected_bonds.clear()
 
         for pt_key in atoms.keys():
+            # Rule N: isinstance guard for t_map
+            if not isinstance(t_map, dict): t_map = {}
             center = t_map.get(pt_key, QPointF(*pt_key))
             if self.is_point_inside_lasso(center):
                 self.selected_atoms.add(pt_key)
@@ -144,6 +146,8 @@ class LassoSelectionRenderer:
 
         painter.setPen(QPen(QColor(255, 200, 0), 4.0))
         for (k1, k2) in selected_bonds:
+            # Rule N: isinstance guard for t_map
+            if not isinstance(t_map, dict): t_map = {}
             p1 = t_map.get(k1, QPointF(*k1))
             p2 = t_map.get(k2, QPointF(*k2))
             painter.drawLine(p1, p2)
@@ -171,10 +175,16 @@ class LassoSelectionRenderer:
             from rdkit import Chem
             from rdkit.Chem import AllChem
 
-            emol = Chem.EditableMol(Chem.MolFromSmiles("C"))
+            _base_mol = Chem.MolFromSmiles("C")
+            if _base_mol is None:
+                logger.warning("Failed to parse base SMILES 'C' for lasso selection")
+                return None
+            emol = Chem.EditableMol(_base_mol)
 
             atom_list = list(selected_atoms)
             if atom_list:
+                # Rule N: isinstance guard for atoms
+                if not isinstance(atoms, dict): atoms = {}
                 atoms_list = [(pt, atoms.get(pt, {}).get("main", "C"))
                               for pt in atom_list]
 
