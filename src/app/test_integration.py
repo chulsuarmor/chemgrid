@@ -11,11 +11,14 @@ Usage:
 
 Environment: conda chemgrid (Python 3.12, RDKit 2025.09.5, PyQt6 6.10.2)
 """
+import logging
 import sys
 import os
 import time
 import traceback
 import unittest
+
+logger = logging.getLogger(__name__)
 
 # Ensure src/app is on sys.path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -49,8 +52,8 @@ def smiles_to_chemgrid_data(smiles: str):
     # Kekulize for alternating single/double bonds (like the app does)
     try:
         Chem.Kekulize(mol, clearAromaticFlags=False)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Kekulization skipped: %s", e)
 
     conf = mol.GetConformer()
     SCALE = 30.0  # arbitrary scale for coordinate separation
@@ -91,6 +94,8 @@ def smiles_to_chemgrid_data(smiles: str):
     bonds = {}
     for bond in mol.GetBonds():
         i, j = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+        # Rule N: isinstance guard for idx_to_key
+        if not isinstance(idx_to_key, dict): idx_to_key = {}
         k1, k2 = idx_to_key.get(i), idx_to_key.get(j)
         if k1 is not None and k2 is not None:
             bt = bond.GetBondTypeAsDouble()
@@ -207,6 +212,8 @@ class TestAnalyzerIntegration(unittest.TestCase):
                 result = self.analyzer.analyze(atoms, bonds, smiles=smi)
                 self.assertIsNotNone(result, f"{name}: analyze() returned None")
 
+                # Rule N: isinstance guard for result
+                if not isinstance(result, dict): result = {}
                 charges = result.get("charges", {})
                 self.assertGreaterEqual(len(charges), min_atoms,
                     f"{name}: expected >= {min_atoms} charge entries, got {len(charges)}")
@@ -226,6 +233,8 @@ class TestAnalyzerIntegration(unittest.TestCase):
                 result = self.analyzer.analyze(atoms, bonds, smiles=smi)
                 self.assertIsNotNone(result, f"{name}: analyze() returned None")
 
+                # Rule N: isinstance guard for result
+                if not isinstance(result, dict): result = {}
                 aromatic = result.get("aromatic", set())
                 expected_min = aromatic_molecules[name]
                 self.assertGreaterEqual(len(aromatic), expected_min,
