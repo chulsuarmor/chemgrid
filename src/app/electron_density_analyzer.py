@@ -1,8 +1,12 @@
-# electron_density_analyzer.py (v3.00 - Logging Refactor + Code Cleanup)
+# electron_density_analyzer.py (v3.10 - M/N Code Guards)
 """
 ChemGrid — ORCA DFT 계산 결과 전자밀도 분석
 
-Major changes in v3.00:
+Major changes in v3.10:
+  ✅ isinstance 타입 가드 추가 (N 코드: 외부 데이터 방어)
+  ✅ Silent failure 금지 (M 코드: 모든 경로에 logger 메시지)
+
+v3.00:
   ✅ All print() replaced with logging module
   ✅ Code cleanup: removed redundant comments, streamlined logic
   ✅ Preserved all v2.10 features:
@@ -142,10 +146,12 @@ class MullikenChargeExtractor:
 
             for line_idx in range(mulliken_start, len(lines)):
                 line = lines[line_idx]
+                upper_line = line.upper()
 
                 # Immediate exit on next section
-                if ("FINAL GEOMETRY" in line or "CARTESIAN COORDINATES" in line
-                        or "LÖWDIN" in line):
+                if ("FINAL GEOMETRY" in upper_line or "CARTESIAN COORDINATES" in upper_line
+                        or "LÖWDIN" in line or "LOWDIN ATOMIC CHARGES" in upper_line
+                        or "---" in line or "SUM OF" in upper_line):
                     break
 
                 parts = line.split()
@@ -155,23 +161,20 @@ class MullikenChargeExtractor:
                         atom_idx = int(parts[0])
                         charge = float(parts[2])
                         charges[atom_idx] = round(charge, 4)
-                    except (ValueError, IndexError):
-                        pass
+                    except (ValueError, IndexError) as e:
+                        logger.warning("Mulliken charge parse error (3-col) at line %d: %s", line_idx, e)
 
                 elif len(parts) == 4 and parts[2] == ":":
                     try:
                         atom_idx = int(parts[0])
                         charge = float(parts[3])
                         charges[atom_idx] = round(charge, 4)
-                    except (ValueError, IndexError):
-                        pass
+                    except (ValueError, IndexError) as e:
+                        logger.warning("Mulliken charge parse error (4-col) at line %d: %s", line_idx, e)
 
                 elif len(parts) >= 5:
                     logger.debug("Mulliken: rejected 5+ column line %d: %s",
                                  line_idx, line.strip()[:50])
-
-                elif "---" in line or "Sum of" in line:
-                    break
 
             logger.info("Mulliken: extracted %d charges (sum=%.4f)",
                         len(charges), sum(charges.values()))
@@ -193,6 +196,8 @@ class MullikenChargeExtractor:
         charges: Dict[int, float] = {}
 
         if not out_path.exists():
+            # M 코드: silent return 금지 — 파일 부재 시 경고 로깅
+            logger.warning("Löwdin: output file not found: %s", out_path)
             return charges
 
         try:
@@ -207,12 +212,16 @@ class MullikenChargeExtractor:
                     break
 
             if lowdin_start is None:
+                # M 코드: 섹션 미발견 시 로깅 필수
+                logger.warning("LÖWDIN ATOMIC CHARGES section not found in %s", out_path.name)
                 return charges
 
             for line_idx in range(lowdin_start, len(lines)):
                 line = lines[line_idx]
+                upper_line = line.upper()
 
-                if "FINAL GEOMETRY" in line or "CARTESIAN COORDINATES" in line:
+                if ("FINAL GEOMETRY" in upper_line or "CARTESIAN COORDINATES" in upper_line
+                        or "---" in line or "SUM OF" in upper_line):
                     break
 
                 parts = line.split()
@@ -222,22 +231,19 @@ class MullikenChargeExtractor:
                         atom_idx = int(parts[0])
                         charge = float(parts[2])
                         charges[atom_idx] = round(charge, 4)
-                    except (ValueError, IndexError):
-                        pass
+                    except (ValueError, IndexError) as e:
+                        logger.warning("Lowdin charge parse error (3-col) at line %d: %s", line_idx, e)
 
                 elif len(parts) == 4 and parts[2] == ":":
                     try:
                         atom_idx = int(parts[0])
                         charge = float(parts[3])
                         charges[atom_idx] = round(charge, 4)
-                    except (ValueError, IndexError):
-                        pass
+                    except (ValueError, IndexError) as e:
+                        logger.warning("Lowdin charge parse error (4-col) at line %d: %s", line_idx, e)
 
                 elif len(parts) >= 5:
                     logger.debug("Löwdin: rejected 5+ column line %d", line_idx)
-
-                elif "---" in line or "Sum of" in line:
-                    break
 
             logger.info("Löwdin: extracted %d charges", len(charges))
 
@@ -271,6 +277,8 @@ class GeometryExtractor:
         geometry: Dict[int, Tuple[float, float, float]] = {}
 
         if not out_path.exists():
+            # M 코드: silent return 금지 — 파일 부재 시 경고 로깅
+            logger.warning("Geometry: output file not found: %s", out_path)
             return geometry
 
         try:
@@ -305,8 +313,8 @@ class GeometryExtractor:
                         z = float(parts[4])
                         geometry[atom_idx] = (round(x, 2), round(y, 2), round(z, 2))
                         atom_count += 1
-                    except (ValueError, IndexError):
-                        pass
+                    except (ValueError, IndexError) as e:
+                        logger.warning("Geometry parse error (5-col) at line %d: %s", line_idx, e)
 
                 elif len(parts) == 4:
                     try:
@@ -315,8 +323,8 @@ class GeometryExtractor:
                         z = float(parts[3])
                         geometry[atom_count] = (round(x, 2), round(y, 2), round(z, 2))
                         atom_count += 1
-                    except (ValueError, IndexError):
-                        pass
+                    except (ValueError, IndexError) as e:
+                        logger.warning("Geometry parse error (4-col) at line %d: %s", line_idx, e)
 
                 elif len(parts) == 3:
                     logger.debug("Geometry: rejected 3-column line %d (charge data)", line_idx)
@@ -346,10 +354,27 @@ class ResonanceDetector:
         charges: Dict[int, float],
     ) -> Optional[ResonanceStructure]:
         """환형 공명구조 감지."""
+        # N 코드: isinstance 타입 가드
+        if not isinstance(atom_indices, list):
+            logger.warning("detect_resonance_ring: atom_indices가 list가 아님 (type=%s)", type(atom_indices).__name__)
+            return None
+        if not isinstance(charges, dict):
+            logger.warning("detect_resonance_ring: charges가 dict가 아님 (type=%s)", type(charges).__name__)
+            return None
+
         ring_size = len(atom_indices)
-        ring_charges = [charges.get(i, 0.0) for i in atom_indices]
+        # N 코드: .get() 반환값이 float인지 확인
+        ring_charges = []
+        for i in atom_indices:
+            val = charges.get(i, 0.0)
+            if not isinstance(val, (int, float)):
+                logger.warning("charges[%d]가 숫자가 아님 (type=%s), 0.0 사용", i, type(val).__name__)
+                val = 0.0
+            ring_charges.append(float(val))
 
         if not ring_charges:
+            # M 코드: silent return 금지
+            logger.warning("detect_resonance_ring: ring_charges가 비어있음 (atom_indices=%s)", atom_indices)
             return None
 
         avg_charge = sum(ring_charges) / len(ring_charges)
@@ -371,6 +396,11 @@ class ResonanceDetector:
                 description="Cyclopentadienyl anion: negative charge distributed",
             )
 
+        # M 코드: 공명구조 미감지 시 로깅 (silent return 금지)
+        logger.debug(
+            "detect_resonance_ring: 공명구조 미감지 (ring_size=%d, avg_charge=%.4f, variance=%.6f)",
+            ring_size, avg_charge, charge_variance
+        )
         return None
 
     @staticmethod
@@ -379,6 +409,14 @@ class ResonanceDetector:
         resonance_structures: List[ResonanceStructure],
     ) -> List[AtomicDensity]:
         """공명구조를 반영하여 전하 조정."""
+        # N 코드: isinstance 타입 가드
+        if not isinstance(densities, list):
+            logger.warning("adjust_charges_for_resonance: densities가 list가 아님 (type=%s)", type(densities).__name__)
+            return []
+        if not isinstance(resonance_structures, list):
+            logger.warning("adjust_charges_for_resonance: resonance_structures가 list가 아님 (type=%s)", type(resonance_structures).__name__)
+            return list(densities)
+
         densities_copy = [AtomicDensity(**vars(d)) for d in densities]
 
         for res in resonance_structures:
@@ -420,10 +458,28 @@ class ElectronDensityCalculator:
         Mulliken-first: Mulliken available → use it (even if 0.0).
         Mulliken missing → fallback to Löwdin.
         """
+        # N 코드: isinstance 타입 가드 — 외부에서 잘못된 타입이 올 수 있음
+        if not isinstance(geometry, dict):
+            logger.warning("calculate_atom_densities: geometry가 dict가 아님 (type=%s)", type(geometry).__name__)
+            return []
+        if not isinstance(mulliken_charges, dict):
+            logger.warning("calculate_atom_densities: mulliken_charges가 dict가 아님 (type=%s)", type(mulliken_charges).__name__)
+            mulliken_charges = {}
+        if not isinstance(lowdin_charges, dict):
+            logger.warning("calculate_atom_densities: lowdin_charges가 dict가 아님 (type=%s)", type(lowdin_charges).__name__)
+            lowdin_charges = {}
+        if not isinstance(atom_symbols, dict):
+            logger.warning("calculate_atom_densities: atom_symbols가 dict가 아님 (type=%s)", type(atom_symbols).__name__)
+            atom_symbols = {}
+
         densities = []
 
         for atom_idx, coord in geometry.items():
+            # N 코드: .get() 반환값 타입 확인
             symbol = atom_symbols.get(atom_idx, "C")
+            if not isinstance(symbol, str):
+                logger.warning("atom_symbols[%d]가 str이 아님 (type=%s), 기본값 'C' 사용", atom_idx, type(symbol).__name__)
+                symbol = "C"
 
             if atom_idx in mulliken_charges:
                 mulliken = mulliken_charges[atom_idx]
@@ -454,6 +510,17 @@ class ElectronDensityCalculator:
 
         Epsilon-based charge normalization (CHARGE_TOLERANCE = 1e-4).
         """
+        # N 코드: isinstance 타입 가드
+        if not isinstance(densities, list):
+            logger.warning("create_density_map: densities가 list가 아님 (type=%s)", type(densities).__name__)
+            densities = list(densities) if densities is not None else []
+        if not isinstance(atom_positions, dict):
+            logger.warning("create_density_map: atom_positions가 dict가 아님 (type=%s)", type(atom_positions).__name__)
+            atom_positions = {}
+        if not isinstance(expected_charge, (int, float)):
+            logger.warning("create_density_map: expected_charge가 숫자가 아님 (type=%s), 0.0 사용", type(expected_charge).__name__)
+            expected_charge = 0.0
+
         grid_points: Dict[Tuple[float, float], float] = {}
         total_charge = 0.0
 
@@ -534,6 +601,24 @@ class ElectronDensityAnalyzer:
             FileNotFoundError: If out_path doesn't exist
         """
         if charge_tolerance is None:
+            charge_tolerance = CHARGE_TOLERANCE
+
+        # N 코드: isinstance 타입 가드 — 외부 호출부에서 잘못된 타입 방어
+        if not isinstance(out_path, Path):
+            logger.warning("analyze_orca_output: out_path가 Path가 아님 (type=%s), Path로 변환 시도", type(out_path).__name__)
+            try:
+                out_path = Path(str(out_path))
+            except Exception as e:
+                logger.warning("out_path를 Path로 변환 실패: %s", e)
+                raise TypeError(f"out_path must be a Path, got {type(out_path).__name__}")
+        if not isinstance(atom_positions, dict):
+            logger.warning("analyze_orca_output: atom_positions가 dict가 아님 (type=%s)", type(atom_positions).__name__)
+            atom_positions = {}
+        if not isinstance(atom_symbols, dict):
+            logger.warning("analyze_orca_output: atom_symbols가 dict가 아님 (type=%s)", type(atom_symbols).__name__)
+            atom_symbols = {}
+        if not isinstance(charge_tolerance, (int, float)):
+            logger.warning("analyze_orca_output: charge_tolerance가 숫자가 아님, 기본값 사용")
             charge_tolerance = CHARGE_TOLERANCE
 
         logger.info("Starting analysis of %s (tolerance=%.0e)", out_path.name, charge_tolerance)
@@ -644,11 +729,236 @@ def density_to_opacity(density: float, max_density: float = 1.0) -> int:
 
 
 # ============================================================================
+# [M541] ORCA MULLIKEN REDUCED ORBITAL CHARGES 파서
+# ============================================================================
+# 사용자 직접 설계 신규 레이어 (canvas.py CanvasMode.ELECTRON_DIST)에서 사용.
+# 학술 인용 (Rule O):
+#   - Mulliken R.S. (1955) J. Chem. Phys. 23, 1833 (Population Analysis)
+#   - Löwdin P.O. (1950) J. Chem. Phys. 18, 365 (Orthogonalization)
+
+
+def parse_mulliken_orbital_occupancy(out_path: Path) -> Dict[int, Dict[str, float]]:
+    """ORCA .out 파일에서 MULLIKEN REDUCED ORBITAL CHARGES 섹션 파싱.
+
+    ORCA 출력 형식 예시:
+        ----------------------------------------
+        MULLIKEN REDUCED ORBITAL CHARGES
+        ----------------------------------------
+          0 C s       :     3.3921  s :     3.3921
+                p       :     2.6502  p :     2.6502
+          1 O s       :     3.8498  s :     3.8498
+                p       :     4.5719  p :     4.5719
+        ...
+
+    줄당 가능 패턴:
+      "  N  X  s       :     N.NNNN ..."  (원자 번호 + 기호 + s 라인)
+      "        p       :     N.NNNN ..."  (이전 원자의 p 라인)
+      "        d       :     N.NNNN ..."  (이전 원자의 d 라인)
+
+    Args:
+        out_path: ORCA .out 파일 경로
+
+    Returns:
+        {atom_idx: {"s": float, "p": float, "d": float, "f": float, "total": float}}
+        ORCA 미실행/파일 부재/섹션 부재 시 빈 dict 반환 (Rule M: logger.warning)
+    """
+    occupancy: Dict[int, Dict[str, float]] = {}
+
+    # Rule N: Path 타입 가드
+    if not isinstance(out_path, Path):
+        logger.warning(
+            "[M541] parse_mulliken_orbital_occupancy: out_path가 Path 아님 (type=%s)",
+            type(out_path).__name__
+        )
+        try:
+            out_path = Path(str(out_path))
+        except Exception as e:
+            logger.warning("[M541] Path 변환 실패: %s", e)
+            return occupancy
+
+    # Rule M: silent return 금지 — 파일 부재 시 경고
+    if not out_path.exists():
+        logger.warning(
+            "[M541] parse_mulliken_orbital_occupancy: 파일 없음 → 빈 dict 반환 (path=%s)",
+            out_path
+        )
+        return occupancy
+
+    try:
+        content = out_path.read_text(encoding="utf-8", errors="ignore")
+        lines = content.split("\n")
+    except Exception as e:
+        logger.warning("[M541] ORCA out 읽기 실패: %s", e)
+        return occupancy
+
+    # 섹션 시작 위치 탐색
+    section_start = None
+    section_header_re = re.compile(
+        r"MULLIKEN\s+REDUCED\s+ORBITAL\s+CHARGES", re.IGNORECASE
+    )
+    for i, line in enumerate(lines):
+        if section_header_re.search(line):
+            section_start = i + 1
+            logger.debug("[M541] MULLIKEN REDUCED ORBITAL CHARGES @ line %d", i)
+            break
+
+    if section_start is None:
+        # ORCA가 Mulliken section은 출력했어도 reduced orbital은 옵션
+        logger.warning(
+            "[M541] MULLIKEN REDUCED ORBITAL CHARGES 섹션 미존재 (path=%s)",
+            out_path.name
+        )
+        return occupancy
+
+    # 정규식: " 0 C s       :     3.3921"
+    # 그룹: 원자번호 / 원소기호 / shell / value
+    new_atom_re = re.compile(
+        r"^\s*(\d+)\s+([A-Z][a-z]?)\s+([spdfg])\s*:\s*([+-]?\d+\.\d+)"
+    )
+    # 정규식: "        p       :     2.6502" (이전 원자의 다른 shell)
+    cont_atom_re = re.compile(
+        r"^\s+([spdfg])\s*:\s*([+-]?\d+\.\d+)"
+    )
+    # 종료 패턴: 다음 섹션이 시작되거나 빈줄/구분선
+    end_re = re.compile(
+        r"(MULLIKEN ATOMIC|LOEWDIN|LÖWDIN|FINAL GEOMETRY|"
+        r"CARTESIAN COORDINATES|^\s*-{20,})", re.IGNORECASE
+    )
+
+    current_atom_idx: Optional[int] = None
+
+    for line_idx in range(section_start, len(lines)):
+        line = lines[line_idx]
+
+        if end_re.search(line):
+            # 다음 섹션 도달 → 파싱 종료
+            break
+
+        # 새 원자 라인 시도
+        m_new = new_atom_re.match(line)
+        if m_new:
+            try:
+                atom_idx = int(m_new.group(1))
+                shell = m_new.group(3).lower()
+                value = float(m_new.group(4))
+                current_atom_idx = atom_idx
+                if atom_idx not in occupancy:
+                    occupancy[atom_idx] = {}
+                occupancy[atom_idx][shell] = round(value, 4)
+            except (ValueError, IndexError) as e:
+                # Rule M: silent skip 금지
+                logger.warning(
+                    "[M541] reduced orbital parse error (new) line %d: %s | content=%r",
+                    line_idx, e, line.strip()[:80]
+                )
+            continue
+
+        # 이전 원자의 다른 shell 라인 시도
+        m_cont = cont_atom_re.match(line)
+        if m_cont and current_atom_idx is not None:
+            try:
+                shell = m_cont.group(1).lower()
+                value = float(m_cont.group(2))
+                if current_atom_idx not in occupancy:
+                    occupancy[current_atom_idx] = {}
+                occupancy[current_atom_idx][shell] = round(value, 4)
+            except (ValueError, IndexError) as e:
+                logger.warning(
+                    "[M541] reduced orbital parse error (cont) line %d: %s | content=%r",
+                    line_idx, e, line.strip()[:80]
+                )
+            continue
+
+    # total 계산 (학생용 sanity check)
+    for atom_idx, shells in occupancy.items():
+        total = sum(v for k, v in shells.items() if k in ("s", "p", "d", "f"))
+        shells["total"] = round(total, 4)
+
+    logger.info(
+        "[M541] parse_mulliken_orbital_occupancy: %d atoms 추출 (path=%s)",
+        len(occupancy), out_path.name
+    )
+    return occupancy
+
+
+def build_population_data_for_canvas(
+    out_path: Path
+) -> Dict[int, Dict]:
+    """canvas.py orca_population_data에 직접 주입 가능한 dict 생성.
+
+    데스크톱 ChemGrid의 ElectronDistributionRenderer에서 요구하는 형식:
+        {
+          atom_idx: {
+            "mulliken_charge": float,
+            "lowdin_charge":   float,
+            "orbital_occupancy": {"s": ..., "p": ..., "d": ...} or None
+          }
+        }
+
+    Args:
+        out_path: ORCA .out 파일 경로
+
+    Returns:
+        canvas.orca_population_data 형식의 dict.
+        파일 부재/파싱 실패 시 빈 dict (Rule M: logger.warning)
+    """
+    result: Dict[int, Dict] = {}
+
+    # Rule N: Path 타입 가드
+    if not isinstance(out_path, Path):
+        try:
+            out_path = Path(str(out_path))
+        except Exception as e:
+            logger.warning("[M541] build_population: Path 변환 실패: %s", e)
+            return result
+
+    if not out_path.exists():
+        logger.warning(
+            "[M541] build_population_data_for_canvas: 파일 없음 (path=%s)", out_path
+        )
+        return result
+
+    # 1) Mulliken charges
+    mulliken = MullikenChargeExtractor.extract_from_out_file(out_path)
+    # 2) Löwdin charges
+    lowdin = MullikenChargeExtractor.extract_lowdin_from_out_file(out_path)
+    # 3) Reduced orbital occupancy
+    occupancy = parse_mulliken_orbital_occupancy(out_path)
+
+    # 모든 원자 idx 통합 (Mulliken 우선, occupancy/lowdin이 추가일 수 있음)
+    all_indices = set(mulliken.keys()) | set(lowdin.keys()) | set(occupancy.keys())
+
+    for atom_idx in sorted(all_indices):
+        m_charge = mulliken.get(atom_idx, 0.0)
+        l_charge = lowdin.get(atom_idx, m_charge)  # Löwdin 부재 시 Mulliken 폴백
+        occ = occupancy.get(atom_idx)  # None일 수 있음 → renderer가 ground-state 폴백
+        result[atom_idx] = {
+            "mulliken_charge": float(m_charge),
+            "lowdin_charge": float(l_charge),
+            "orbital_occupancy": occ if isinstance(occ, dict) else None,
+        }
+
+    logger.info(
+        "[M541] build_population_data_for_canvas: %d atoms ready (mulliken=%d/lowdin=%d/occ=%d)",
+        len(result), len(mulliken), len(lowdin), len(occupancy)
+    )
+    return result
+
+
+# ============================================================================
 # EXPORT FUNCTIONS
 # ============================================================================
 
 def export_density_map_json(density_map: DensityMap, output_path: Path) -> None:
     """DensityMap을 JSON으로 내보내기."""
+    # N 코드: isinstance 타입 가드
+    if not isinstance(density_map, DensityMap):
+        logger.warning("export_density_map_json: density_map이 DensityMap이 아님 (type=%s)", type(density_map).__name__)
+        return
+    if not isinstance(output_path, Path):
+        logger.warning("export_density_map_json: output_path가 Path가 아님 (type=%s), Path로 변환", type(output_path).__name__)
+        output_path = Path(str(output_path))
+
     data = {
         "num_atoms": density_map.num_atoms,
         "total_charge": density_map.total_charge,
