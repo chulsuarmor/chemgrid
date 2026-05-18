@@ -163,28 +163,48 @@ class Phase2ESPCalculationManager:
         densities = []
         
         try:
-            if not orca_result.densities:
+            # [N] 타입 가드: orca_result 속성 검증
+            result_densities = getattr(orca_result, 'densities', None)
+            result_geometry = getattr(orca_result, 'geometry', None)
+            result_charges_m = getattr(orca_result, 'charges_mulliken', None)
+            result_charges_l = getattr(orca_result, 'charges_lowdin', None)
+
+            if not result_densities:
                 # Generate densities from ORCA charges and geometry
-                for atom_idx, (x, y, z) in orca_result.geometry.items():
+                if not isinstance(result_geometry, dict):
+                    logger.warning("[Integration] orca_result.geometry is not dict (type=%s), returning empty", type(result_geometry))
+                    return []
+                charges_m = result_charges_m if isinstance(result_charges_m, dict) else {}
+                charges_l = result_charges_l if isinstance(result_charges_l, dict) else {}
+                for atom_idx, coords in result_geometry.items():
+                    if not isinstance(coords, (list, tuple)) or len(coords) < 3:
+                        logger.warning("[Integration] Invalid geometry coords for atom %s: %s", atom_idx, coords)
+                        continue
+                    x, y, z = coords[0], coords[1], coords[2]
                     density = ElectronicDensity(
                         atom_index=atom_idx,
                         atom_symbol="C",  # Placeholder
                         position=(round(x, 2), round(y, 2), round(z, 2)),
                         density=0.5,  # Default density
-                        mulliken_charge=orca_result.charges_mulliken.get(atom_idx, 0.0),
-                        lowdin_charge=orca_result.charges_lowdin.get(atom_idx, 0.0)
+                        mulliken_charge=charges_m.get(atom_idx, 0.0),
+                        lowdin_charge=charges_l.get(atom_idx, 0.0)
                     )
                     densities.append(density)
             else:
                 # Use pre-calculated densities
-                for d in orca_result.densities:
+                if not isinstance(result_densities, (list, tuple)):
+                    logger.warning("[Integration] orca_result.densities is not list (type=%s)", type(result_densities))
+                    return []
+                for d in result_densities:
                     # Round position to 0.01 precision
-                    d.position = (round(d.position[0], 2), round(d.position[1], 2), round(d.position[2], 2))
+                    pos = getattr(d, 'position', None)
+                    if isinstance(pos, (list, tuple)) and len(pos) >= 3:
+                        d.position = (round(pos[0], 2), round(pos[1], 2), round(pos[2], 2))
                     densities.append(d)
-            
+
             logger.info("[Integration] Imported %d electronic densities from ORCA", len(densities))
             return densities
-            
+
         except Exception as e:
             logger.error("[Integration ORCA Import Error] %s", e)
             return []
@@ -323,20 +343,33 @@ class PhaseIntegrationManager:
         # Phase B: Import densities and start ESP calculation
         if self.esp_manager:
             densities = self.esp_manager.import_orca_densities(orca_result)
-            
+
+            # [N] 타입 가드: canvas.atoms가 존재하고 dict인지 확인
+            canvas_atoms = getattr(self.canvas, 'atoms', None)
+            if not isinstance(canvas_atoms, dict):
+                logger.warning("[Integration] canvas.atoms is not dict (type=%s), skipping ESP", type(canvas_atoms))
+                return
+
             # Create atom position dict
             atom_positions = {}
-            for k in self.canvas.atoms.keys():
+            for k in canvas_atoms.keys():
                 atom_positions[k] = (k[0], k[1], 0.0)
-            
+
             # Start ESP calculation
             self.esp_manager.start_esp_calculation(densities, atom_positions)
     
     def display_3d_popup(self):
         """Manually trigger 3D popup display"""
         if self.popup_manager and hasattr(self.canvas, 'analysis_results'):
-            theory_data = self.canvas.analysis_results.get("theory_data", {})
-            self.on_theory_layer_interaction(self.canvas.atoms, self.canvas.bonds, theory_data)
+            # [N] 타입 가드: analysis_results가 dict인지 확인
+            ar = self.canvas.analysis_results
+            if not isinstance(ar, dict):
+                logger.warning("[Integration] canvas.analysis_results is not dict (type=%s)", type(ar))
+                return
+            theory_data = ar.get("theory_data", {})
+            canvas_atoms = getattr(self.canvas, 'atoms', {})
+            canvas_bonds = getattr(self.canvas, 'bonds', {})
+            self.on_theory_layer_interaction(canvas_atoms, canvas_bonds, theory_data)
     
     def cleanup(self):
         """Clean up threads and resources with graceful shutdown"""
