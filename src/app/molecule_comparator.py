@@ -13,6 +13,7 @@ ChemGrid Pro Phase 4: Molecule Comparator Module
 """
 
 import json
+import logging
 from typing import Dict, Tuple, Optional, List
 from dataclasses import dataclass, asdict
 from datetime import datetime
@@ -20,6 +21,8 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, DataStructs
 from PyQt6.QtCore import QThread, pyqtSignal, QPointF
 from PyQt6.QtGui import QColor, QPainter, QPen, QBrush
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -131,9 +134,9 @@ class MoleculeComparator:
                 fp2 = AllChem.GetMorganFingerprintAsBitVect(mol2, 2, nBits=1024)
                 similarity = DataStructs.TanimotoSimilarity(fp1, fp2)
                 return round(similarity, 3)
-        except:
-            pass
-        
+        except Exception as e:
+            logger.warning("Tanimoto similarity failed: %s", e)
+
         return 0.0
     
     @staticmethod
@@ -170,7 +173,8 @@ class MoleculeComparator:
                 return smiles1  # 동일 크기면 첫 번째 반환
             
             return None
-        except:
+        except Exception as e:
+            logger.warning("Common substructure search failed: %s", e)
             return None
     
     @staticmethod
