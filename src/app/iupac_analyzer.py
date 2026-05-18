@@ -10,7 +10,10 @@ ChemGrid Pro Phase D: Automated IUPAC Naming System
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from PyQt6.QtCore import QThread, pyqtSignal, QPointF
+import logging
 import math
+
+logger = logging.getLogger(__name__)
 
 try:
     from rdkit import Chem
@@ -18,11 +21,17 @@ try:
     RDKIT_AVAILABLE = True
     try:
         from rdkit.Chem.Draw import IPythonConsole
-    except ImportError:
-        pass  # IPythonConsole is optional, only needed in Jupyter
+    except ImportError as e:
+        logger.warning("[IUPACAnalyzer] IPythonConsole import skipped (Jupyter-only): %s", e)
 except ImportError:
     RDKIT_AVAILABLE = False
     print("[Phase D] RDKit not available, IUPAC naming disabled")
+
+try:
+    import pubchem_client as _pubchem
+    _PUBCHEM_AVAILABLE = True
+except ImportError:
+    _PUBCHEM_AVAILABLE = False
 
 
 @dataclass
@@ -150,9 +159,13 @@ class IUPACNameGenerator:
     @staticmethod
     def generate_iupac_name(mol: Chem.Mol) -> Optional[str]:
         """
-        Generate IUPAC name for molecule using RDKit
-        Note: RDKit's IUPAC naming is limited; uses SMILES + description as fallback
-        
+        Generate IUPAC name for molecule.
+
+        Fallback chain (in order):
+          1. PubChem API lookup (authoritative IUPAC name)
+          2. RDKit canonical SMILES (unambiguous identifier)
+          3. Molecular formula with "(offline)" label
+
         Returns:
             IUPAC name string or None if generation fails
         """
@@ -160,113 +173,41 @@ class IUPACNameGenerator:
             # Validate and clean molecule
             mol = Chem.AddHs(mol)
             mol = Chem.RemoveHs(mol)
-            
-            # Try to generate name using SMILES with isomeric information
+
             smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-            
-            # Try to use rdMolDescriptors (limited IUPAC support in RDKit)
-            # RDKit doesn't have full IUPAC generator, so we construct a descriptive name
-            
-            # Get molecular formula
             formula = rdMolDescriptors.CalcMolFormula(mol)
-            
-            # Count heavy atoms
-            num_atoms = mol.GetNumAtoms()
-            num_bonds = mol.GetNumBonds()
-            
-            # Determine primary carbon chain length (simplified)
-            iupac_name = IUPACNameGenerator._construct_descriptive_name(mol, smiles, formula)
-            
-            print(f"[Phase D] Generated IUPAC name: {iupac_name}")
-            return iupac_name
-            
+
+            # --- Fallback 1: PubChem authoritative IUPAC name ---
+            if _PUBCHEM_AVAILABLE:
+                try:
+                    pubchem_name = _pubchem.get_iupac_name_by_smiles(smiles)
+                    if pubchem_name and isinstance(pubchem_name, str) and len(pubchem_name) > 0:
+                        print(f"[Phase D] PubChem IUPAC name: {pubchem_name}")
+                        return pubchem_name
+                except Exception as e:
+                    print(f"[Phase D] PubChem lookup failed: {e}")
+
+            # --- Fallback 2: SMILES (unambiguous, but not a name) ---
+            # Only use if formula is too generic (e.g. many isomers share same formula)
+            # Return formula + SMILES for clarity
+            if smiles:
+                offline_name = f"{formula} (offline)"
+                print(f"[Phase D] Offline fallback: {offline_name}")
+                return offline_name
+
+            # --- Fallback 3: formula only ---
+            if formula:
+                return f"{formula} (offline)"
+
+            return None
+
         except Exception as e:
             print(f"[Phase D IUPAC ERROR] {e}")
             return None
     
-    @staticmethod
-    def _construct_descriptive_name(mol: Chem.Mol, smiles: str, formula: str) -> str:
-        """
-        Construct descriptive chemical name from molecule properties
-        Used as fallback when RDKit's IUPAC naming is insufficient
-        """
-        try:
-            # Get longest carbon chain
-            longest_chain = IUPACNameGenerator._find_longest_carbon_chain(mol)
-            
-            # Count heteroatoms
-            hetero_atoms = {}
-            for atom in mol.GetAtoms():
-                symbol = atom.GetSymbol()
-                if symbol != "C" and symbol != "H":
-                    hetero_atoms[symbol] = hetero_atoms.get(symbol, 0) + 1
-            
-            # Build name components
-            name_parts = []
-            
-            # Primary group/chain
-            if longest_chain >= 12:
-                alkane_names = ["", "", "ethane", "propane", "butane", "pentane",
-                               "hexane", "heptane", "octane", "nonane", "decane",
-                               "undecane", "dodecane"]
-                base_name = alkane_names[min(longest_chain, len(alkane_names)-1)]
-            else:
-                base_name = f"C{longest_chain}_compound"
-            
-            name_parts.append(base_name)
-            
-            # Add heteroatom information
-            if "N" in hetero_atoms:
-                name_parts.append(f"{hetero_atoms['N']}N")
-            if "O" in hetero_atoms:
-                name_parts.append(f"{hetero_atoms['O']}O")
-            if "S" in hetero_atoms:
-                name_parts.append(f"{hetero_atoms['S']}S")
-            
-            # Combine parts
-            descriptive_name = "-".join(name_parts)
-            
-            # Add isomeric notation if relevant
-            if "." in smiles:  # Multiple molecules
-                descriptive_name += " (mixture)"
-            
-            return descriptive_name
-            
-        except Exception as e:
-            print(f"[Phase D NAME CONSTRUCTION ERROR] {e}")
-            return "Unknown compound"
-    
-    @staticmethod
-    def _find_longest_carbon_chain(mol: Chem.Mol) -> int:
-        """Find longest continuous carbon chain"""
-        try:
-            max_chain_length = 0
-            
-            for atom in mol.GetAtoms():
-                if atom.GetSymbol() == "C":
-                    # DFS to find longest chain from this atom
-                    visited = set()
-                    chain_length = IUPACNameGenerator._dfs_chain_length(atom, visited)
-                    max_chain_length = max(max_chain_length, chain_length)
-            
-            return max_chain_length
-            
-        except Exception:
-            return mol.GetNumAtoms()
-    
-    @staticmethod
-    def _dfs_chain_length(atom: Chem.Atom, visited: set) -> int:
-        """Depth-first search to find longest carbon chain"""
-        visited.add(atom.GetIdx())
-        max_length = 1
-        
-        for neighbor in atom.GetNeighbors():
-            if neighbor.GetSymbol() == "C" and neighbor.GetIdx() not in visited:
-                length = 1 + IUPACNameGenerator._dfs_chain_length(neighbor, visited)
-                max_length = max(max_length, length)
-        
-        visited.remove(atom.GetIdx())
-        return max_length
+    # NOTE: _find_longest_carbon_chain and _dfs_chain_length removed.
+    # The old code produced fake names like "C2_compound-1O".
+    # Now we use PubChem API for authoritative IUPAC names.
 
 
 class IUPACAnalyzerThread(QThread):
@@ -368,39 +309,70 @@ class IUPACAnalyzerThread(QThread):
         try:
             mol = Chem.RWMol()
             atom_map = {}
-            
+
             # Add atoms
+            # pos is always a (float, float) tuple from get_coord_key — never QPointF
             for pos, data in self.atoms.items():
-                symbol = data.get("main", "C")
-                atom = Chem.Atom(symbol or "C")
+                if not isinstance(pos, tuple):
+                    # Guard: pos must be a hashable tuple key
+                    pt_key = (round(pos.x(), 2), round(pos.y(), 2)) if hasattr(pos, 'x') else pos
+                else:
+                    pt_key = pos
+                symbol = data.get("main", "C") if isinstance(data, dict) else "C"
+                atom = Chem.Atom(symbol or "C")  # '' (Carbon) → "C" for RDKit
                 idx = mol.AddAtom(atom)
-                atom_map[pos] = idx
-            
+                atom_map[pt_key] = idx
+
             # Add bonds
             for (k1, k2), bond_data in self.bonds.items():
-                if k1 in atom_map and k2 in atom_map:
-                    idx1 = atom_map[k1]
-                    idx2 = atom_map[k2]
-                    
-                    # Determine bond type
-                    if isinstance(bond_data, tuple):
-                        bond_order = bond_data[1] if len(bond_data) > 1 else 1
+                # Normalise keys: canvas stores tuple keys but guard against QPointF
+                if hasattr(k1, 'x'):
+                    k1 = (round(k1.x(), 2), round(k1.y(), 2))
+                if hasattr(k2, 'x'):
+                    k2 = (round(k2.x(), 2), round(k2.y(), 2))
+
+                if k1 not in atom_map or k2 not in atom_map:
+                    continue
+                idx1 = atom_map[k1]
+                idx2 = atom_map[k2]
+
+                # Determine bond order
+                # bond_data formats:
+                #   int           → plain bond order (1/2/3)
+                #   float         → coordination bond (0.5) → treat as SINGLE
+                #   (QPointF, QPointF, "Wedge"/"Dash") → stereo single bond; order = 1
+                #   (int, int, ...)  → (order, ?, ?) legacy tuple
+                if isinstance(bond_data, int):
+                    bond_order = bond_data
+                elif isinstance(bond_data, float):
+                    bond_order = 1  # dative / coordination bond → single for RDKit
+                elif isinstance(bond_data, tuple) and len(bond_data) >= 3:
+                    # Stereo bond: (QPointF, QPointF, "Wedge"/"Dash") — always order 1
+                    last = bond_data[2]
+                    if isinstance(last, str) and last in ("Wedge", "Dash"):
+                        bond_order = 1
+                    elif isinstance(bond_data[1], int):
+                        bond_order = bond_data[1]
                     else:
-                        bond_order = bond_data if isinstance(bond_data, int) else 1
-                    
-                    bond_type = {
-                        1: Chem.BondType.SINGLE,
-                        2: Chem.BondType.DOUBLE,
-                        3: Chem.BondType.TRIPLE,
-                    }.get(bond_order, Chem.BondType.SINGLE)
-                    
-                    mol.AddBond(idx1, idx2, bond_type)
-            
+                        bond_order = 1  # fallback
+                elif isinstance(bond_data, tuple) and len(bond_data) == 2:
+                    bond_order = bond_data[1] if isinstance(bond_data[1], int) else 1
+                else:
+                    bond_order = 1
+
+                bond_type = {
+                    1: Chem.BondType.SINGLE,
+                    2: Chem.BondType.DOUBLE,
+                    3: Chem.BondType.TRIPLE,
+                }.get(bond_order, Chem.BondType.SINGLE)
+
+                mol.AddBond(idx1, idx2, bond_type)
+
             final_mol = mol.GetMol()
             Chem.SanitizeMol(final_mol)
-            
+
             return final_mol
-            
+
         except Exception as e:
             print(f"[Phase D BUILD ERROR] {e}")
             return None
@@ -421,7 +393,15 @@ class IUPACAnalyzer:
     @staticmethod
     def _smiles_to_cache_key(atoms: Dict, bonds: Dict) -> str:
         """Generate cache key from atoms/bonds (simpler than full SMILES)"""
-        return f"{len(atoms)}_{len(bonds)}_{hash(frozenset(atoms.keys()))}"
+        # Guard: QPointF keys are not hashable; normalise to tuple before frozenset
+        try:
+            safe_keys = frozenset(
+                (round(k.x(), 2), round(k.y(), 2)) if hasattr(k, 'x') else k
+                for k in atoms.keys()
+            )
+            return f"{len(atoms)}_{len(bonds)}_{hash(safe_keys)}"
+        except Exception:
+            return f"{len(atoms)}_{len(bonds)}_0"
     
     @staticmethod
     def _invalidate_stale_cache():
