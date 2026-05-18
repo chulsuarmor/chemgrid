@@ -87,6 +87,8 @@ def _bond_type_to_order(bond_type) -> float:
         bt.ONEANDAHALF: 1.5,
         bt.TWOANDAHALF: 2.5,
     }
+    # Rule N: isinstance guard for mapping
+    if not isinstance(mapping, dict): mapping = {}
     return mapping.get(bond_type, 1.0)
 
 
@@ -118,6 +120,11 @@ class BondChangeDetector:
         """
         if not RDKIT_AVAILABLE:
             logger.warning("RDKit not available - BondChangeDetector disabled")
+            return None
+
+        # [N] 타입 가드: 외부에서 non-str이 올 수 있음
+        if not isinstance(reactant_smiles, str) or not isinstance(product_smiles, str):
+            logger.warning(f"detect() received non-string SMILES: R={type(reactant_smiles)}, P={type(product_smiles)}")
             return None
 
         # SMILES 파싱
@@ -353,7 +360,9 @@ class BondChangeDetector:
             p_atoms = p_by_elem[elem]
 
             if len(r_atoms) != len(p_atoms):
-                continue  # 개수 불일치 → 안전하게 skip
+                # [M] 개수 불일치는 silent skip 금지 — 디버그 로그 출력
+                logger.debug(f"_extend_mapping: elem={elem} count mismatch R={len(r_atoms)} vs P={len(p_atoms)}, skip")
+                continue
 
             # 연결성 기반 매칭 점수 계산
             # 이미 매핑된 이웃이 있으면 가산점
@@ -412,6 +421,8 @@ class BondChangeDetector:
 
         for r_neighbor in r_atom.GetNeighbors():
             rn_idx = r_neighbor.GetIdx()
+            # Rule N: isinstance guard for r2p
+            if not isinstance(r2p, dict): r2p = {}
             pn_mapped = r2p.get(rn_idx)
             if pn_mapped is not None:
                 # 생성물에서 p_idx와 pn_mapped가 결합되어 있으면 보너스
@@ -460,8 +471,10 @@ class BondChangeDetector:
             pi, pj = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
             order = _bond_type_to_order(bond.GetBondType())
 
-            ri = mapping.product_to_reactant.get(pi)
-            rj = mapping.product_to_reactant.get(pj)
+            # Rule N: isinstance guard for product_to_reactant
+            p2r_map = mapping.product_to_reactant if isinstance(mapping.product_to_reactant, dict) else {}
+            ri = p2r_map.get(pi)
+            rj = p2r_map.get(pj)
 
             if ri is not None and rj is not None:
                 key = (min(ri, rj), max(ri, rj))
@@ -503,7 +516,9 @@ class BondChangeDetector:
 
             # 한쪽이 unmapped, 다른 쪽이 mapped
             if pi in unmapped_p_set and pj not in unmapped_p_set:
-                ri = mapping.product_to_reactant.get(pj)
+                # Rule N: isinstance guard for product_to_reactant
+                p2r_map = mapping.product_to_reactant if isinstance(mapping.product_to_reactant, dict) else {}
+                ri = p2r_map.get(pj)
                 if ri is not None:
                     changes.append(BondChange(
                         atom_i=ri, atom_j=-1,  # -1 = external (유입 원자)
@@ -511,7 +526,8 @@ class BondChangeDetector:
                         change_type="formed",
                     ))
             elif pj in unmapped_p_set and pi not in unmapped_p_set:
-                ri = mapping.product_to_reactant.get(pi)
+                p2r_map = mapping.product_to_reactant if isinstance(mapping.product_to_reactant, dict) else {}
+                ri = p2r_map.get(pi)
                 if ri is not None:
                     changes.append(BondChange(
                         atom_i=ri, atom_j=-1,
