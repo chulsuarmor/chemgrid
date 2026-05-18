@@ -8,6 +8,7 @@ ChemGrid Pro: NMR Spectrum Viewer with Lorentzian Simulation
 """
 
 import logging
+import os
 from pathlib import Path
 from typing import Optional, List, Tuple, Dict
 import re
@@ -27,9 +28,26 @@ try:
 except ImportError:
     PYQT_AVAILABLE = False
 
+import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+
+# --- Korean font support for matplotlib ---
+_MPL_KR_FONT = None
+_KR_FONT_PATHS = [
+    "C:/Windows/Fonts/malgun.ttf",
+    "C:/Windows/Fonts/NanumGothic.ttf",
+    "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+]
+for _fp in _KR_FONT_PATHS:
+    if os.path.exists(_fp):
+        _MPL_KR_FONT = fm.FontProperties(fname=_fp)
+        matplotlib.rcParams["font.family"] = _MPL_KR_FONT.get_name()
+        fm.fontManager.addfont(_fp)
+        break
+_fkw = {"fontproperties": _MPL_KR_FONT} if _MPL_KR_FONT else {}
 
 
 @dataclass
@@ -52,23 +70,40 @@ class NMRParser:
         Returns dict: {nucleus_type: [NMRSignal, ...]}
         """
         nmr_data = {"1H": [], "13C": [], "19F": []}
-        
+
+        if not isinstance(filepath, (str, Path)):
+            logger.warning("parse_nmr_from_orca: invalid filepath type: %s", type(filepath).__name__)
+            return nmr_data
+
+        filepath = Path(filepath)
+        if not filepath.exists():
+            logger.warning("parse_nmr_from_orca: file does not exist: %s", filepath)
+            return nmr_data
+
         try:
             with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
-            
+
+            if not isinstance(content, str) or not content.strip():
+                logger.warning("parse_nmr_from_orca: empty or invalid file content: %s", filepath)
+                return nmr_data
+
             # Parse ¹H NMR
             nmr_data["1H"] = NMRParser._extract_h_nmr(content)
-            
+
             # Parse ¹³C NMR
             nmr_data["13C"] = NMRParser._extract_c_nmr(content)
-            
+
             # Parse ¹⁹F NMR
             nmr_data["19F"] = NMRParser._extract_f_nmr(content)
-            
+
+            total = sum(len(v) for v in nmr_data.values())
+            if total == 0:
+                logger.warning("parse_nmr_from_orca: no NMR signals found in %s", filepath.name)
+
         except Exception as e:
-            logger.error(f"NMR parsing error: {e}")
-        
+            logger.warning("parse_nmr_from_orca: NMR parsing failed for %s: %s", filepath, e)
+
         return nmr_data
     
     @staticmethod
@@ -146,17 +181,28 @@ class NMRSpectrumSimulator:
     
     @staticmethod
     def simulate_spectrum(signals: List[NMRSignal], nucleus: str,
-                         freq_min: float, freq_max: float, 
+                         freq_min: float, freq_max: float,
                          linewidth: float = 1.0, points: int = 1000) -> Tuple[np.ndarray, np.ndarray]:
         """
         Simulate NMR spectrum with Lorentzian broadening
         Returns: (frequency_array, intensity_array)
         """
+        if not isinstance(signals, list):
+            logger.warning("simulate_spectrum: signals is not a list: %s", type(signals).__name__)
+            signals = []
+        if not isinstance(nucleus, str):
+            logger.warning("simulate_spectrum: nucleus is not str: %s", type(nucleus).__name__)
+            nucleus = "1H"
+
         freq = np.linspace(freq_min, freq_max, points)
         intensity = np.zeros_like(freq, dtype=float)
-        
+
         # Add contribution from each signal
         for signal in signals:
+            if not isinstance(signal, NMRSignal):
+                logger.warning("simulate_spectrum: skipping non-NMRSignal item: %s",
+                               type(signal).__name__)
+                continue
             if signal.nucleus == nucleus:
                 intensity += NMRSpectrumSimulator.lorentzian(
                     freq, signal.chemical_shift, linewidth, signal.intensity
@@ -199,8 +245,12 @@ class NMRPlottingWidget(FigureCanvas):
     def plot_stick_spectrum(self, signals: List[NMRSignal], nucleus: str):
         """Plot stick spectrum (peaks only)"""
         self.ax.clear()
-        
-        filtered_signals = [s for s in signals if s.nucleus == nucleus]
+
+        if not isinstance(signals, list):
+            logger.warning("plot_stick_spectrum: signals is not list: %s", type(signals).__name__)
+            signals = []
+
+        filtered_signals = [s for s in signals if isinstance(s, NMRSignal) and s.nucleus == nucleus]
         
         if filtered_signals:
             shifts = [s.chemical_shift for s in filtered_signals]
@@ -226,38 +276,127 @@ class NMRPlottingWidget(FigureCanvas):
 
 
 class NMRPopup(QDialog):
-    """NMR spectrum viewer with Lorentzian simulation"""
-    
+    """NMR spectrum viewer with Lorentzian simulation.
+
+    Supports two data sources:
+      1. ORCA output file (filepath-based loading)
+      2. Predicted spectra from ChemGrid engine (NMRPeak/C13Peak lists)
+    """
+
     nmr_data_loaded = pyqtSignal(dict)
-    
-    def __init__(self, orca_filepath: Optional[Path] = None, parent=None):
+
+    def __init__(self, orca_filepath: Optional[Path] = None,
+                 predicted_h1: Optional[List] = None,
+                 predicted_c13: Optional[List] = None,
+                 mol_name: str = "",
+                 parent=None):
         super().__init__(parent)
-        self.nmr_signals = {}
+        self.nmr_signals: Dict[str, List[NMRSignal]] = {}
         self.current_nucleus = "1H"
         self.linewidth = 1.0
-        
+        self.mol_name = mol_name
+
         if orca_filepath:
             self.load_nmr_data(orca_filepath)
-        
+        elif predicted_h1 or predicted_c13:
+            self._load_predicted_spectra(predicted_h1, predicted_c13)
+
         self.init_ui()
-        self.setWindowTitle("NMR Spectrum Analysis")
+        title = "NMR Spectrum Analysis"
+        if mol_name:
+            title += f" - {mol_name}"
+        self.setWindowTitle(title)
         self.resize(1000, 700)
+
+    def _load_predicted_spectra(self, h1_peaks: Optional[List] = None,
+                                c13_peaks: Optional[List] = None):
+        """Load NMR signals from ChemGrid predicted spectra (predict_spectra.py).
+
+        Accepts NMRPeak objects (shift, integration, multiplicity, assignment)
+        and C13Peak objects (shift, assignment, dept_type) from predict_spectra module.
+        """
+        self.nmr_signals = {"1H": [], "13C": [], "19F": []}
+
+        # Convert predicted 1H NMR peaks
+        if h1_peaks and isinstance(h1_peaks, list):
+            for peak in h1_peaks:
+                if not hasattr(peak, 'shift'):
+                    logger.warning("_load_predicted_spectra: invalid h1 peak (no shift attr): %r", peak)
+                    continue
+                try:
+                    signal = NMRSignal(
+                        nucleus="1H",
+                        chemical_shift=float(peak.shift),
+                        intensity=float(getattr(peak, 'integration', 1.0)),
+                        multiplicity=getattr(peak, 'multiplicity', 's'),
+                    )
+                    self.nmr_signals["1H"].append(signal)
+                except (ValueError, TypeError) as e:
+                    logger.warning("_load_predicted_spectra: failed to convert h1 peak: %s", e)
+
+        # Convert predicted 13C peaks
+        if c13_peaks and isinstance(c13_peaks, list):
+            for peak in c13_peaks:
+                if not hasattr(peak, 'shift'):
+                    logger.warning("_load_predicted_spectra: invalid c13 peak (no shift attr): %r", peak)
+                    continue
+                try:
+                    signal = NMRSignal(
+                        nucleus="13C",
+                        chemical_shift=float(peak.shift),
+                        intensity=1.0,
+                        multiplicity="s",
+                    )
+                    self.nmr_signals["13C"].append(signal)
+                except (ValueError, TypeError) as e:
+                    logger.warning("_load_predicted_spectra: failed to convert c13 peak: %s", e)
+
+        total = sum(len(v) for v in self.nmr_signals.values())
+        logger.info("Loaded %d predicted NMR signals (1H=%d, 13C=%d)",
+                    total, len(self.nmr_signals["1H"]), len(self.nmr_signals["13C"]))
     
     def init_ui(self):
         """Initialize UI"""
         main_layout = QVBoxLayout()
-        
+
         # Title
         title_layout = QHBoxLayout()
         title_label = QLabel("NMR Spectrum Simulation")
         title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
         title_layout.addWidget(title_label)
-        
-        self.info_label = QLabel("No data loaded")
+
+        # Show data source info
+        total_signals = sum(len(v) for v in self.nmr_signals.values()) if self.nmr_signals else 0
+        if total_signals > 0 and self.mol_name:
+            info_text = f"Predicted: {total_signals} signals ({self.mol_name})"
+        elif total_signals > 0:
+            info_text = f"Loaded: {total_signals} signals"
+        else:
+            info_text = "No data loaded"
+        self.info_label = QLabel(info_text)
         title_layout.addStretch()
         title_layout.addWidget(self.info_label)
         main_layout.addLayout(title_layout)
-        
+
+        # [M646_ENDPOINTS] Rule GG: SIMULATION_MODE 노랑 배너 + 학술 인용 (Rule NN)
+        # NMRDB 라이브 endpoint 미제공 (검증: M646_ENDPOINTS HTTP probes 2026-04-28)
+        # — /api/predict 404 / /new_predictor HTML JS visualizer / /service/predictor POST 폼
+        # 따라서 본 팝업은 ORCA 결과 또는 내장 시뮬레이션만 표시.
+        sim_banner = QLabel(
+            "[SIMULATION_MODE] 이론적 NMR 스펙트럼 (ORCA/내장 시뮬레이션) — "
+            "NMRDB 라이브 예측 미연동. "
+            "출처: NMRDB Banfi & Patiny (2008) Chimia 62:280 / "
+            "참고 UI: https://www.nmrdb.org/new_predictor/ (학생 직접 입력)"
+        )
+        # [MAGIC] _SIM_BANNER_BG=#fff3cd, _SIM_BANNER_FG=#856404 — Bootstrap warning 톤
+        sim_banner.setStyleSheet(
+            "QLabel { background-color: #fff3cd; color: #856404; "
+            "border: 1px solid #ffeeba; border-radius: 4px; "
+            "padding: 6px 10px; font-weight: bold; font-size: 11px; }"
+        )
+        sim_banner.setWordWrap(True)
+        main_layout.addWidget(sim_banner)
+
         # Tab widget
         self.tabs = QTabWidget()
         
@@ -374,10 +513,16 @@ class NMRPopup(QDialog):
     
     def load_nmr_data(self, filepath: Path):
         """Load NMR data from ORCA file"""
-        self.nmr_signals = NMRParser.parse_nmr_from_orca(filepath)
-        
+        result = NMRParser.parse_nmr_from_orca(filepath)
+        if not isinstance(result, dict):
+            logger.warning("load_nmr_data: parser returned non-dict: %s", type(result).__name__)
+            result = {"1H": [], "13C": [], "19F": []}
+        self.nmr_signals = result
+
         # Update info
         total_signals = sum(len(v) for v in self.nmr_signals.values())
+        if total_signals == 0:
+            logger.warning("load_nmr_data: no signals loaded from %s", filepath)
         self.info_label.setText(f"Loaded: {total_signals} signals from {filepath.name}")
         
         self.update_table()
@@ -403,7 +548,14 @@ class NMRPopup(QDialog):
     
     def update_table(self):
         """Update signals table"""
+        if not isinstance(self.nmr_signals, dict):
+            logger.warning("update_table: nmr_signals is not dict: %s", type(self.nmr_signals).__name__)
+            self.nmr_signals = {}
         signals = self.nmr_signals.get(self.current_nucleus, [])
+        if not isinstance(signals, list):
+            logger.warning("update_table: signals for %s is not list: %s",
+                           self.current_nucleus, type(signals).__name__)
+            signals = []
         self.signals_table.setRowCount(len(signals))
         
         for row, signal in enumerate(signals):
@@ -414,9 +566,13 @@ class NMRPopup(QDialog):
     
     def update_plot(self):
         """Update spectrum plot"""
+        if not isinstance(self.nmr_signals, dict):
+            logger.warning("update_plot: nmr_signals is not dict: %s", type(self.nmr_signals).__name__)
+            self.nmr_signals = {}
         signals = self.nmr_signals.get(self.current_nucleus, [])
-        
+
         if not signals:
+            logger.warning("update_plot: no signals for nucleus %s", self.current_nucleus)
             self.nmr_canvas.ax.clear()
             self.nmr_canvas.ax.text(0.5, 0.5, 'No data available',
                                    ha='center', va='center', transform=self.nmr_canvas.ax.transAxes)
@@ -450,8 +606,27 @@ class NMRPopup(QDialog):
             QMessageBox.information(self, "Export", f"Spectrum saved to {filepath}")
 
 
-def launch_nmr_viewer(orca_filepath: Optional[Path] = None, parent=None) -> NMRPopup:
-    """Convenience function to launch NMR viewer"""
-    popup = NMRPopup(orca_filepath, parent)
+def launch_nmr_viewer(orca_filepath: Optional[Path] = None,
+                      predicted_h1: Optional[List] = None,
+                      predicted_c13: Optional[List] = None,
+                      mol_name: str = "",
+                      parent=None) -> NMRPopup:
+    """Convenience function to launch NMR viewer.
+
+    Args:
+        orca_filepath: Path to ORCA output file (optional)
+        predicted_h1: List of NMRPeak objects from predict_spectra (optional)
+        predicted_c13: List of C13Peak objects from predict_spectra (optional)
+        mol_name: Display name for the molecule (optional)
+        parent: Parent widget (optional)
+
+    Returns:
+        NMRPopup instance
+    """
+    popup = NMRPopup(orca_filepath=orca_filepath,
+                     predicted_h1=predicted_h1,
+                     predicted_c13=predicted_c13,
+                     mol_name=mol_name,
+                     parent=parent)
     popup.exec()
     return popup
