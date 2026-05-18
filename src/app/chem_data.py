@@ -1,5 +1,8 @@
-# chem_data.py (v2.25 - Complete Physics & Visual Scaling DB)
+# chem_data.py (v2.26 - Complete Physics & Visual Scaling DB + Heavy metals M551)
 
+# [SECTION 1] 1~54번 원소 물리 데이터 + 중금속 (Pt, Pd, Au, Hg) M551 신설
+# M551: 배위착물(시스플라틴 Pt), 메탈로센(페로센 Fe는 26번으로 기존 등재),
+#       헴(Fe 포함 포르피린), 콜레스테롤·글루코스(유기 분자)용 5종 다양성 확장
 # [SECTION 1] 1~54번 원소 물리 데이터 (cloud_scale & density_scale 반영)
 ELEMENT_DATA = {
     "H":  {"number": 1,  "negativity": 2.20, "radius": 0.37, "cloud_scale": 0.80, "density_scale": 0.7, "F": 0.00, "R": 0.00},
@@ -57,6 +60,19 @@ ELEMENT_DATA = {
     "Te": {"number": 52, "negativity": 2.10, "radius": 1.35, "cloud_scale": 1.15, "density_scale": 0.9, "F": 0.00, "R": 0.00},
     "I":  {"number": 53, "negativity": 2.66, "radius": 1.33, "cloud_scale": 1.75, "density_scale": 0.6, "F": 0.40, "R": -0.19},
     "Xe": {"number": 54, "negativity": 2.60, "radius": 1.30, "cloud_scale": 1.10, "density_scale": 0.5, "F": 0.00, "R": 0.00},
+    # ── M551: 5d 전이금속 / 중금속 (배위착물·메탈로센 지원) ──
+    # 출처: Pauling electronegativity revised (Allen scale 보정 포함),
+    #       CRC Handbook 97th ed., Miessler-Fischer-Tarr Inorganic Chemistry 5th ed.
+    "Pd": {"number": 46, "negativity": 2.20, "radius": 1.31, "cloud_scale": 1.20, "density_scale": 0.9, "F": 0.00, "R": 0.00},
+    "Ag": {"number": 47, "negativity": 1.93, "radius": 1.53, "cloud_scale": 1.25, "density_scale": 0.8, "F": 0.00, "R": 0.00},
+    "Cd": {"number": 48, "negativity": 1.69, "radius": 1.48, "cloud_scale": 1.30, "density_scale": 0.7, "F": 0.00, "R": 0.00},
+    # Pt (78번, 5d8): 시스플라틴 [Pt(NH3)2Cl2] 핵심 원소
+    # negativity=2.28 (Pauling), radius=1.36 Å (공유결합, CRC §9), cloud_scale=1.25 (분극률 반영)
+    "Pt": {"number": 78, "negativity": 2.28, "radius": 1.36, "cloud_scale": 1.25, "density_scale": 0.9, "F": 0.00, "R": 0.00},
+    # Au (79번, 5d10): 금 착물 지원
+    "Au": {"number": 79, "negativity": 2.54, "radius": 1.36, "cloud_scale": 1.30, "density_scale": 0.8, "F": 0.00, "R": 0.00},
+    # Hg (80번, 5d10 6s2): 수은 착물 지원
+    "Hg": {"number": 80, "negativity": 2.00, "radius": 1.49, "cloud_scale": 1.40, "density_scale": 0.7, "F": 0.00, "R": 0.00},
 }
 
 # [SECTION 1.5] 표준 공유결합 길이 (Angstrom) — PLAN-CHEM-001
