@@ -9,7 +9,11 @@ ChemGrid: Drug Screening & Candidate Ranking Popup
 
 import csv
 import io
+import logging
+import os
 from typing import List, Optional
+
+logger = logging.getLogger(__name__)
 
 try:
     from PyQt6.QtWidgets import (
@@ -31,6 +35,23 @@ try:
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
 
+# ── Korean font for matplotlib ──────────────────────────────────────
+_MPL_KR_FONT = None
+if MATPLOTLIB_AVAILABLE:
+    import matplotlib
+    import matplotlib.font_manager as fm
+    _KR_FONT_PATHS = [
+        "C:/Windows/Fonts/malgun.ttf",       # 맑은 고딕
+        "C:/Windows/Fonts/NanumGothic.ttf",   # 나눔고딕
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",  # Linux fallback
+    ]
+    for _fp in _KR_FONT_PATHS:
+        if os.path.exists(_fp):
+            _MPL_KR_FONT = fm.FontProperties(fname=_fp)
+            matplotlib.rcParams["font.family"] = _MPL_KR_FONT.get_name()
+            fm.fontManager.addfont(_fp)
+            break
+
 try:
     from drug_screening import (
         CompoundEntry, ScreeningHit, ScreeningResult,
@@ -45,6 +66,15 @@ try:
     ADMET_AVAILABLE = True
 except ImportError:
     ADMET_AVAILABLE = False
+
+# DrugBank 로컬 모듈 (M646_INTEGRATE)
+# 학술 인용: Wishart, D.S. et al. (2018) Nucleic Acids Res. 46(D1): D1074-D1082.
+#           Knox, C. et al. (2024) Nucleic Acids Res. 52(D1): D1265-D1275.
+try:
+    import drugbank_local
+    DRUGBANK_AVAILABLE = True
+except ImportError:
+    DRUGBANK_AVAILABLE = False
 
 # Tier colors
 TIER_COLORS = {
@@ -64,9 +94,9 @@ class _ScreeningWorker(QThread):
     finished = pyqtSignal(object)    # ScreeningResult
     error = pyqtSignal(str)
 
-    def __init__(self, compounds: List[CompoundEntry], parent=None):
+    def __init__(self, compounds: List[CompoundEntry] = None, parent=None):
         super().__init__(parent)
-        self.compounds = compounds
+        self.compounds = compounds or []
 
     def run(self):
         try:
@@ -128,6 +158,11 @@ class DrugScreeningPopup(QDialog):
         self._build_tab_results()
         self._build_tab_distribution()
         self._build_tab_filters()
+        # M646_INTEGRATE: DrugBank Tanimoto 매칭 탭 (Wishart 2018, Knox 2024)
+        self._build_tab_drugbank()
+        # M646_LITE_PARITY: ChEMBL 외부 검색 탭 (Mendez 2019 NAR 47:D930)
+        # router src/app 통합 — requests 직접 호출, web 라우터 거치지 않음.
+        self._build_tab_chembl()
 
     # ========================= Tab 1: Candidate Input =========================
     def _build_tab_input(self):
@@ -224,6 +259,116 @@ class DrugScreeningPopup(QDialog):
         )
         self.tbl_results.doubleClicked.connect(self._on_row_double_click)
         vbox.addWidget(self.tbl_results)
+
+        # ── [M853 格忿#31] 외부 도킹 서비스 링크 패널 ──────────────────────────
+        # 사용자: "신약개발 탭에서도 도킹 시뮬레이션 결합방향·강도 볼 수 있어야지"
+        # Rule FF: Eberhardt 2021 / Sehnal 2021 / Grosdidier 2011 인용
+        # Rule I: URL 상수 주석 필수. Rule S: PyQt6 시그널 확인.
+        try:
+            from PyQt6.QtWidgets import QFrame
+            from PyQt6.QtCore import QUrl
+            from PyQt6.QtGui import QDesktopServices
+
+            ext_frame = QFrame()
+            ext_frame.setStyleSheet(
+                "QFrame { background: #1a2635; border: 2px solid #0288d1; "
+                "border-radius: 8px; padding: 4px; margin-top: 4px; }"
+            )
+            ext_layout = QVBoxLayout(ext_frame)
+            ext_layout.setSpacing(4)
+
+            ext_header = QLabel(
+                "외부 도킹 서비스 — 결합 강도(kcal/mol) 및 결합 방향 정밀 분석"
+            )
+            ext_header.setStyleSheet(
+                "font-weight: bold; font-size: 11pt; color: #81d4fa; "
+                "background: transparent; border: none;"
+            )
+            ext_header.setWordWrap(True)
+            ext_layout.addWidget(ext_header)
+
+            ext_cite = QLabel(
+                "Eberhardt et al. 2021 J.Chem.Inf.Model. 61:3891 (Vina 1.2)  |  "
+                "Sehnal et al. 2021 NAR 49:W431 (Mol*)  |  "
+                "Grosdidier et al. 2011 NAR 39:W270 (SwissDock)"
+            )
+            ext_cite.setStyleSheet(
+                "color: #4fc3f7; font-size: 8pt; background: transparent; border: none;"
+            )
+            ext_cite.setWordWrap(True)
+            ext_layout.addWidget(ext_cite)
+
+            ext_btn_row = QHBoxLayout()
+
+            btn_sw = QPushButton("SwissDock 외부 도킹")
+            btn_sw.setStyleSheet(
+                "QPushButton { background: #0288d1; color: white; font-weight: bold; "
+                "font-size: 11px; padding: 7px 12px; border-radius: 4px; }"
+                "QPushButton:hover { background: #0277bd; }"
+            )
+            btn_sw.setToolTip(
+                "SwissDock — 게스트 사용 가능 외부 AutoDock Vina 서비스.\n"
+                "결합 강도(kcal/mol) + 결합 방향 3D 포즈 제공.\n"
+                "Grosdidier A. et al. 2011 NAR 39:W270"
+            )
+            SWISSDOCK_URL = "https://www.swissdock.ch/docking"  # [MAGIC] SwissDock 공식 서비스
+            # Rule S: QPushButton.clicked — Qt6 공식 시그널 확인
+            btn_sw.clicked.connect(
+                lambda _checked=False, u=SWISSDOCK_URL: QDesktopServices.openUrl(QUrl(u))
+            )
+            ext_btn_row.addWidget(btn_sw)
+
+            btn_pdbe = QPushButton("PDBe-KB 결합 데이터")
+            btn_pdbe.setStyleSheet(
+                "QPushButton { background: #1565c0; color: white; font-weight: bold; "
+                "font-size: 11px; padding: 7px 12px; border-radius: 4px; }"
+                "QPushButton:hover { background: #0d47a1; }"
+            )
+            btn_pdbe.setToolTip(
+                "PDBe-KB — UniProt 기반 결합 부위 + 상호작용 잔기 데이터.\n"
+                "학술 인용: Sehnal et al. 2021 NAR 49:W431"
+            )
+            PDBE_KB_URL = "https://www.ebi.ac.uk/pdbe/pdbe-kb/proteins"  # [MAGIC] PDBe-KB UniProt
+            # Rule S: QPushButton.clicked — Qt6 공식 시그널 확인
+            btn_pdbe.clicked.connect(
+                lambda _checked=False, u=PDBE_KB_URL: QDesktopServices.openUrl(QUrl(u))
+            )
+            ext_btn_row.addWidget(btn_pdbe)
+
+            btn_molstar = QPushButton("Mol* 3D 시각화")
+            btn_molstar.setStyleSheet(
+                "QPushButton { background: #4a148c; color: white; font-weight: bold; "
+                "font-size: 11px; padding: 7px 12px; border-radius: 4px; }"
+                "QPushButton:hover { background: #38006b; }"
+            )
+            btn_molstar.setToolTip(
+                "Mol* 공식 뷰어 — 단백질-리간드 3D 시각화 학술 표준.\n"
+                "Sehnal D. et al. 2021 Nucleic Acids Res 49:W431-W437"
+            )
+            MOLSTAR_URL = "https://molstar.org/viewer/"  # [MAGIC] Mol* 공식 뷰어
+            # Rule S: QPushButton.clicked — Qt6 공식 시그널 확인
+            btn_molstar.clicked.connect(
+                lambda _checked=False, u=MOLSTAR_URL: QDesktopServices.openUrl(QUrl(u))
+            )
+            ext_btn_row.addWidget(btn_molstar)
+
+            ext_layout.addLayout(ext_btn_row)
+
+            ext_info = QLabel(
+                "스크리닝 후 결과 분자를 선택하여 SwissDock에 SMILES를 입력하면\n"
+                "결합 강도(kcal/mol)와 결합 방향(3D 포즈)을 상세히 확인할 수 있습니다."
+            )
+            ext_info.setStyleSheet(
+                "color: #90a4ae; font-size: 9pt; background: transparent; border: none;"
+            )
+            ext_info.setWordWrap(True)
+            ext_layout.addWidget(ext_info)
+
+            vbox.addWidget(ext_frame)
+        except Exception as _ext_e:
+            logger.warning(
+                "[DrugScreeningPopup._build_tab_results] 외부 도킹 패널 생성 실패: %s (M853)", _ext_e
+            )
 
         self.tabs.addTab(tab, "스크리닝 결과")
 
@@ -345,8 +490,14 @@ class DrugScreeningPopup(QDialog):
                 reader = csv.DictReader(f)
                 count = 0
                 for row in reader:
-                    smiles = row.get("smiles", row.get("SMILES", "")).strip()
-                    name = row.get("name", row.get("Name", row.get("NAME", ""))).strip()
+                    # N-code type guard: CSV row from external file
+                    if not isinstance(row, dict):
+                        logger.warning("_on_load_csv: unexpected row type=%s, skipping", type(row).__name__)
+                        continue
+                    raw_smiles = row.get("smiles", row.get("SMILES", ""))
+                    smiles = raw_smiles.strip() if isinstance(raw_smiles, str) else ""
+                    raw_name = row.get("name", row.get("Name", row.get("NAME", "")))
+                    name = raw_name.strip() if isinstance(raw_name, str) else ""
                     if smiles:
                         self._add_candidate(smiles, name)
                         count += 1
@@ -459,9 +610,11 @@ class DrugScreeningPopup(QDialog):
                 row, 6, self._num_item(hit.composite_score, fmt=".3f")
             )
             # Tier badge
-            tier_item = QTableWidgetItem(hit.tier)
+            # N-code type guard: hit.tier from screening result
+            tier_str = hit.tier if isinstance(hit.tier, str) else str(hit.tier) if hit.tier is not None else "-"
+            tier_item = QTableWidgetItem(tier_str)
             tier_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            color = TIER_COLORS.get(hit.tier, "#999999")
+            color = TIER_COLORS.get(tier_str, "#999999")
             tier_item.setForeground(QBrush(QColor(color)))
             tier_item.setFont(QFont("", 10, QFont.Weight.Bold))
             self.tbl_results.setItem(row, 7, tier_item)
@@ -527,7 +680,7 @@ class DrugScreeningPopup(QDialog):
 
         names = [h.compound.name or h.compound.smiles[:20] for h in hits]
         scores = [h.composite_score for h in hits]
-        colors = [TIER_COLORS.get(h.tier, "#999999") for h in hits]
+        colors = [TIER_COLORS.get(h.tier if isinstance(h.tier, str) else str(h.tier) if h.tier is not None else "-", "#999999") for h in hits]
 
         bars = ax.bar(range(len(hits)), scores, color=colors, edgecolor="#333", linewidth=0.5)
 
@@ -584,3 +737,527 @@ class DrugScreeningPopup(QDialog):
         self._refresh_results_table(filtered)
         self._refresh_chart(filtered)
         self.tabs.setCurrentIndex(1)
+
+    # ========================= Tab 5: DrugBank 매칭 (M646_INTEGRATE) =========================
+    # 학술 인용 (Rule NN): Wishart, D.S. et al. (2018) Nucleic Acids Res. 46(D1): D1074-D1082.
+    #                    Knox, C. et al. (2024) Nucleic Acids Res. 52(D1): D1265-D1275.
+    #                    Rogers, D.; Hahn, M. (2010) ECFP. J.Chem.Inf.Model. 50(5): 742-754.
+
+    def _build_tab_drugbank(self):
+        """DrugBank 로컬 데이터셋 Tanimoto 유사도 검색 탭."""
+        tab = QWidget()
+        vbox = QVBoxLayout(tab)
+
+        # 데이터 가용성 표시 (Rule M: silent failure 차단)
+        self.lbl_drugbank_status = QLabel()
+        self.lbl_drugbank_status.setWordWrap(True)
+        self.lbl_drugbank_status.setStyleSheet(
+            "QLabel { padding: 8px; background-color: #f8f9fa; border: 1px solid #dee2e6; "
+            "border-radius: 4px; font-size: 11px; }"
+        )
+        self._refresh_drugbank_status_label()
+        vbox.addWidget(self.lbl_drugbank_status)
+
+        # 학술 인용 안내 (Rule NN: 항상 표시 — 사용자 학습 정합성)
+        lbl_citation = QLabel(
+            "<i>참고: Wishart et al. NAR 2018;46:D1074 — DrugBank 5.0. "
+            "Knox et al. NAR 2024;52:D1265 — DrugBank 6.0. "
+            "Rogers&Hahn JCIM 2010;50:742 — ECFP4 fingerprint.</i>"
+        )
+        lbl_citation.setWordWrap(True)
+        lbl_citation.setStyleSheet("color: #555; font-size: 9px; padding: 2px 8px;")
+        vbox.addWidget(lbl_citation)
+
+        # 검색 폼
+        grp_search = QGroupBox("Tanimoto 유사도 검색 (현재 표 행 또는 SMILES 입력)")
+        form_layout = QVBoxLayout(grp_search)
+
+        # SMILES 입력 라인
+        smiles_row = QHBoxLayout()
+        smiles_row.addWidget(QLabel("SMILES:"))
+        self.txt_drugbank_smiles = QTextEdit()
+        self.txt_drugbank_smiles.setMaximumHeight(50)
+        self.txt_drugbank_smiles.setPlaceholderText(
+            "예: CC(=O)Oc1ccccc1C(=O)O (Aspirin) — 빈 칸이면 결과 탭 첫 행 분자 사용"
+        )
+        smiles_row.addWidget(self.txt_drugbank_smiles)
+        form_layout.addLayout(smiles_row)
+
+        # 파라미터 (k, cutoff)
+        param_row = QHBoxLayout()
+        param_row.addWidget(QLabel("Top-k:"))
+        self.slider_drugbank_k = QSlider(Qt.Orientation.Horizontal)
+        self.slider_drugbank_k.setRange(1, 20)  # [MAGIC: 1-20] UI 표시 가능 한도
+        self.slider_drugbank_k.setValue(5)  # [MAGIC: 5] 기본값
+        self.lbl_drugbank_k = QLabel("5")
+        self.slider_drugbank_k.valueChanged.connect(
+            lambda v: self.lbl_drugbank_k.setText(str(v))
+        )
+        param_row.addWidget(self.slider_drugbank_k)
+        param_row.addWidget(self.lbl_drugbank_k)
+
+        param_row.addWidget(QLabel("  Tanimoto cutoff:"))
+        self.slider_drugbank_cutoff = QSlider(Qt.Orientation.Horizontal)
+        self.slider_drugbank_cutoff.setRange(0, 100)
+        self.slider_drugbank_cutoff.setValue(40)  # [MAGIC: 0.40] ECFP4 표준 (Rogers&Hahn 2010)
+        self.lbl_drugbank_cutoff = QLabel("0.40")
+        self.slider_drugbank_cutoff.valueChanged.connect(
+            lambda v: self.lbl_drugbank_cutoff.setText(f"{v / 100:.2f}")
+        )
+        param_row.addWidget(self.slider_drugbank_cutoff)
+        param_row.addWidget(self.lbl_drugbank_cutoff)
+        form_layout.addLayout(param_row)
+
+        # 검색 버튼
+        btn_row = QHBoxLayout()
+        self.btn_drugbank_search = QPushButton("DrugBank 매칭 검색")
+        self.btn_drugbank_search.setStyleSheet(
+            "QPushButton { background-color: #16a085; color: white; "
+            "font-weight: bold; padding: 8px 20px; border-radius: 4px; }"
+        )
+        self.btn_drugbank_search.clicked.connect(self._on_drugbank_search)
+        btn_row.addWidget(self.btn_drugbank_search)
+        btn_row.addStretch()
+        form_layout.addLayout(btn_row)
+
+        vbox.addWidget(grp_search)
+
+        # 결과 표
+        grp_res = QGroupBox("매칭 결과 (Tanimoto Top-k)")
+        res_layout = QVBoxLayout(grp_res)
+        self.tbl_drugbank = QTableWidget()
+        self.tbl_drugbank.setColumnCount(6)
+        self.tbl_drugbank.setHorizontalHeaderLabels([
+            "DrugBank ID", "Common Name", "유사도", "CAS", "InChI Key", "URL",
+        ])
+        self.tbl_drugbank.horizontalHeader().setStretchLastSection(True)
+        self.tbl_drugbank.setSelectionBehavior(
+            QTableWidget.SelectionBehavior.SelectRows
+        )
+        self.tbl_drugbank.setEditTriggers(
+            QTableWidget.EditTrigger.NoEditTriggers
+        )
+        # 더블클릭 → 브라우저 (Rule M: 사용자 피드백)
+        self.tbl_drugbank.doubleClicked.connect(self._on_drugbank_row_doubleclick)
+        # 툴팁: Wishart 2018 인용 (Rule NN UI 명시)
+        self.tbl_drugbank.setToolTip(
+            "DrugBank 6.0 (Knox et al. NAR 2024;52:D1265). "
+            "Tanimoto 유사도는 Morgan ECFP4 fingerprint 기반 (Rogers&Hahn JCIM 2010;50:742). "
+            "더블클릭하면 DrugBank 페이지를 엽니다."
+        )
+        res_layout.addWidget(self.tbl_drugbank)
+        vbox.addWidget(grp_res)
+
+        self.tabs.addTab(tab, "DrugBank")
+
+    # ========================= Tab 6: ChEMBL (M646_LITE_PARITY) =========================
+    def _build_tab_chembl(self):
+        """ChEMBL 외부 API 검색 탭 — SMILES → 생물활성 데이터.
+
+        학술 인용 (Rule NN — academic_integrity_check.py / FP-28 차단):
+          Mendez, D. et al. (2019) ChEMBL: towards direct deposition of
+            bioassay data. Nucleic Acids Res. 47(D1): D930-D940.
+          Davies, M. et al. (2015) ChEMBL web services. NAR 43(W1): W612-W620.
+
+        Rule M: silent failure 금지 — 모든 실패 logger.warning + UI 메시지.
+        Rule N: 응답 dict/list 가드.
+        Rule Y: 1:1 router 이식 — ext_live._chembl_get_molecule() 함수와 동일 URL.
+        """
+        tab = QWidget()
+        vbox = QVBoxLayout(tab)
+
+        # 학술 인용 안내 (Rule NN: 항상 표시)
+        lbl_citation = QLabel(
+            "<i>참고: Mendez et al. NAR 2019;47:D930 — ChEMBL bioactivity DB. "
+            "Davies et al. NAR 2015;43:W612 — ChEMBL web services REST API.</i>"
+        )
+        lbl_citation.setWordWrap(True)
+        lbl_citation.setStyleSheet("color: #555; font-size: 9px; padding: 2px 8px;")
+        vbox.addWidget(lbl_citation)
+
+        # 안내문 (FP-15 차단 — 외부 API 의존성 명시)
+        lbl_info = QLabel(
+            "<b>외부 API:</b> ChEMBL EBI (ebi.ac.uk/chembl). "
+            "네트워크 연결 필수 — 미연결 시 SIMULATION_MODE 표시."
+        )
+        lbl_info.setWordWrap(True)
+        lbl_info.setStyleSheet(
+            "QLabel { padding: 8px; background-color: #f8f9fa; "
+            "border: 1px solid #dee2e6; border-radius: 4px; font-size: 11px; }"
+        )
+        vbox.addWidget(lbl_info)
+
+        # 검색 폼
+        grp_search = QGroupBox("ChEMBL SMILES 검색 (현재 표 행 또는 SMILES 입력)")
+        form_layout = QVBoxLayout(grp_search)
+
+        # SMILES 입력 라인
+        smiles_row = QHBoxLayout()
+        smiles_row.addWidget(QLabel("SMILES:"))
+        self.txt_chembl_smiles = QTextEdit()
+        self.txt_chembl_smiles.setMaximumHeight(50)
+        self.txt_chembl_smiles.setPlaceholderText(
+            "예: CC(=O)Oc1ccccc1C(=O)O (Aspirin) — 빈 칸이면 결과 탭 첫 행 분자 사용"
+        )
+        smiles_row.addWidget(self.txt_chembl_smiles)
+        form_layout.addLayout(smiles_row)
+
+        # 검색 버튼
+        btn_row = QHBoxLayout()
+        self.btn_chembl_search = QPushButton("ChEMBL 외부 검색")
+        self.btn_chembl_search.setStyleSheet(
+            "QPushButton { background-color: #2980b9; color: white; "
+            "font-weight: bold; padding: 8px 20px; border-radius: 4px; }"
+        )
+        self.btn_chembl_search.clicked.connect(self._on_chembl_search)
+        btn_row.addWidget(self.btn_chembl_search)
+        btn_row.addStretch()
+        form_layout.addLayout(btn_row)
+        vbox.addWidget(grp_search)
+
+        # 결과 표
+        grp_res = QGroupBox("ChEMBL 매칭 결과")
+        res_layout = QVBoxLayout(grp_res)
+        self.tbl_chembl = QTableWidget()
+        self.tbl_chembl.setColumnCount(5)
+        self.tbl_chembl.setHorizontalHeaderLabels([
+            "ChEMBL ID", "Pref Name", "Max Phase", "Mol Formula", "URL",
+        ])
+        self.tbl_chembl.horizontalHeader().setStretchLastSection(True)
+        self.tbl_chembl.setSelectionBehavior(
+            QTableWidget.SelectionBehavior.SelectRows
+        )
+        self.tbl_chembl.setEditTriggers(
+            QTableWidget.EditTrigger.NoEditTriggers
+        )
+        # 학술 인용 툴팁 (Rule NN UI 명시)
+        self.tbl_chembl.setToolTip(
+            "ChEMBL bioactivity DB (Mendez et al. NAR 2019;47:D930). "
+            "Max Phase 4 = 시판 약물 / Phase 1-3 = 임상시험. "
+            "더블클릭하면 ChEMBL 페이지를 엽니다."
+        )
+        self.tbl_chembl.doubleClicked.connect(self._on_chembl_row_doubleclick)
+        res_layout.addWidget(self.tbl_chembl)
+        vbox.addWidget(grp_res)
+
+        # 상태 라벨 (Rule M: 명시적 피드백)
+        self.lbl_chembl_status = QLabel("준비됨 — SMILES 입력 후 '검색' 버튼")
+        self.lbl_chembl_status.setStyleSheet(
+            "color: #555; font-size: 10px; padding: 4px 8px;"
+        )
+        vbox.addWidget(self.lbl_chembl_status)
+
+        self.tabs.addTab(tab, "ChEMBL")
+
+    def _on_chembl_search(self):
+        """ChEMBL 외부 API 호출 — Mendez 2019 NAR 47:D930.
+
+        Rule M: silent 금지. Rule N: 응답 dict/list 가드.
+        Rule Y: 1:1 router 이식 — ext_live._chembl_get_molecule() URL 동일.
+        """
+        # 입력 SMILES (빈 칸이면 첫 결과 분자 사용)
+        smi = self.txt_chembl_smiles.toPlainText().strip()
+        if not smi and self._all_hits:  # Rule M: silent 금지
+            smi = getattr(self._all_hits[0], "smiles", "") or ""
+        if not smi:
+            self.lbl_chembl_status.setText(
+                "<span style='color:#e74c3c;'>SMILES 입력 또는 결과 탭에 분자 추가</span>"
+            )
+            QMessageBox.warning(
+                self, "ChEMBL", "SMILES 가 비어 있습니다.\n결과 탭에 분자가 있으면 자동 사용합니다."
+            )
+            return
+
+        self.lbl_chembl_status.setText(
+            f"<i>ChEMBL 검색 중... ({smi[:40]})</i>"
+        )
+        self.btn_chembl_search.setEnabled(False)
+        try:
+            results = self._chembl_query(smi)
+        finally:
+            self.btn_chembl_search.setEnabled(True)
+
+        # Rule N: 응답 list 가드
+        if not isinstance(results, list):  # Rule N
+            logger.warning("[ChEMBL] 예상치 못한 응답 타입 %s", type(results).__name__)
+            results = []
+
+        # _simulation_mode 키 체크 (Rule GG)
+        sim_flag = False
+        sim_reason = ""
+        if results and isinstance(results[0], dict):
+            sim_flag = bool(results[0].get("_simulation_mode", False))
+            sim_reason = str(results[0].get("_reason", ""))
+        if sim_flag:
+            self.lbl_chembl_status.setText(
+                f"<span style='color:#e67e22;'>"
+                f"<b>SIMULATION_MODE</b> — {sim_reason}</span>"
+            )
+            self.tbl_chembl.setRowCount(0)
+            return
+
+        # 결과 표 채우기
+        self.tbl_chembl.setRowCount(len(results))
+        for i, item in enumerate(results):
+            if not isinstance(item, dict):  # Rule N
+                continue
+            chembl_id = str(item.get("molecule_chembl_id", "?"))
+            pref = str(item.get("pref_name") or "")
+            max_phase = str(item.get("max_phase") or "")
+            formula = "?"
+            mol_props = item.get("molecule_properties")
+            if isinstance(mol_props, dict):  # Rule N
+                formula = str(mol_props.get("full_molformula", "") or "?")
+            url = f"https://www.ebi.ac.uk/chembl/compound_report_card/{chembl_id}/"
+
+            self.tbl_chembl.setItem(i, 0, QTableWidgetItem(chembl_id))
+            self.tbl_chembl.setItem(i, 1, QTableWidgetItem(pref))
+            self.tbl_chembl.setItem(i, 2, QTableWidgetItem(max_phase))
+            self.tbl_chembl.setItem(i, 3, QTableWidgetItem(formula))
+            self.tbl_chembl.setItem(i, 4, QTableWidgetItem(url))
+
+        if not results:
+            self.lbl_chembl_status.setText(
+                f"<span style='color:#7f8c8d;'>결과 없음 — '{smi[:40]}' 매칭 ChEMBL 항목 0건</span>"
+            )
+        else:
+            self.lbl_chembl_status.setText(
+                f"<span style='color:#27ae60;'>"
+                f"<b>{len(results)}건 매칭</b> — Mendez et al. NAR 2019;47:D930</span>"
+            )
+
+    def _chembl_query(self, smiles: str) -> list:
+        """ChEMBL REST API 직접 호출 — ext_live._chembl_get_molecule() 와 1:1 동일.
+
+        Rule M / Rule N / Rule Y 준수.
+        """
+        try:
+            import requests as _requests
+            import urllib.parse as _urlparse
+        except ImportError as e:
+            logger.warning("[ChEMBL] requests/urllib 미설치: %s", e)
+            return [{
+                "_simulation_mode": True,
+                "_reason": "requests 라이브러리 없음 — 외부 API 호출 불가",
+            }]
+
+        if not isinstance(smiles, str) or not smiles.strip():  # Rule N
+            return [{"_simulation_mode": True, "_reason": "SMILES 비어 있음"}]
+
+        # ext_live.py 와 동일 URL — Rule Y 1:1 이식
+        # [MAGIC: 30s] ChEMBL API 응답 시간 max
+        encoded = _urlparse.quote(smiles.strip(), safe='')
+        url = (
+            f"https://www.ebi.ac.uk/chembl/api/data/molecule"
+            f"?smiles={encoded}&format=json&limit=10"
+        )
+        try:
+            resp = _requests.get(  # type: ignore[union-attr]
+                url, headers={"User-Agent": "ChemGrid/M646_LITE_PARITY"}, timeout=30,
+            )
+        except _requests.exceptions.Timeout:  # type: ignore[union-attr]
+            logger.warning("[ChEMBL] timeout @ %s", url[:80])
+            return [{"_simulation_mode": True, "_reason": "ChEMBL API timeout (30s)"}]
+        except Exception as e:
+            logger.warning("[ChEMBL] 네트워크 오류 %s: %s", type(e).__name__, e)
+            return [{"_simulation_mode": True,
+                      "_reason": f"network: {type(e).__name__}: {e}"}]
+
+        if not resp.ok:
+            logger.warning("[ChEMBL] HTTP %d", resp.status_code)
+            return [{"_simulation_mode": True,
+                      "_reason": f"HTTP {resp.status_code}"}]
+        try:
+            data = resp.json()
+        except Exception as e:
+            logger.warning("[ChEMBL] JSON 파싱 실패: %s", e)
+            return [{"_simulation_mode": True, "_reason": f"json: {e}"}]
+
+        if not isinstance(data, dict):  # Rule N
+            return []
+        molecules = data.get("molecules", [])
+        if not isinstance(molecules, list):  # Rule N
+            return []
+        # 가드: 각 항목 dict 인지
+        return [m for m in molecules if isinstance(m, dict)]
+
+    def _on_chembl_row_doubleclick(self, idx):
+        """ChEMBL 행 더블클릭 → 브라우저 외부 열기 (Rule M: 명시적 피드백)."""
+        row = idx.row()
+        if row < 0:
+            return
+        item = self.tbl_chembl.item(row, 4)  # URL 열
+        if item is None:
+            return
+        url = item.text().strip()
+        if not url:
+            return
+        try:
+            from PyQt6.QtCore import QUrl as _QUrl
+            from PyQt6.QtGui import QDesktopServices as _QDS
+            _QDS.openUrl(_QUrl(url))
+        except Exception as e:
+            logger.warning("[ChEMBL] URL 열기 실패: %s", e)
+
+    def _refresh_drugbank_status_label(self):
+        """DrugBank 데이터 가용성 라벨 갱신 (Rule M: 명시적 사용자 피드백)."""
+        if not DRUGBANK_AVAILABLE:
+            self.lbl_drugbank_status.setText(
+                "<b style='color:#e74c3c;'>DrugBank 모듈 미가용</b> — RDKit 설치 또는 "
+                "drugbank_local.py 임포트 실패. <i>SIMULATION_MODE</i>"
+            )
+            return
+        try:
+            status = drugbank_local.get_data_status()
+        except Exception as e:  # Rule M
+            logger.warning("DrugBank status 조회 실패: %s", e)
+            self.lbl_drugbank_status.setText(
+                f"<b style='color:#e74c3c;'>상태 조회 실패</b>: {e}"
+            )
+            return
+        if not status.get("csv_exists") or not status.get("sdf_exists"):
+            self.lbl_drugbank_status.setText(
+                f"<b style='color:#e67e22;'>DrugBank 데이터 미설치</b><br>"
+                f"data_root: <code>{status.get('data_root', '?')}</code><br>"
+                f"CSV: {'있음' if status.get('csv_exists') else '<b style=\"color:#e74c3c\">없음</b>'} | "
+                f"SDF: {'있음' if status.get('sdf_exists') else '<b style=\"color:#e74c3c\">없음</b>'}<br>"
+                f"<i>해결: drugbank.ca/release/latest 에서 vocabulary CSV + open structures SDF 다운로드 후 위 폴더에 복사.</i>"
+            )
+            return
+        msg = (
+            f"<b style='color:#27ae60;'>DrugBank 로컬 데이터 가용</b><br>"
+            f"vocabulary: {status.get('vocabulary_count', 0):,} 약물"
+        )
+        if status.get("fp_index_built"):
+            msg += f" | SDF 인덱스: {status.get('fp_index_count', 0):,} 분자 (Tanimoto 검색 가능)"
+        else:
+            msg += " | SDF 인덱스: <i>첫 검색 시 자동 빌드 (~수십 초)</i>"
+        if status.get("build_error"):
+            msg += f"<br><span style='color:#e67e22;'>경고: {status['build_error']}</span>"
+        self.lbl_drugbank_status.setText(msg)
+
+    def _on_drugbank_search(self):
+        """DrugBank Tanimoto 매칭 실행 (Rule M: 명시적 에러 분기)."""
+        if not DRUGBANK_AVAILABLE:
+            QMessageBox.warning(
+                self, "DrugBank",
+                "DrugBank 로컬 모듈을 사용할 수 없습니다.\n"
+                "RDKit 설치 또는 drugbank_local.py 임포트 실패."
+            )
+            return
+        smiles = self.txt_drugbank_smiles.toPlainText().strip()
+        if not smiles:
+            # 결과 탭 첫 행 SMILES 자동 사용 (사용자 편의)
+            if self._all_hits:
+                first_hit = self._all_hits[0]
+                if hasattr(first_hit, "compound") and hasattr(first_hit.compound, "smiles"):
+                    smiles = first_hit.compound.smiles
+            if not smiles and self._candidates:
+                first_cand = self._candidates[0]
+                if hasattr(first_cand, "smiles"):
+                    smiles = first_cand.smiles
+            if not smiles:
+                QMessageBox.information(
+                    self, "DrugBank",
+                    "SMILES를 입력하거나 결과 탭에 먼저 분자를 추가하세요."
+                )
+                return
+        k_val = self.slider_drugbank_k.value()
+        cutoff_val = self.slider_drugbank_cutoff.value() / 100.0
+
+        # 검색 실행 (큰 SDF 인덱스 빌드 첫 호출 시 수십 초 가능)
+        self.btn_drugbank_search.setEnabled(False)
+        self.lbl_drugbank_status.setText(
+            "<b style='color:#3498db;'>DrugBank 검색 중...</b> (첫 호출은 SDF 인덱싱으로 수십 초 소요 가능)"
+        )
+        # repaint 강제 (Rule F: 사용자 환경 피드백)
+        try:
+            from PyQt6.QtCore import QCoreApplication
+            QCoreApplication.processEvents()
+        except Exception as e:  # Rule M: processEvents 실패 시 경고
+            logger.warning("processEvents 실패 (무시): %s", e)
+        try:
+            results = drugbank_local.search_by_smiles(
+                smiles, k=k_val, cutoff=cutoff_val)
+        except Exception as e:  # Rule M
+            logger.warning("DrugBank 검색 실패: %s", e)
+            QMessageBox.warning(self, "DrugBank", f"검색 실패: {e}")
+            self.btn_drugbank_search.setEnabled(True)
+            self._refresh_drugbank_status_label()
+            return
+
+        # 결과 표 갱신
+        self.tbl_drugbank.setRowCount(0)
+        # Rule N: results가 list인지 검증
+        if not isinstance(results, list):
+            QMessageBox.warning(
+                self, "DrugBank",
+                f"비정상 응답: {type(results).__name__}")
+            self.btn_drugbank_search.setEnabled(True)
+            self._refresh_drugbank_status_label()
+            return
+        # 첫 항목이 _data_missing/_invalid_smiles 단일 dict 인지 확인
+        if results and isinstance(results[0], dict) and results[0].get("_data_missing"):
+            QMessageBox.warning(
+                self, "DrugBank",
+                f"데이터 부재: {results[0].get('_reason', 'DRUGBANK_DATA_MISSING')}"
+            )
+            self.btn_drugbank_search.setEnabled(True)
+            self._refresh_drugbank_status_label()
+            return
+        if results and isinstance(results[0], dict) and results[0].get("_invalid_smiles"):
+            QMessageBox.warning(
+                self, "DrugBank",
+                f"잘못된 SMILES: {results[0].get('_reason', '')}"
+            )
+            self.btn_drugbank_search.setEnabled(True)
+            self._refresh_drugbank_status_label()
+            return
+        # 정상 결과 채우기
+        self.tbl_drugbank.setRowCount(len(results))
+        for row, item in enumerate(results):
+            if not isinstance(item, dict):  # Rule N
+                continue
+            self.tbl_drugbank.setItem(row, 0, QTableWidgetItem(item.get("drugbank_id", "")))
+            self.tbl_drugbank.setItem(row, 1, QTableWidgetItem(item.get("name", "")))
+            sim_val = item.get("similarity", 0.0)
+            sim_str = f"{sim_val:.3f}" if isinstance(sim_val, (int, float)) else str(sim_val)
+            sim_item = QTableWidgetItem(sim_str)
+            sim_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            # 색상: 0.7 이상 녹색, 0.4-0.7 주황, 그 외 회색
+            if isinstance(sim_val, (int, float)):
+                if sim_val >= 0.7:  # [MAGIC: 0.7] 강한 매칭 (ECFP4 표준)
+                    sim_item.setForeground(QBrush(QColor("#27ae60")))
+                    sim_item.setFont(QFont("", 10, QFont.Weight.Bold))
+                elif sim_val >= 0.4:  # [MAGIC: 0.4] 의미있는 매칭
+                    sim_item.setForeground(QBrush(QColor("#f39c12")))
+            self.tbl_drugbank.setItem(row, 2, sim_item)
+            self.tbl_drugbank.setItem(row, 3, QTableWidgetItem(item.get("cas", "")))
+            self.tbl_drugbank.setItem(row, 4, QTableWidgetItem(item.get("inchikey", "")))
+            self.tbl_drugbank.setItem(row, 5, QTableWidgetItem(item.get("drugbank_url", "")))
+        self.tbl_drugbank.resizeColumnsToContents()
+
+        if len(results) == 0:
+            QMessageBox.information(
+                self, "DrugBank",
+                f"매칭 결과 없음 (cutoff={cutoff_val:.2f}). "
+                f"cutoff를 낮춰 다시 시도하세요."
+            )
+        self.btn_drugbank_search.setEnabled(True)
+        self._refresh_drugbank_status_label()
+
+    def _on_drugbank_row_doubleclick(self, index):
+        """DrugBank 행 더블클릭 → 브라우저로 이동 (Rule M 사용자 피드백)."""
+        row = index.row()
+        url_item = self.tbl_drugbank.item(row, 5)
+        if url_item is None:
+            return
+        url = url_item.text().strip()
+        if not url:
+            return
+        try:
+            import webbrowser
+            webbrowser.open(url)
+        except Exception as e:  # Rule M
+            logger.warning("DrugBank 브라우저 열기 실패: %s", e)
+            QMessageBox.information(self, "DrugBank", f"수동으로 이동하세요: {url}")
