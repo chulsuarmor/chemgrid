@@ -7,6 +7,7 @@ ChemGrid: 범용 반응 메커니즘 생성 엔진
 """
 
 import logging
+import os
 from typing import Optional, List, Tuple, Dict
 
 logger = logging.getLogger(__name__)
@@ -79,6 +80,558 @@ def _get_substitution_degree(mol, atom_idx: int) -> int:
 
 LEAVING_GROUPS = {9, 17, 35, 53}  # F, Cl, Br, I
 
+# ============================================================================
+# TRANSFORM NAME → MECHANISM KEY MAPPING
+# Maps retrosynthesis transform names (Korean + English) and condition strings
+# to gold-standard mechanism keys in reaction_mechanisms.MECHANISMS.
+# ============================================================================
+
+_TRANSFORM_TO_MECHANISM: Dict[str, str] = {
+    # --- Korean transform names (from _RETRO_TRANSFORM_DATA) ---
+    "sn2": "sn2",
+    "sn1": "sn1",
+    "e2": "e2",
+    "e1": "e1",
+    "williamson": "sn2",
+    "fischer": "esterification",
+    "에스터": "esterification",
+    "esterification": "esterification",
+    "에스터화": "esterification",
+    "아마이드": "amidation",
+    "amidation": "amidation",
+    "아마이드 역합성": "amidation",
+    "eas": "eas",
+    "eas 염소화": "eas",
+    "eas chlorination": "eas",
+    "eas nitration": "eas_nitration",
+    "eas sulfonation": "eas_sulfonation",
+    "니트로화": "eas_nitration",
+    "술폰화": "eas_sulfonation",
+    "friedel-crafts": "friedel_crafts_alkylation",
+    "fc 알킬화": "friedel_crafts_alkylation",
+    "fc alkylation": "friedel_crafts_alkylation",
+    "diels-alder": "diels_alder",
+    "diels alder": "diels_alder",
+    "딜스 알더": "diels_alder",
+    "딜스-알더": "diels_alder",
+    "beckmann": "beckmann",
+    "베크만": "beckmann",
+    "curtius": "curtius",
+    "쿠르티우스": "curtius",
+    "michael": "michael_addition",
+    "마이클": "michael_addition",
+    "michael addition": "michael_addition",
+    "wittig": "wittig",
+    "비티히": "wittig",
+    "grignard": "grignard",
+    "그리냐르": "grignard",
+    "suzuki": "suzuki_coupling",
+    "스즈키": "suzuki_coupling",
+    "suzuki coupling": "suzuki_coupling",
+    "heck": "heck_reaction",
+    "헥": "heck_reaction",
+    "heck reaction": "heck_reaction",
+    "cope": "cope_rearrangement",
+    "claisen": "claisen_rearrangement",
+    "클라이젠": "claisen_rearrangement",
+    "ozonolysis": "ozonolysis",
+    "오존분해": "ozonolysis",
+    "br₂ 첨가": "br2_anti_addition",
+    "br2 addition": "br2_anti_addition",
+    "acid hydration": "acid_hydration",
+    "산촉매 수화": "acid_hydration",
+    "탈수": "acid_hydration",
+    "hydration": "acid_hydration",
+    "radical": "radical_halogenation",
+    "라디칼": "radical_halogenation",
+    "nbs": "radical_halogenation",
+    "tosylation": "tosylation",
+    "토실화": "tosylation",
+    "oxidation": "oxidation",
+    "산화": "oxidation",
+    "dess-martin": "dess_martin",
+    "swern": "swern_oxidation",
+    "swern oxidation": "swern_oxidation",
+    "스원 산화": "swern_oxidation",
+    "robinson": "robinson_annulation",
+    "robinson annulation": "robinson_annulation",
+    "로빈슨": "robinson_annulation",
+    "로빈슨 환화": "robinson_annulation",
+    "favorskii": "favorskii_rearrangement",
+    "favorskii rearrangement": "favorskii_rearrangement",
+    "파보르스키": "favorskii_rearrangement",
+    "파보르스키 자리옮김": "favorskii_rearrangement",
+    "reduction": "clemmensen_reduction",
+    "환원": "clemmensen_reduction",
+    "에폭시화 (친전자)": "electrophilic_addition",
+    "epoxidation (ea)": "electrophilic_addition",
+    "hbr 첨가": "electrophilic_addition",
+    "hcl 첨가": "electrophilic_addition",
+    "gabriel": "gabriel",
+    "가브리엘": "gabriel",
+    "appel": "appel",
+    "아펠": "appel",
+    "birch": "birch_reduction",
+    "버치": "birch_reduction",
+    "buchwald": "buchwald_hartwig",
+    "부흐발트": "buchwald_hartwig",
+    "baeyer-villiger": "baeyer_villiger",
+    "바이어-빌리거": "baeyer_villiger",
+    "henry": "henry_reaction",
+    "헨리": "henry_reaction",
+    # 산촉매 에스터 가수분해
+    "ester hydrolysis": "acid_ester_hydrolysis",
+    "에스터 가수분해": "acid_ester_hydrolysis",
+    "acid ester hydrolysis": "acid_ester_hydrolysis",
+    "산촉매 가수분해": "acid_ester_hydrolysis",
+    "가수분해": "acid_ester_hydrolysis",
+    "hydrolysis": "acid_ester_hydrolysis",
+    # 알돌 축합
+    "aldol": "aldol_condensation",
+    "aldol condensation": "aldol_condensation",
+    "알돌": "aldol_condensation",
+    "알돌 축합": "aldol_condensation",
+    "aldol addition": "aldol_condensation",
+    # EAS 브롬화 (특이적)
+    "eas bromination": "eas_bromination",
+    "eas 브롬화": "eas_bromination",
+    "bromination": "eas_bromination",
+    "브롬화": "eas_bromination",
+    # Claisen 축합
+    "claisen condensation": "claisen_condensation",
+    "claisen 축합": "claisen_condensation",
+    "클라이젠 축합": "claisen_condensation",
+    # Wolff-Kishner 환원
+    "wolff-kishner": "wolff_kishner",
+    "wolff kishner": "wolff_kishner",
+    "울프-키슈너": "wolff_kishner",
+    "울프 키슈너": "wolff_kishner",
+    # Pinacol 전위
+    "pinacol": "pinacol",
+    "pinacol rearrangement": "pinacol",
+    "피나콜": "pinacol",
+    "피나콜 전위": "pinacol",
+    # Hofmann 전위
+    "hofmann": "hofmann",
+    "hofmann rearrangement": "hofmann",
+    "호프만": "hofmann",
+    "호프만 전위": "hofmann",
+    # Cope 제거
+    "cope elimination": "cope_elimination",
+    "cope 제거": "cope_elimination",
+    "코프": "cope_elimination",
+    "코프 제거": "cope_elimination",
+    # Baeyer-Villiger 산화 (추가 한국어)
+    "baeyer villiger": "baeyer_villiger",
+    "바이어 빌리거": "baeyer_villiger",
+    # Diels-Alder (추가 한국어)
+    "딜스알더": "diels_alder",
+    # Grignard (추가 한국어)
+    "grignard reaction": "grignard",
+    "그리냐르 반응": "grignard",
+    # Wittig (추가 한국어)
+    "wittig reaction": "wittig",
+    "비티히 반응": "wittig",
+    # Beckmann (추가 한국어)
+    "beckmann rearrangement": "beckmann",
+    "베크만 전위": "beckmann",
+    # Curtius (추가 한국어)
+    "curtius rearrangement": "curtius",
+    "커티우스": "curtius",
+    "커티우스 전위": "curtius",
+    # Epoxide ring opening (산촉매/염기촉매)
+    "epoxide opening": "epoxide_acid_opening",
+    "에폭시드 개환": "epoxide_acid_opening",
+    "에폭시 개환": "epoxide_acid_opening",
+    "epoxide acid opening": "epoxide_acid_opening",
+    "epoxide base opening": "epoxide_base_opening",
+    "에폭시드 염기 개환": "epoxide_base_opening",
+    # Cannizzaro 반응
+    "cannizzaro": "cannizzaro",
+    "칸니자로": "cannizzaro",
+    "cannizzaro reaction": "cannizzaro",
+    "칸니자로 반응": "cannizzaro",
+    "불균등화": "cannizzaro",
+    # 알코올 탈수
+    "alcohol dehydration": "alcohol_dehydration",
+    "알코올 탈수": "alcohol_dehydration",
+    "탈수 반응": "alcohol_dehydration",
+    "dehydration": "alcohol_dehydration",
+    # 할로하이드린 형성
+    "halohydrin": "halohydrin_formation",
+    "halohydrin formation": "halohydrin_formation",
+    "할로하이드린": "halohydrin_formation",
+    "할로하이드린 형성": "halohydrin_formation",
+    "bromohydrin": "halohydrin_formation",
+    "브로모하이드린": "halohydrin_formation",
+    # mCPBA 에폭시화
+    "epoxidation": "mcpba_epoxidation",
+    "mcpba epoxidation": "mcpba_epoxidation",
+    "에폭시화": "mcpba_epoxidation",
+    "mcpba": "mcpba_epoxidation",
+    # Fischer 에스터화
+    "fischer esterification": "fischer_esterification",
+    "피셔 에스터화": "fischer_esterification",
+    "피셔": "fischer_esterification",
+    # NaBH4 환원
+    "nabh4": "nabh4_reduction",
+    "nabh4 reduction": "nabh4_reduction",
+    "sodium borohydride": "nabh4_reduction",
+    "소듐 보로하이드라이드": "nabh4_reduction",
+    "보로하이드라이드 환원": "nabh4_reduction",
+    "NaBH4 환원": "nabh4_reduction",
+    # LiAlH4 환원
+    "lialh4": "lialh4_reduction",
+    "lialh4 reduction": "lialh4_reduction",
+    "lithium aluminium hydride": "lialh4_reduction",
+    "리튬 알루미늄 하이드라이드": "lialh4_reduction",
+    "LiAlH4 환원": "lialh4_reduction",
+    # 촉매적 수소화
+    "catalytic hydrogenation": "catalytic_hydrogenation",
+    "수소화": "catalytic_hydrogenation",
+    "촉매적 수소화": "catalytic_hydrogenation",
+    "hydrogenation": "catalytic_hydrogenation",
+    # PCC 산화
+    "pcc": "pcc_oxidation",
+    "pcc oxidation": "pcc_oxidation",
+    "pcc 산화": "pcc_oxidation",
+    "pyridinium chlorochromate": "pcc_oxidation",
+    # Williamson 에테르 합성
+    "williamson ether": "williamson_ether",
+    "williamson ether synthesis": "williamson_ether",
+    "윌리엄슨": "williamson_ether",
+    "윌리엄슨 에테르": "williamson_ether",
+    "에테르 합성": "williamson_ether",
+    # 아세탈 형성
+    "acetal": "acetal_formation",
+    "acetal formation": "acetal_formation",
+    "acetal protection": "acetal_formation",
+    "아세탈": "acetal_formation",
+    "아세탈 형성": "acetal_formation",
+    "아세탈 보호": "acetal_formation",
+    "카르보닐 보호": "acetal_formation",
+    # 이민 형성 (Schiff 염기)
+    "imine": "imine_formation",
+    "imine formation": "imine_formation",
+    "schiff base": "imine_formation",
+    "이민": "imine_formation",
+    "이민 형성": "imine_formation",
+    "쉬프 염기": "imine_formation",
+    # 엔아민 형성 (Stork)
+    "enamine": "enamine_formation",
+    "enamine formation": "enamine_formation",
+    "stork enamine": "enamine_formation",
+    "stork": "enamine_formation",
+    "엔아민": "enamine_formation",
+    "에나민": "enamine_formation",
+    "엔아민 형성": "enamine_formation",
+    "스토크": "enamine_formation",
+    "스토크 에나민": "enamine_formation",
+    # Hell-Volhard-Zelinsky
+    "hvz": "hell_volhard_zelinsky",
+    "hell-volhard-zelinsky": "hell_volhard_zelinsky",
+    "hell volhard zelinsky": "hell_volhard_zelinsky",
+    "헬-볼하르트-젤린스키": "hell_volhard_zelinsky",
+    "alpha halogenation": "hell_volhard_zelinsky",
+    "알파 할로겐화": "hell_volhard_zelinsky",
+    # 말론산 에스터 합성
+    "malonic ester": "malonic_ester_synthesis",
+    "malonic ester synthesis": "malonic_ester_synthesis",
+    "말론산 에스터": "malonic_ester_synthesis",
+    "말론산 에스터 합성": "malonic_ester_synthesis",
+    "말론산 합성": "malonic_ester_synthesis",
+    # Friedel-Crafts 아실화
+    "friedel-crafts acylation": "friedel_crafts_acylation",
+    "friedel crafts acylation": "friedel_crafts_acylation",
+    "fc acylation": "friedel_crafts_acylation",
+    "fc 아실화": "friedel_crafts_acylation",
+    "프리델-크래프츠 아실화": "friedel_crafts_acylation",
+    "프리델 크래프츠 아실화": "friedel_crafts_acylation",
+    "아실화": "friedel_crafts_acylation",
+    # Oxymercuration
+    "oxymercuration": "oxymercuration",
+    "oxymercuration-demercuration": "oxymercuration",
+    "산화수은 수화": "oxymercuration",
+    "옥시머큐레이션": "oxymercuration",
+    "머큐레이션": "oxymercuration",
+    # Anti-Markovnikov 라디칼 HBr
+    "anti-markovnikov": "anti_markovnikov_addition",
+    "anti markovnikov": "anti_markovnikov_addition",
+    "anti-markovnikov addition": "anti_markovnikov_addition",
+    "라디칼 hbr": "anti_markovnikov_addition",
+    "과산화물 효과": "anti_markovnikov_addition",
+    "카라시 효과": "anti_markovnikov_addition",
+    "kharasch": "anti_markovnikov_addition",
+    # Hofmann 제거 (4차 암모늄)
+    "hofmann elimination": "hofmann_elimination",
+    "hofmann 제거": "hofmann_elimination",
+    "호프만 제거": "hofmann_elimination",
+    "호프만 탈리": "hofmann_elimination",
+    "4차 암모늄 제거": "hofmann_elimination",
+    "exhaustive methylation": "hofmann_elimination",
+    # Horner-Wadsworth-Emmons
+    "hwe": "horner_wadsworth_emmons",
+    "horner-wadsworth-emmons": "horner_wadsworth_emmons",
+    "horner wadsworth emmons": "horner_wadsworth_emmons",
+    "호너-워즈워스-에몬스": "horner_wadsworth_emmons",
+    "호너 워즈워스 에몬스": "horner_wadsworth_emmons",
+    # Fischer 인돌 합성
+    "fischer indole": "fischer_indole",
+    "fischer indole synthesis": "fischer_indole",
+    "피셔 인돌": "fischer_indole",
+    "피셔 인돌 합성": "fischer_indole",
+    # Diazotization
+    "diazotization": "diazotization",
+    "디아조화": "diazotization",
+    "디아조화 반응": "diazotization",
+    "디아조늄": "diazotization",
+    # Fries 자리옮김
+    "fries": "fries_rearrangement",
+    "fries rearrangement": "fries_rearrangement",
+    "프리스": "fries_rearrangement",
+    "프리스 자리옮김": "fries_rearrangement",
+    "프리스 전위": "fries_rearrangement",
+    # Arndt-Eistert
+    "arndt-eistert": "arndt_eistert",
+    "arndt eistert": "arndt_eistert",
+    "아른트-아이스테르트": "arndt_eistert",
+    "아른트 아이스테르트": "arndt_eistert",
+    "동족산 합성": "arndt_eistert",
+    "homologation": "arndt_eistert",
+    # Yamaguchi 에스터화
+    "yamaguchi": "yamaguchi_esterification",
+    "yamaguchi esterification": "yamaguchi_esterification",
+    "야마구치": "yamaguchi_esterification",
+    "야마구치 에스터화": "yamaguchi_esterification",
+    "매크로락톤화": "yamaguchi_esterification",
+    "macrolactonization": "yamaguchi_esterification",
+    # Julia 올레핀화
+    "julia": "julia_olefination",
+    "julia olefination": "julia_olefination",
+    "julia-lythgoe": "julia_olefination",
+    "줄리아": "julia_olefination",
+    "줄리아 올레핀화": "julia_olefination",
+    # Pictet-Spengler
+    "pictet-spengler": "pictet_spengler",
+    "pictet spengler": "pictet_spengler",
+    "픽테-스펭글러": "pictet_spengler",
+    "픽테 스펭글러": "pictet_spengler",
+}
+
+# Condition string → mechanism key (fallback when transform name doesn't match)
+_CONDITIONS_TO_MECHANISM: Dict[str, str] = {
+    "H₂SO₄, 가열": "esterification",
+    "NaOH, H₂O": "sn2",
+    "NaOH, EtOH": "sn2",
+    "NaH, THF": "sn2",
+    "NaCN, DMSO": "sn2",
+    "Br₂, FeBr₃": "eas_bromination",
+    "Cl₂, AlCl₃": "eas",
+    "HNO₃, H₂SO₄": "eas_nitration",
+    "AlCl₃, CH₂Cl₂": "friedel_crafts_alkylation",
+    "mCPBA, CH₂Cl₂": "electrophilic_addition",
+    "HBr": "electrophilic_addition",
+    "HCl": "electrophilic_addition",
+    "Br₂, CCl₄": "br2_anti_addition",
+    "DCC 또는 가열": "amidation",
+    "SOCl₂": "amidation",
+    "Pd(PPh₃)₄, Na₂CO₃": "suzuki_coupling",
+    "Pd(OAc)₂, PPh₃, Et₃N": "heck_reaction",
+    "O₃, DMS": "ozonolysis",
+    "O₃, Me₂S": "ozonolysis",
+    "PPh₃, CBr₄": "appel",
+    "Na, NH₃(l)": "birch_reduction",
+    "Li, NH₃(l)": "birch_reduction",
+    "Pd₂(dba)₃": "buchwald_hartwig",
+    "m-CPBA": "baeyer_villiger",
+    "Zn(Hg), HCl": "clemmensen_reduction",
+    "NH₂NH₂, KOH": "wolff_kishner",
+    "(COCl)₂, DMSO, Et₃N": "swern_oxidation",
+    "DMSO, (COCl)₂": "swern_oxidation",
+    "MVK, KOH": "robinson_annulation",
+    "NaOEt, EtOH": "favorskii_rearrangement",
+    "NaOMe, MeOH": "favorskii_rearrangement",
+    # 산촉매 에스터 가수분해
+    "H₂SO₄, H₂O": "acid_ester_hydrolysis",
+    "HCl, H₂O": "acid_ester_hydrolysis",
+    "H₃O⁺": "acid_ester_hydrolysis",
+    # 알돌 축합
+    "NaOH, Δ": "aldol_condensation",
+    "NaOH, H₂O, Δ": "aldol_condensation",
+    "NaOH(cat), H₂O": "aldol_condensation",
+    "NaOH(cat), H₂O, Δ": "aldol_condensation",
+    "LDA, THF, -78°C": "aldol_condensation",
+    # Claisen 축합
+    "NaOEt, EtOH, Δ": "claisen_condensation",
+    "NaOMe, MeOH, Δ": "claisen_condensation",
+    # EAS 브롬화
+    "Br₂, AlBr₃": "eas_bromination",
+    "Br₂, AlCl₃": "eas_bromination",
+    # Wolff-Kishner 환원
+    "NH₂NH₂, KOH, Δ": "wolff_kishner",
+    "NH₂NH₂, NaOH": "wolff_kishner",
+    "NH₂NH₂, KOH, 에틸렌글리콜": "wolff_kishner",
+    "N₂H₄, KOH": "wolff_kishner",
+    # Pinacol 전위
+    "H₂SO₄": "pinacol",
+    "H₃PO₄": "pinacol",
+    # Hofmann 전위
+    "Br₂, NaOH": "hofmann",
+    "NaOBr": "hofmann",
+    # Cope 제거
+    "mCPBA, Δ": "cope_elimination",
+    "H₂O₂, Δ": "cope_elimination",
+    # Curtius 전위 (아실 아지드 조건)
+    "NaN₃, 가열": "curtius",
+    "DPPA, Et₃N": "curtius",
+    # Beckmann 전위
+    "H₂SO₄, Δ": "beckmann",
+    "PCl₅": "beckmann",
+    # Baeyer-Villiger 산화
+    "mCPBA": "baeyer_villiger",
+    # Epoxide ring opening — substrate hint variants (English + Korean)
+    "H₃O⁺, H₂O (에폭시드)": "epoxide_acid_opening",
+    "H₃O⁺, H₂O (epoxide)": "epoxide_acid_opening",
+    "H₂SO₄, H₂O (에폭시드)": "epoxide_acid_opening",
+    "H₂SO₄, H₂O (epoxide)": "epoxide_acid_opening",
+    "NaOH, H₂O (에폭시드)": "epoxide_base_opening",
+    "NaOH, H₂O (epoxide)": "epoxide_base_opening",
+    "NaOMe, MeOH (에폭시드)": "epoxide_base_opening",
+    "NaOMe, MeOH (epoxide)": "epoxide_base_opening",
+    # Cannizzaro — substrate hint variants (English + Korean)
+    "NaOH, H₂O (알데하이드)": "cannizzaro",
+    "NaOH, H₂O (aldehyde)": "cannizzaro",
+    "NaOH, H₂O (알데히드)": "cannizzaro",
+    "KOH, H₂O (알데하이드)": "cannizzaro",
+    "KOH, H₂O (aldehyde)": "cannizzaro",
+    "NaOH(conc), H₂O": "cannizzaro",
+    "NaOH(conc), H₂O, 가열": "cannizzaro",
+    # Alcohol dehydration
+    "H₂SO₄, Δ (알코올)": "alcohol_dehydration",
+    "H₃PO₄, Δ": "alcohol_dehydration",
+    "Al₂O₃, Δ": "alcohol_dehydration",
+    # Halohydrin formation
+    "Br₂, H₂O": "halohydrin_formation",
+    "Cl₂, H₂O": "halohydrin_formation",
+    "NBS, H₂O": "halohydrin_formation",
+    # mCPBA epoxidation — substrate hint variants
+    "mCPBA, CH₂Cl₂ (알켄)": "mcpba_epoxidation",
+    "mCPBA, CH₂Cl₂ (alkene)": "mcpba_epoxidation",
+    "MMPP": "mcpba_epoxidation",
+    # Fischer esterification
+    "H₂SO₄, ROH": "fischer_esterification",
+    "H⁺, MeOH": "fischer_esterification",
+    "H⁺, EtOH": "fischer_esterification",
+    "H₂SO₄, MeOH": "fischer_esterification",
+    "H₂SO₄, EtOH": "fischer_esterification",
+    # NaBH4 환원
+    "NaBH₄, MeOH": "nabh4_reduction",
+    "NaBH₄, EtOH": "nabh4_reduction",
+    "NaBH₄": "nabh4_reduction",
+    "NaBH₄, MeOH, 0°C": "nabh4_reduction",
+    # LiAlH4 환원
+    "LiAlH₄, Et₂O": "lialh4_reduction",
+    "LiAlH₄, THF": "lialh4_reduction",
+    "LiAlH₄": "lialh4_reduction",
+    # 촉매적 수소화
+    "H₂, Pd/C": "catalytic_hydrogenation",
+    "H₂, Pd": "catalytic_hydrogenation",
+    "H₂, Pt": "catalytic_hydrogenation",
+    "H₂, PtO₂": "catalytic_hydrogenation",
+    "H₂, Ni": "catalytic_hydrogenation",
+    "H₂, Pd/C, EtOH": "catalytic_hydrogenation",
+    "H₂, Lindlar": "catalytic_hydrogenation",
+    # PCC 산화
+    "PCC, CH₂Cl₂": "pcc_oxidation",
+    "PCC": "pcc_oxidation",
+    # Williamson 에테르 합성
+    "NaH, R-X": "williamson_ether",
+    "NaH, THF, R-X": "williamson_ether",
+    # 아세탈 형성
+    "R'OH, H⁺": "acetal_formation",
+    "HOCH₂CH₂OH, H⁺": "acetal_formation",
+    "MeOH, H⁺, Dean-Stark": "acetal_formation",
+    "p-TsOH, ROH": "acetal_formation",
+    # 이민 형성
+    "R'NH₂, H⁺": "imine_formation",
+    "RNH₂, pH 4-5": "imine_formation",
+    # 엔아민 형성
+    "피롤리딘, p-TsOH": "enamine_formation",
+    "모르폴린, p-TsOH": "enamine_formation",
+    "R₂NH, H⁺, Dean-Stark": "enamine_formation",
+    # HVZ 반응
+    "Br₂, PBr₃": "hell_volhard_zelinsky",
+    "Br₂, P": "hell_volhard_zelinsky",
+    "Cl₂, PCl₃": "hell_volhard_zelinsky",
+    # 말론산 에스터 합성
+    "NaOEt, EtOH, R-X": "malonic_ester_synthesis",
+    "CH₂(CO₂Et)₂, NaOEt": "malonic_ester_synthesis",
+    # Friedel-Crafts 아실화
+    "RCOCl, AlCl₃": "friedel_crafts_acylation",
+    "CH₃COCl, AlCl₃": "friedel_crafts_acylation",
+    "AlCl₃, RCOCl": "friedel_crafts_acylation",
+    "(RCO)₂O, AlCl₃": "friedel_crafts_acylation",
+    # Oxymercuration
+    "Hg(OAc)₂, H₂O, NaBH₄": "oxymercuration",
+    "Hg(OAc)₂, THF/H₂O": "oxymercuration",
+    "Hg(OAc)₂, NaBH₄": "oxymercuration",
+    # Anti-Markovnikov HBr
+    "HBr, ROOR": "anti_markovnikov_addition",
+    "HBr, 과산화물": "anti_markovnikov_addition",
+    "HBr, hν": "anti_markovnikov_addition",
+    # Hofmann 제거
+    "CH₃I (과량), Ag₂O, Δ": "hofmann_elimination",
+    "Me₃N⁺, OH⁻, Δ": "hofmann_elimination",
+    # HWE
+    "(EtO)₂P(O)CH₂CO₂Et, NaH": "horner_wadsworth_emmons",
+    "NaH, 포스포네이트": "horner_wadsworth_emmons",
+    "n-BuLi, 포스포네이트": "horner_wadsworth_emmons",
+    # Fischer 인돌
+    "PhNHNH₂, H⁺, Δ": "fischer_indole",
+    "페닐히드라진, HCl": "fischer_indole",
+    "ArNHNH₂, 산촉매": "fischer_indole",
+    # Diazotization — with plain "0C" variant for ASCII input
+    "NaNO₂, HCl, 0°C": "diazotization",
+    "NaNO₂, HCl, 0C": "diazotization",
+    "NaNO₂, H₂SO₄, 0°C": "diazotization",
+    "NaNO₂, H₂SO₄, 0C": "diazotization",
+    "NaNO₂, HBF₄": "diazotization",
+    # Fries 자리옮김
+    "AlCl₃, Δ (페놀 에스터)": "fries_rearrangement",
+    "AlCl₃ (페놀 에스터)": "fries_rearrangement",
+    # Arndt-Eistert
+    "SOCl₂, CH₂N₂, Ag₂O": "arndt_eistert",
+    "CH₂N₂, Ag₂O, H₂O": "arndt_eistert",
+    "TMSCHN₂, Ag₂O": "arndt_eistert",
+    # Yamaguchi
+    "2,4,6-Cl₃C₆H₂COCl, Et₃N, DMAP": "yamaguchi_esterification",
+    "Yamaguchi 시약, DMAP": "yamaguchi_esterification",
+    # Julia 올레핀화
+    "PhSO₂CH₂R, n-BuLi": "julia_olefination",
+    "n-BuLi, Na/Hg": "julia_olefination",
+    # Pictet-Spengler
+    "RCHO, TFA": "pictet_spengler",
+    "RCHO, AcOH, Δ": "pictet_spengler",
+    # --- Grignard multi-step conditions ---
+    "1) RMgBr/THF  2) H₃O⁺": "grignard",
+    "1) RMgBr, THF  2) H₃O⁺": "grignard",
+    "RMgBr, THF, H₃O⁺": "grignard",
+    "RMgBr/THF, H₃O⁺": "grignard",
+    # --- Beckmann "or" variant (Korean + English) ---
+    "H₂SO₄ 또는 PCl₅": "beckmann",
+    "H₂SO₄ or PCl₅": "beckmann",
+    # --- E2 with named base ---
+    "t-BuOK, E2": "e2",
+    "t-BuOK": "e2",
+    "KOtBu": "e2",
+    "KOtBu, E2": "e2",
+    # --- Dilute acid hydrolysis variants ---
+    "H₂SO₄(묽), 가열": "acid_ester_hydrolysis",
+    "H₂SO₄ (dilute), 가열": "acid_ester_hydrolysis",
+    "H₂SO₄ (dilute), heat": "acid_ester_hydrolysis",
+    "H₂SO₄(dilute), heat": "acid_ester_hydrolysis",
+}
+
 # Pauling electronegativity (주요 원소)
 _ELECTRONEG = {
     1: 2.20,   # H
@@ -96,11 +649,63 @@ _ELECTRONEG = {
 
 def _has_leaving_group(mol, atom_idx: int) -> bool:
     """원자에 이탈기가 연결되어 있는지"""
+    # Rule N: 타입 가드
+    if mol is None:
+        return False
+    if not isinstance(atom_idx, int):
+        try:
+            atom_idx = int(atom_idx)
+        except (ValueError, TypeError):
+            return False
+    if atom_idx < 0 or atom_idx >= mol.GetNumAtoms():
+        return False
     atom = mol.GetAtomWithIdx(atom_idx)
     for n in atom.GetNeighbors():
         if n.GetAtomicNum() in LEAVING_GROUPS:
             return True
     return False
+
+
+# ============================================================================
+# UNICODE ↔ ASCII NORMALIZATION FOR CONDITION MATCHING
+# Converts Unicode subscripts/superscripts/special chars to ASCII equivalents
+# so that both "NaBH₄, MeOH" and "NaBH4, MeOH" match the same key.
+# ============================================================================
+
+_UNICODE_TO_ASCII = {
+    '\u2080': '0', '\u2081': '1', '\u2082': '2', '\u2083': '3',
+    '\u2084': '4', '\u2085': '5', '\u2086': '6', '\u2087': '7',
+    '\u2088': '8', '\u2089': '9',  # subscript digits
+    '\u2070': '0', '\u00b9': '1', '\u00b2': '2', '\u00b3': '3',
+    '\u2074': '4', '\u2075': '5', '\u2076': '6', '\u2077': '7',
+    '\u2078': '8', '\u2079': '9',  # superscript digits
+    '\u207a': '+', '\u207b': '-',  # superscript +/-
+    '\u00b0': '',  # degree sign — strip for matching (0°C → 0C)
+    '\u0394': 'delta',  # Greek capital delta (Δ)
+    '\u2103': 'C',  # degree Celsius
+}
+
+
+def _normalize_to_ascii(text: str) -> str:
+    """Unicode subscript/superscript/special → ASCII 변환.
+
+    예: "NaBH₄, MeOH" → "NaBH4, MeOH"
+        "H₂SO₄, Δ" → "H2SO4, delta"
+    """
+    result = []
+    for ch in text:
+        if ch in _UNICODE_TO_ASCII:
+            result.append(_UNICODE_TO_ASCII[ch])
+        else:
+            result.append(ch)
+    return ''.join(result)
+
+
+# Pre-build ASCII-normalized lookup table for conditions
+# Maps normalized(key) → mechanism_key for O(1) lookup of ASCII inputs
+_CONDITIONS_ASCII_NORMALIZED: Dict[str, str] = {
+    _normalize_to_ascii(k): v for k, v in _CONDITIONS_TO_MECHANISM.items()
+}
 
 
 # ============================================================================
@@ -123,11 +728,82 @@ class MechanismEngine:
         self._detector = BondChangeDetector()
         self._arrow_gen = ArrowGenerator(orca_available=_check_orca())
 
+    @staticmethod
+    def _infer_mechanism_type(transform_name: str = "",
+                               conditions: str = "") -> str:
+        """Transform 이름 또는 조건 문자열에서 mechanism key 추론.
+
+        1차: transform_name의 부분 문자열을 _TRANSFORM_TO_MECHANISM에서 매칭
+        2차: conditions를 _CONDITIONS_TO_MECHANISM에서 정확/부분 매칭
+        매칭 실패 시 빈 문자열 반환.
+        """
+        # Rule N: 타입 가드
+        if not isinstance(transform_name, str):
+            transform_name = str(transform_name) if transform_name is not None else ""
+        if not isinstance(conditions, str):
+            conditions = str(conditions) if conditions is not None else ""
+
+        # Normalize: lowercase, strip whitespace
+        tn_lower = transform_name.lower().strip()
+        cond_stripped = conditions.strip()
+
+        # 1차: transform name matching (longest match first for accuracy)
+        if tn_lower:
+            # Try exact match first
+            if tn_lower in _TRANSFORM_TO_MECHANISM:
+                return _TRANSFORM_TO_MECHANISM[tn_lower]
+            # Try substring matching — check if any key is contained in the name
+            best_key = ""
+            best_len = 0
+            for pattern, mech_key in _TRANSFORM_TO_MECHANISM.items():
+                if pattern in tn_lower and len(pattern) > best_len:
+                    best_key = mech_key
+                    best_len = len(pattern)
+            if best_key:
+                return best_key
+
+        # 2차: conditions matching
+        if cond_stripped:
+            # Exact match (Unicode)
+            if cond_stripped in _CONDITIONS_TO_MECHANISM:
+                return _CONDITIONS_TO_MECHANISM[cond_stripped]
+
+            # Exact match (ASCII-normalized fallback)
+            # Handles cases where user/code passes "NaBH4, MeOH" instead of "NaBH₄, MeOH"
+            cond_ascii = _normalize_to_ascii(cond_stripped)
+            if cond_ascii in _CONDITIONS_ASCII_NORMALIZED:
+                return _CONDITIONS_ASCII_NORMALIZED[cond_ascii]
+
+            # Substring match (longest match first for specificity)
+            # e.g. "NaOH, H₂O (aldehyde)" must match cannizzaro, not sn2
+            best_key = ""
+            best_len = 0
+            for cond_pattern, mech_key in _CONDITIONS_TO_MECHANISM.items():
+                if cond_pattern in cond_stripped and len(cond_pattern) > best_len:
+                    best_key = mech_key
+                    best_len = len(cond_pattern)
+            if best_key:
+                return best_key
+
+            # Substring match (ASCII-normalized fallback, longest first)
+            best_key = ""
+            best_len = 0
+            for cond_pattern_ascii, mech_key in _CONDITIONS_ASCII_NORMALIZED.items():
+                if cond_pattern_ascii in cond_ascii and len(cond_pattern_ascii) > best_len:
+                    best_key = mech_key
+                    best_len = len(cond_pattern_ascii)
+            if best_key:
+                return best_key
+
+        return ""
+
     def generate_mechanism(self,
                             reactant_smiles: str,
                             product_smiles: str = "",
                             reagent_smiles: str = "",
-                            mechanism_type_hint: str = "") -> Optional[MechanismData]:
+                            mechanism_type_hint: str = "",
+                            transform_name: str = "",
+                            conditions: str = "") -> Optional[MechanismData]:
         """
         반응 메커니즘 생성 (메인 진입점).
 
@@ -136,20 +812,81 @@ class MechanismEngine:
             product_smiles: 생성물 SMILES (빈 문자열이면 예측 시도)
             reagent_smiles: 시약 SMILES (옵션)
             mechanism_type_hint: 메커니즘 유형 힌트 (e.g. "sn2")
+            transform_name: 역합성 변환 이름 (e.g. "Fischer 에스터 역합성")
+            conditions: 반응 조건 문자열 (e.g. "H₂SO₄, 가열")
 
         Returns:
             MechanismData or None
         """
+        # Rule N: 외부 입력 타입 가드 — str 아닌 값이 올 수 있음
+        if not isinstance(reactant_smiles, str):
+            logger.warning("reactant_smiles is not str: %s (%s)",
+                           reactant_smiles, type(reactant_smiles).__name__)
+            reactant_smiles = str(reactant_smiles) if reactant_smiles is not None else ""
+        if not isinstance(product_smiles, str):
+            logger.warning("product_smiles is not str: %s (%s)",
+                           product_smiles, type(product_smiles).__name__)
+            product_smiles = str(product_smiles) if product_smiles is not None else ""
+        if not isinstance(reagent_smiles, str):
+            logger.warning("reagent_smiles is not str: %s (%s)",
+                           reagent_smiles, type(reagent_smiles).__name__)
+            reagent_smiles = str(reagent_smiles) if reagent_smiles is not None else ""
+        if not isinstance(mechanism_type_hint, str):
+            logger.warning("mechanism_type_hint is not str: %s (%s)",
+                           mechanism_type_hint, type(mechanism_type_hint).__name__)
+            mechanism_type_hint = str(mechanism_type_hint) if mechanism_type_hint is not None else ""
+        if not isinstance(transform_name, str):
+            logger.warning("transform_name is not str: %s (%s)",
+                           transform_name, type(transform_name).__name__)
+            transform_name = str(transform_name) if transform_name is not None else ""
+        if not isinstance(conditions, str):
+            logger.warning("conditions is not str: %s (%s)",
+                           conditions, type(conditions).__name__)
+            conditions = str(conditions) if conditions is not None else ""
+
         if not RDKIT_AVAILABLE:
             logger.warning("RDKit not available - MechanismEngine disabled")
             return None
 
         # ─── 1. 하드코딩 gold standard 확인 ───
+        # [M157 FIX] 반드시 deepcopy 후 반환 — 원본 MECHANISMS 딕셔너리 변경 방지.
+        # generate_intermolecular_mechanism이 step.arrows를 in-place 수정하므로,
+        # 공유 참조를 그대로 반환하면 다음 호출 시 인덱스가 이중 재매핑되어 오역됨.
+        import copy as _copy
+
+        # M433 DEFECT-2: 페리사이클릭 우선 가드
+        # 페리사이클릭/협동 반응(Diels-Alder, 1,3-쌍극자 등)은
+        # 친전자/친핵 분류 로직을 타면 잘못된 단계 분해가 일어남.
+        # gold standard 탐색 전에 먼저 페리사이클릭 여부를 판별한다.
+        # 규칙: pericyclic hint → gold standard → 없으면 'pericyclic' 태그 유지하여 단계 분해 비활성
+        _PERICYCLIC_HINTS = {
+            "pericyclic", "concerted", "diels_alder", "diels-alder",
+            "cycloaddition_2_2", "cope_rearrangement", "claisen_rearrangement",
+            "ene_reaction", "sigmatropic", "1,3-dipolar", "1,3_dipolar",
+        }
+        _effective_type = mechanism_type_hint.lower().replace(" ", "_") if mechanism_type_hint else ""
+        _is_pericyclic_hint = _effective_type in _PERICYCLIC_HINTS
+
+        # 1a. 명시적 hint가 있으면 직접 조회
         if mechanism_type_hint:
             hardcoded = get_mechanism(mechanism_type_hint)
             if hardcoded:
                 logger.info(f"Gold standard 메커니즘 반환: {mechanism_type_hint}")
-                return hardcoded
+                return _copy.deepcopy(hardcoded)
+
+        # 1b. hint가 없으면 transform_name/conditions에서 추론
+        if not mechanism_type_hint:
+            inferred = self._infer_mechanism_type(transform_name, conditions)
+            # M433 DEFECT-2: 추론된 키도 페리사이클릭 여부 갱신
+            if inferred and inferred in _PERICYCLIC_HINTS:
+                _is_pericyclic_hint = True
+            if inferred:
+                hardcoded = get_mechanism(inferred)
+                if hardcoded:
+                    logger.info(f"Gold standard 메커니즘 추론 반환: "
+                                f"{inferred} (from transform='{transform_name}', "
+                                f"conditions='{conditions}')")
+                    return _copy.deepcopy(hardcoded)
 
         # ─── 2. 생성물 예측 (필요 시) ───
         if not product_smiles:
@@ -161,11 +898,37 @@ class MechanismEngine:
         # ─── 3. 결합 변화 탐지 ───
         result = self._detector.detect(reactant_smiles, product_smiles)
         if result is None or not result.bond_changes:
-            logger.warning("결합 변화 감지 실패 또는 변화 없음")
+            logger.warning("결합 변화 감지 실패 또는 변화 없음 — DFT 폴백 시도")
+
+            # ─── 3b. DFT Quantum Chemistry Fallback (expensive but rigorous) ───
+            # When the rule engine cannot determine bond changes, fall back to
+            # actual quantum mechanical calculation via ORCA DFT.
+            try:
+                from mechanism_dft_engine import MechanismDFTEngine
+                dft_engine = MechanismDFTEngine()
+                if dft_engine.is_available:
+                    dft_result = dft_engine.generate(
+                        reactant_smiles, product_smiles, reagent_smiles
+                    )
+                    if dft_result and dft_result.success and dft_result.mechanism_data:
+                        logger.info(
+                            f"DFT mechanism generated: "
+                            f"{len(dft_result.intermediates)} intermediates, "
+                            f"{len(dft_result.transition_states)} TSs"
+                        )
+                        return dft_result.mechanism_data
+            except Exception as e:
+                logger.debug(f"DFT engine not available: {e}")
+
             return None
 
         # ─── 4. 다단계 분해 여부 결정 ───
-        step_groups = self._decompose_into_steps(result)
+        # M433 DEFECT-2: 페리사이클릭 hint일 때 → 단일 단계 협주 반응 강제
+        if _is_pericyclic_hint:
+            logger.debug("페리사이클릭 hint(%s) → 단일 단계 협주 분해 강제", _effective_type)
+            step_groups = [(result.bond_changes, "페리사이클릭 협주 반응: 전자가 고리형 전이 상태를 통해 동시 재배열")]
+        else:
+            step_groups = self._decompose_into_steps(result)
 
         # ─── 5. 각 단계별 화살표 생성 ───
         mechanism_steps: List[MechanismStep] = []
@@ -235,6 +998,183 @@ class MechanismEngine:
         return mech
 
     # ────────────────────────────────────────────────────────────────────
+    # Intermolecular Mechanism (multi-fragment list → remapped arrows)
+    # ────────────────────────────────────────────────────────────────────
+
+    def generate_intermolecular_mechanism(self,
+                                          reactant_smiles_list: list,
+                                          product_smiles: str,
+                                          transform_name: str = "",
+                                          conditions: str = "") -> Optional["MechanismData"]:
+        """분자간 반응 메커니즘 생성: 반응물 목록 순서를 유지한 채 원자 인덱스 재매핑.
+
+        합성경로 팝업(popup_synthesis.py)의 SynthesisStep.reactant_smiles 목록을
+        받아서 결합된 SMILES의 실제 원자 인덱스에 맞게 금 표준 화살표를 재매핑합니다.
+
+        문제:
+          금 표준 SN2는 "CBr.[OH-]" 순서의 인덱스(C=0, Br=1, O=2)로 고정.
+          그러나 합성 단계의 reactant_smiles = ["[OH-]", "CBr"] 이면
+          결합 SMILES "OH].[CBr]" 의 인덱스(O=0, C=1, Br=2)가 달라져 화살표가 오역됨.
+
+        해결:
+          1) 실제 combined SMILES(목록 순서)로 mol 생성 → 실제 원자 인덱스 확보
+          2) 금 표준 template mol 서브구조 매칭으로 각 원자의 실제 인덱스 계산
+          3) ArrowData.from_atom_idx / to_atom_idx 를 실제 인덱스로 교체한 사본 반환
+
+        Args:
+            reactant_smiles_list: 반응물 SMILES 목록 (순서 중요)
+            product_smiles: 생성물 SMILES
+            transform_name: 변환 이름 (금 표준 매칭용)
+            conditions: 반응 조건 (금 표준 매칭용)
+
+        Returns:
+            MechanismData (인덱스 재매핑 완료) 또는 None
+        """
+        if not RDKIT_AVAILABLE:
+            return None
+        # Rule N: 타입 가드
+        if not isinstance(reactant_smiles_list, list):
+            logger.warning("generate_intermolecular_mechanism: reactant_smiles_list is not list: %s",
+                           type(reactant_smiles_list).__name__)
+            reactant_smiles_list = [reactant_smiles_list] if reactant_smiles_list else []
+        if not isinstance(product_smiles, str):
+            product_smiles = str(product_smiles) if product_smiles is not None else ""
+
+        # 유효 SMILES만 필터링 (Rule L)
+        valid_smiles = []
+        for s in reactant_smiles_list:
+            if not s or not isinstance(s, str):
+                continue
+            mol_check = Chem.MolFromSmiles(s)
+            if mol_check is None:
+                logger.warning("generate_intermolecular_mechanism: invalid SMILES skipped: %s", s)
+                continue
+            valid_smiles.append(s)
+
+        if not valid_smiles:
+            logger.warning("generate_intermolecular_mechanism: no valid reactant SMILES")
+            return None
+
+        # 목록 순서대로 결합 SMILES 구성
+        combined_smi = ".".join(valid_smiles)
+
+        # 기본 메커니즘 생성 (금 표준 우선)
+        mech = self.generate_mechanism(
+            combined_smi, product_smiles,
+            transform_name=transform_name,
+            conditions=conditions,
+        )
+        if mech is None:
+            return None
+
+        # ─── 금 표준 메커니즘의 인덱스 재매핑 ───────────────────────────────
+        # gold standard의 reactant_smiles (예: "CBr.[OH-]") 과
+        # 실제 combined_smi (예: "[OH-].CBr") 는 원자 순서가 다를 수 있다.
+        # rdFMCS / GetSubstructMatch로 금 표준 template → actual molecule 매핑을 구한다.
+        try:
+            actual_mol = Chem.MolFromSmiles(combined_smi)
+            if actual_mol is None:
+                return mech  # 재매핑 불가 → 원본 반환
+
+            actual_mol = Chem.RemoveHs(actual_mol)
+
+            for step in mech.steps:
+                # 금 표준 단계의 reactant_smiles 에서 template mol 생성
+                template_smi = getattr(step, 'reactant_smiles', None)
+                if not template_smi or not isinstance(template_smi, str):
+                    continue
+                template_mol = Chem.MolFromSmiles(template_smi)
+                if template_mol is None:
+                    continue
+                template_mol = Chem.RemoveHs(template_mol)
+
+                # [P0-4 FIX] 원자 수 동일 체크를 완화 — template은 combined_smi의
+                # 부분 구조(subgraph)일 수 있음.
+                # 예: EAS step1 template="BrBr"(2원자) vs actual="c1ccccc1.BrBr"(8원자)
+                # template > actual 인 경우만 불가능하므로 스킵.
+                _t_n = template_mol.GetNumAtoms()
+                _a_n = actual_mol.GetNumAtoms()
+                if _t_n > _a_n:
+                    logger.debug(
+                        "generate_intermolecular_mechanism: template(%d) > actual(%d) "
+                        "— skipping remap for step %d",
+                        _t_n, _a_n, step.step_number)
+                    continue
+
+                # template → actual 서브구조 매칭 (원자 심볼 기반)
+                # useChirality=False, useQueryQueryMatches=False 로 너그럽게
+                match = actual_mol.GetSubstructMatch(template_mol)
+                if not match and _t_n < _a_n:
+                    # [P0-4 FIX] 원소 불일치로 서브구조 매칭 실패한 경우
+                    # (예: 금 표준 "BrBr" vs 실제 "ClCl") → 토폴로지 기반 프래그먼트 오프셋 매칭
+                    # combined_smi 내 fragment 중 template과 원자 수가 같은 것을 찾아 offset 매핑
+                    try:
+                        _frag_mols = Chem.GetMolFrags(actual_mol, asMols=True,
+                                                      sanitizeFrags=False)
+                        _frag_offset = 0
+                        _fallback_match = None
+                        for _fm in _frag_mols:
+                            _fm_n = _fm.GetNumAtoms()
+                            if _fm_n == _t_n:
+                                # 원자 수 일치 → 동일 위치의 분자로 간주
+                                _fallback_match = tuple(_frag_offset + i
+                                                        for i in range(_t_n))
+                                break
+                            _frag_offset += _fm_n
+                        if _fallback_match:
+                            match = _fallback_match
+                            logger.debug(
+                                "generate_intermolecular_mechanism: topology fallback "
+                                "match for step %d (template_n=%d, frag_offset=%d)",
+                                step.step_number, _t_n, _frag_offset)
+                    except Exception as _fe:
+                        logger.debug(
+                            "generate_intermolecular_mechanism: topology fallback "
+                            "error for step %d: %s", step.step_number, _fe)
+
+                if not match and _t_n == _a_n:
+                    # 동일 원자 수지만 서브구조 매칭 실패 — 역방향 시도
+                    rev_match = template_mol.GetSubstructMatch(actual_mol)
+                    if rev_match:
+                        # rev_match[i] = actual의 i번 원자가 template의 어느 인덱스에 해당
+                        # 필요: template_idx → actual_idx 매핑 (역 인버트)
+                        match_list = [None] * _t_n
+                        for actual_i, template_i in enumerate(rev_match):
+                            if template_i < _t_n:
+                                match_list[template_i] = actual_i
+                        if None not in match_list:
+                            match = tuple(match_list)
+
+                if not match:
+                    logger.debug(
+                        "generate_intermolecular_mechanism: substructure match failed "
+                        "for step %d — arrows kept as-is", step.step_number)
+                    continue
+
+                # match[template_idx] = actual_idx
+                # ArrowData 인덱스 재매핑
+                remapped_arrows = []
+                for arrow in step.arrows:
+                    import copy
+                    new_arrow = copy.copy(arrow)
+                    if arrow.from_atom_idx >= 0 and arrow.from_atom_idx < len(match):
+                        new_arrow.from_atom_idx = match[arrow.from_atom_idx]
+                    if arrow.to_atom_idx >= 0 and arrow.to_atom_idx < len(match):
+                        new_arrow.to_atom_idx = match[arrow.to_atom_idx]
+                    remapped_arrows.append(new_arrow)
+                step.arrows = remapped_arrows
+                logger.debug(
+                    "generate_intermolecular_mechanism: remapped %d arrows for step %d "
+                    "(template='%s' → actual='%s')",
+                    len(remapped_arrows), step.step_number, template_smi, combined_smi)
+
+        except Exception as e:
+            logger.warning("generate_intermolecular_mechanism: remap error: %s", e)
+            # 재매핑 실패 시 원본 메커니즘 반환 (화살표가 잘못될 수 있지만 크래시는 막음)
+
+        return mech
+
+    # ────────────────────────────────────────────────────────────────────
     # Product Prediction
     # ────────────────────────────────────────────────────────────────────
 
@@ -243,6 +1183,14 @@ class MechanismEngine:
         RDKit RunReactants로 생성물 예측.
         REACTION_SMARTS 템플릿을 순회하며 첫 매칭 반환.
         """
+        # Rule N: 타입 가드
+        if not isinstance(reactant_smiles, str):
+            logger.warning("_predict_product: reactant_smiles is not str: %s", type(reactant_smiles).__name__)
+            reactant_smiles = str(reactant_smiles) if reactant_smiles is not None else ""
+        if not isinstance(reagent_smiles, str):
+            logger.warning("_predict_product: reagent_smiles is not str: %s", type(reagent_smiles).__name__)
+            reagent_smiles = str(reagent_smiles) if reagent_smiles is not None else ""
+
         try:
             # 시약을 반응물에 포함
             combined = reactant_smiles
@@ -276,8 +1224,8 @@ class MechanismEngine:
                                 try:
                                     Chem.SanitizeMol(p)
                                     product_smiles_list.append(Chem.MolToSmiles(p))
-                                except Exception:
-                                    pass
+                                except Exception as e:
+                                    logger.warning("Product fragment sanitize/SMILES error: %s", e)
                             if product_smiles_list:
                                 # 모든 fragment를 dot-separated로 합산 후 검증
                                 combined = ".".join(product_smiles_list)
@@ -313,7 +1261,18 @@ class MechanismEngine:
         Returns:
             [(bond_changes, step_description), ...]
         """
+        # Rule N: 타입 가드 — result가 BondChangeResult인지 확인
+        if not isinstance(result, BondChangeResult):
+            logger.warning("_decompose_into_steps: result is not BondChangeResult: %s",
+                           type(result).__name__)
+            return [([],  "알 수 없는 반응")]
+
         changes = result.bond_changes
+        if not isinstance(changes, list):
+            logger.warning("_decompose_into_steps: bond_changes is not list: %s",
+                           type(changes).__name__)
+            return [([], "알 수 없는 반응")]
+
         r_mol = result.r_mol
 
         # 페리고리 → 단일 단계
@@ -384,9 +1343,27 @@ class MechanismEngine:
     # Helper Methods
     # ────────────────────────────────────────────────────────────────────
 
+    @staticmethod
+    def _truncate_label(text: str) -> str:
+        """라벨 텍스트 길이 제한 — 30자 초과 시 28자 + U+2026(…) ellipsis.
+
+        Magic: MAX_LABEL_LEN = 30 — 메커니즘 캔버스 가로 폭 / 평균 글자 폭 ≈ 30자 (M433 DEFECT-3)
+        U+2026(…) HORIZONTAL ELLIPSIS 사용. '...' (ASCII 3점) 금지 — 렌더링 폭 불일치.
+        """
+        MAX_LABEL_LEN = 30  # Magic: 메커니즘 캔버스 가로 폭 / 평균 글자 폭 ≈ 30 (M433 DEFECT-3)
+        if not isinstance(text, str):
+            return ""
+        return text[:28] + "\u2026" if len(text) > MAX_LABEL_LEN else text
+
     def _generate_step_title(self, result: BondChangeResult,
                               arrows: List[ArrowData]) -> str:
         """단계 제목 자동 생성 — 화학적으로 의미있는 제목"""
+        # Rule N: 타입 가드
+        if not isinstance(result, BondChangeResult):
+            logger.warning("_generate_step_title: result is not BondChangeResult: %s",
+                           type(result).__name__)
+            return "전자 재배열"
+
         broken = []
         formed = []
         order_changes = []
@@ -401,19 +1378,33 @@ class MechanismEngine:
                 order_changes.append(f"{sym_i}-{sym_j}")
 
         if broken and formed:
-            return f"{', '.join(broken)} 결합 끊김 → {', '.join(formed)} 결합 형성 (동시)"
+            return self._truncate_label(f"{', '.join(broken)} 결합 끊김 → {', '.join(formed)} 결합 형성 (동시)")
         elif broken:
-            return f"{', '.join(broken)} 결합 이종 개열 (heterolysis)"
+            return self._truncate_label(f"{', '.join(broken)} 결합 이종 개열 (heterolysis)")
         elif formed:
-            return f"{', '.join(formed)} 새 결합 형성 (친핵 공격)"
+            return self._truncate_label(f"{', '.join(formed)} 새 결합 형성 (친핵 공격)")
         elif order_changes:
-            return f"{', '.join(order_changes)} 결합 차수 변화"
+            return self._truncate_label(f"{', '.join(order_changes)} 결합 차수 변화")
         else:
             return "전자 재배열"
 
     @staticmethod
     def _get_atom_symbols(mol, atom_i: int, atom_j: int):
         """원자 인덱스로부터 원소 기호 추출"""
+        # Rule N: 타입 가드 — atom_i, atom_j가 int인지 확인
+        if not isinstance(atom_i, int):
+            logger.warning("_get_atom_symbols: atom_i is not int: %s", type(atom_i).__name__)
+            try:
+                atom_i = int(atom_i)
+            except (ValueError, TypeError):
+                return "?", "?"
+        if not isinstance(atom_j, int):
+            logger.warning("_get_atom_symbols: atom_j is not int: %s", type(atom_j).__name__)
+            try:
+                atom_j = int(atom_j)
+            except (ValueError, TypeError):
+                return "?", "?"
+
         if mol:
             sym_i = mol.GetAtomWithIdx(atom_i).GetSymbol() \
                 if 0 <= atom_i < mol.GetNumAtoms() else "외부"
@@ -426,6 +1417,13 @@ class MechanismEngine:
     @staticmethod
     def _classify_atom_role(mol, atom_idx: int, is_leaving: bool = False) -> str:
         """원자의 화학적 역할을 판별 (친핵체/친전자체/이탈기 등)"""
+        # Rule N: 타입 가드
+        if not isinstance(atom_idx, int):
+            logger.warning("_classify_atom_role: atom_idx is not int: %s", type(atom_idx).__name__)
+            try:
+                atom_idx = int(atom_idx)
+            except (ValueError, TypeError):
+                return ""
         if mol is None or atom_idx < 0 or atom_idx >= mol.GetNumAtoms():
             return ""
         atom = mol.GetAtomWithIdx(atom_idx)
@@ -435,10 +1433,14 @@ class MechanismEngine:
 
         # 이탈기 판별
         if is_leaving and anum in LEAVING_GROUPS:
+            # 음전하 위첨자: U+207B (⁻) — 양전하 위첨자: U+207A (⁺) 짝.
+            # U+2212(−)는 일반 마이너스(수식용), 위첨자 아님 — 혼용 금지 (M433 DEFECT-1)
             _names = {9: "F⁻", 17: "Cl⁻", 35: "Br⁻", 53: "I⁻"}
-            return f"{_names.get(anum, symbol + '⁻')} (이탈기)"
+            # Rule N: isinstance guard for _names
+            if not isinstance(_names, dict): _names = {}
+            return f"{_names.get(anum, symbol + '⁻')} (이탈기)"  # ⁻ = U+207B
 
-        # 음전하 → 친핵체
+        # 음전하 → 친핵체 (⁻ = U+207B SUPERSCRIPT MINUS, ⁺ = U+207A SUPERSCRIPT PLUS)
         if charge < 0:
             return f"{symbol}⁻ (친핵체)"
 
@@ -465,6 +1467,16 @@ class MechanismEngine:
         - 이탈기/친핵체/친전자체 명시
         - WHY 이 변화가 일어나는지 설명
         """
+        # Rule N: 타입 가드
+        if not isinstance(result, BondChangeResult):
+            logger.warning("_generate_step_description: result is not BondChangeResult: %s",
+                           type(result).__name__)
+            return "전자 재배열이 일어남"
+        if not isinstance(arrows, list):
+            logger.warning("_generate_step_description: arrows is not list: %s",
+                           type(arrows).__name__)
+            arrows = []
+
         parts = []
         broken_bonds = []
         formed_bonds = []
@@ -522,7 +1534,7 @@ class MechanismEngine:
                     if 0 <= idx < result.r_mol.GetNumAtoms():
                         atom = result.r_mol.GetAtomWithIdx(idx)
                         if atom.GetFormalCharge() < 0:
-                            donor_info = f"{sym}⁻의 론페어가 전자를 공여 → "
+                            donor_info = f"{sym}⁻의 론페어가 전자를 공여 → "  # ⁻ = U+207B SUPERSCRIPT MINUS (M433 DEFECT-1)
                             break
                         elif atom.GetAtomicNum() in (7, 8, 16) and atom.GetAtomicNum() != 6:
                             donor_info = f"{sym}의 론페어가 전자를 공여 → "
@@ -587,12 +1599,12 @@ class MechanismEngine:
         try:
             r_mol = Chem.MolFromSmiles(reactant_smiles)
             p_mol = Chem.MolFromSmiles(product_smiles)
-            if r_mol and p_mol:
+            if r_mol is not None and p_mol is not None:  # Rule L: None guard
                 r_formula = Chem.rdMolDescriptors.CalcMolFormula(r_mol)
                 p_formula = Chem.rdMolDescriptors.CalcMolFormula(p_mol)
                 return f"{r_formula} → {p_formula}"
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Reaction title generation error: %s", e)
         return f"반응 메커니즘"
 
     def _estimate_intermediate_smiles(self, start_smiles: str,
@@ -601,12 +1613,22 @@ class MechanismEngine:
         RDKit RWMol 기반 중간체 SMILES 생성.
 
         결합 변화(BondChange) 목록을 start_smiles 분자에 적용하여
-        중간체 구조를 생성한다.  결합 끊김/생성/차수 변화를 RWMol
+        중간체 구조를 생성한다.  Rule N 타입 가드 적용.  결합 끊김/생성/차수 변화를 RWMol
         AddBond/RemoveBond/SetBondType으로 수행한 뒤 SanitizeMol을
         거쳐 SMILES를 반환한다.
 
         SanitizeMol 실패 시 start_smiles를 그대로 반환 (안전 폴백).
         """
+        # Rule N: 타입 가드
+        if not isinstance(start_smiles, str):
+            logger.warning("_estimate_intermediate_smiles: start_smiles is not str: %s",
+                           type(start_smiles).__name__)
+            start_smiles = str(start_smiles) if start_smiles is not None else ""
+        if not isinstance(step_changes, list):
+            logger.warning("_estimate_intermediate_smiles: step_changes is not list: %s",
+                           type(step_changes).__name__)
+            return start_smiles
+
         if not RDKIT_AVAILABLE:
             return start_smiles
 
@@ -646,6 +1668,8 @@ class MechanismEngine:
                 elif bc.is_formed:
                     # ── 새 결합 생성 ──
                     if existing_bond is None:
+                        # Rule N: isinstance guard for _order_to_bondtype
+                        if not isinstance(_order_to_bondtype, dict): _order_to_bondtype = {}
                         bt = _order_to_bondtype.get(bc.product_order, Chem.BondType.SINGLE)
                         rwmol.AddBond(ai, aj, bt)
                         # 형식전하 보정
@@ -662,7 +1686,8 @@ class MechanismEngine:
                 Chem.SanitizeMol(rwmol)
                 result = Chem.MolToSmiles(rwmol)
                 # 빈 SMILES나 유효하지 않은 결과 체크
-                if result and Chem.MolFromSmiles(result) is not None:
+                _val = Chem.MolFromSmiles(result) if result else None
+                if _val is not None:  # Rule L: None guard
                     return result
             except Exception as e:
                 logger.debug(f"중간체 SanitizeMol 실패 (partial sanitize 시도): {e}")
@@ -674,8 +1699,8 @@ class MechanismEngine:
                     result = Chem.MolToSmiles(rwmol)
                     if result:
                         return result
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Intermediate SMILES sanitize error: %s", e)
 
         except Exception as e:
             logger.warning(f"중간체 SMILES 생성 오류: {e}")
@@ -690,6 +1715,7 @@ class MechanismEngine:
             atom_j = rwmol.GetAtomWithIdx(aj)
 
             # 전기음성도가 높은 쪽에 음전하 부여 (헤테로리틱)
+            # SetFormalCharge(-1) = 음전하. 표시 라벨은 U+207B(⁻). U+2212(−) 혼용 금지 (M433 DEFECT-1)
             en_i = _ELECTRONEG.get(atom_i.GetAtomicNum(), 2.5)
             en_j = _ELECTRONEG.get(atom_j.GetAtomicNum(), 2.5)
 
@@ -701,8 +1727,8 @@ class MechanismEngine:
                 atom_j.SetFormalCharge(atom_j.GetFormalCharge() - 1)
                 atom_i.SetFormalCharge(atom_i.GetFormalCharge() + 1)
             # en_i == en_j: 동종 분열 — 전하 변화 없음
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Charge adjustment on bond break error: %s", e)
 
     @staticmethod
     def _adjust_charge_on_form(rwmol, ai: int, aj: int):
@@ -712,16 +1738,23 @@ class MechanismEngine:
             atom_j = rwmol.GetAtomWithIdx(aj)
 
             # 음전하를 가진 쪽이 전자를 공여 → 전하 중화
+            # 형식전하 -1 → 0 : 표시 ⁻(U+207B) 소멸. U+2212(−) 불가 (M433 DEFECT-1)
             if atom_i.GetFormalCharge() < 0:
                 atom_i.SetFormalCharge(atom_i.GetFormalCharge() + 1)
             if atom_j.GetFormalCharge() > 0:
                 atom_j.SetFormalCharge(atom_j.GetFormalCharge() - 1)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Charge adjustment on bond form error: %s", e)
 
     def _estimate_energy_diagram(self, steps: List[MechanismStep]) \
             -> List[Tuple[str, float]]:
         """에너지 다이어그램 근사"""
+        # Rule N: 타입 가드
+        if not isinstance(steps, list):
+            logger.warning("_estimate_energy_diagram: steps is not list: %s",
+                           type(steps).__name__)
+            return [("반응물", 0.0), ("생성물", -10.0)]
+
         diagram = [("반응물", 0.0)]
 
         for i, step in enumerate(steps):
@@ -753,6 +1786,17 @@ def auto_mechanism(reactant_smiles: str,
     사용법:
         mech = auto_mechanism("CBr.[OH-]", "CO.[Br-]")
     """
+    # Rule N: 타입 가드 — 외부 호출부에서 비str 전달 방어
+    if not isinstance(reactant_smiles, str):
+        logger.warning("auto_mechanism: reactant_smiles is not str: %s", type(reactant_smiles).__name__)
+        reactant_smiles = str(reactant_smiles) if reactant_smiles is not None else ""
+    if not isinstance(product_smiles, str):
+        product_smiles = str(product_smiles) if product_smiles is not None else ""
+    if not isinstance(reagent_smiles, str):
+        reagent_smiles = str(reagent_smiles) if reagent_smiles is not None else ""
+    if not isinstance(mechanism_type_hint, str):
+        mechanism_type_hint = str(mechanism_type_hint) if mechanism_type_hint is not None else ""
+
     engine = MechanismEngine()
     return engine.generate_mechanism(
         reactant_smiles=reactant_smiles,
