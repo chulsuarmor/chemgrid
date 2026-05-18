@@ -113,9 +113,15 @@ def _smiles_to_png_bytes(smiles: str, width: int = MOL_IMG_W,
     """SMILES → PNG 이미지 bytes. 실패 시 None."""
     if not RDKIT_AVAILABLE or not PIL_AVAILABLE:
         return None
+    # Rule N: isinstance 타입 가드
+    if not isinstance(smiles, str) or not smiles.strip():
+        logger.warning("_smiles_to_png_bytes: smiles가 유효하지 않습니다: %s", type(smiles))
+        return None
     try:
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
+            # Rule L/M: SMILES 파싱 실패 시 경고 로그 (silent return 금지)
+            logger.warning("SMILES 파싱 실패 (mechanism_pdf): %s", smiles)
             return None
         AllChem.Compute2DCoords(mol)
         img = Draw.MolToImage(mol, size=(width, height))
@@ -130,8 +136,12 @@ def _smiles_to_png_bytes(smiles: str, width: int = MOL_IMG_W,
 def _get_block_name_kr(smiles: str) -> str:
     """빌딩 블록의 한글 이름 반환. 없으면 SMILES 축약."""
     info = get_building_block_info(smiles)
-    if info:
-        return info.get("name_kr", info.get("name", smiles))
+    # Rule N: isinstance 타입 가드 — 외부 데이터 dict 검증
+    if info and isinstance(info, dict):
+        name = info.get("name_kr", info.get("name", smiles))
+        if not isinstance(name, str):
+            name = str(name) if name is not None else smiles
+        return name
     # SMILES가 너무 길면 축약
     if len(smiles) > 25:
         return smiles[:22] + "..."
@@ -168,6 +178,13 @@ class MechanismPDFExporter:
         Returns:
             True 성공, False 실패
         """
+        # Rule N: isinstance 타입 가드
+        if not isinstance(route, SynthesisRoute):
+            logger.warning("export_route: route가 SynthesisRoute가 아닙니다: %s", type(route))
+            return False
+        if not isinstance(output_path, str) or not output_path.strip():
+            logger.warning("export_route: output_path가 유효하지 않습니다: %s", output_path)
+            return False
         if not REPORTLAB_AVAILABLE:
             logger.error("reportlab이 설치되지 않았습니다.")
             return False
