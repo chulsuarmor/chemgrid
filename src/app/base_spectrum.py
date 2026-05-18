@@ -57,22 +57,46 @@ class BaseSpectrumPopup(QDialog, metaclass=_ABCQMeta):
             parent: 부모 위젯
         """
         super().__init__(parent)
+
+        # N: Type guard — orca_output_path must be Path or None
+        if orca_output_path is not None and not isinstance(orca_output_path, Path):
+            logger.warning(
+                "%s: orca_output_path is not Path — type=%s, converting",
+                self.__class__.__name__, type(orca_output_path).__name__
+            )
+            try:
+                orca_output_path = Path(str(orca_output_path))
+            except Exception as e:
+                logger.warning(
+                    "%s: Path conversion failed: %s — setting to None",
+                    self.__class__.__name__, e
+                )
+                orca_output_path = None
+
         self.orca_output_path = orca_output_path
         self.spectrum_data = None  # 서브클래스에서 파싱 결과 저장
 
-        if orca_output_path and orca_output_path.exists():
-            try:
-                self._parse_data()
-                self.data_loaded.emit()
-                logger.info(
-                    "%s: 데이터 로드 완료 — %s",
-                    self.__class__.__name__, orca_output_path.name
-                )
-            except Exception:
-                logger.exception(
-                    "%s: 데이터 파싱 실패 — %s",
+        if orca_output_path is not None:
+            if not orca_output_path.exists():
+                # M: Silent failure 금지 — 파일 미존재 시 경고 로그
+                logger.warning(
+                    "%s: ORCA output file not found — %s",
                     self.__class__.__name__, orca_output_path
                 )
+            else:
+                try:
+                    self._parse_data()
+                    self.data_loaded.emit()
+                    logger.info(
+                        "%s: 데이터 로드 완료 — %s",
+                        self.__class__.__name__, orca_output_path.name
+                    )
+                except Exception as e:
+                    # M: Silent failure 금지 — 구체적 에러 로깅
+                    logger.warning(
+                        "%s: 데이터 파싱 실패 — %s: %s",
+                        self.__class__.__name__, orca_output_path, e
+                    )
 
         self._setup_ui()
 
@@ -118,24 +142,37 @@ class BaseSpectrumPopup(QDialog, metaclass=_ABCQMeta):
             "",
             "ORCA Files (*.out);;All Files (*)",
         )
-        if filepath:
-            self.orca_output_path = Path(filepath)
-            try:
-                self._parse_data()
-                self.data_loaded.emit()
-                logger.info(
-                    "%s: 사용자 선택 파일 로드 — %s",
-                    self.__class__.__name__, filepath
-                )
-            except Exception:
-                logger.exception(
-                    "%s: 파일 파싱 실패 — %s",
-                    self.__class__.__name__, filepath
-                )
-                QMessageBox.critical(
-                    self, "Parse Error",
-                    f"Failed to parse ORCA output:\n{filepath}"
-                )
+        if not filepath:
+            # M: Silent failure 금지 — 파일 미선택 로깅
+            logger.info("%s: 파일 선택 취소됨", self.__class__.__name__)
+            return
+
+        # N: Type guard — filepath should be str
+        if not isinstance(filepath, str):
+            logger.warning(
+                "%s: filepath is not str — type=%s",
+                self.__class__.__name__, type(filepath).__name__
+            )
+            filepath = str(filepath)
+
+        self.orca_output_path = Path(filepath)
+        try:
+            self._parse_data()
+            self.data_loaded.emit()
+            logger.info(
+                "%s: 사용자 선택 파일 로드 — %s",
+                self.__class__.__name__, filepath
+            )
+        except Exception as e:
+            # M: Silent failure 금지 — 구체적 에러 메시지
+            logger.warning(
+                "%s: 파일 파싱 실패 — %s: %s",
+                self.__class__.__name__, filepath, e
+            )
+            QMessageBox.critical(
+                self, "Parse Error",
+                f"Failed to parse ORCA output:\n{filepath}\n\nError: {e}"
+            )
 
     def export_spectrum_dialog(self):
         """스펙트럼 이미지/PDF 내보내기 대화상자."""
@@ -145,22 +182,35 @@ class BaseSpectrumPopup(QDialog, metaclass=_ABCQMeta):
             "",
             "PNG Image (*.png);;PDF (*.pdf);;SVG (*.svg)",
         )
-        if filepath:
-            try:
-                self._export_to_file(filepath)
-                logger.info(
-                    "%s: 내보내기 완료 — %s",
-                    self.__class__.__name__, filepath
-                )
-            except Exception:
-                logger.exception(
-                    "%s: 내보내기 실패 — %s",
-                    self.__class__.__name__, filepath
-                )
-                QMessageBox.critical(
-                    self, "Export Error",
-                    f"Failed to export spectrum:\n{filepath}"
-                )
+        if not filepath:
+            # M: Silent failure 금지 — 파일 미선택 로깅
+            logger.info("%s: 내보내기 취소됨", self.__class__.__name__)
+            return
+
+        # N: Type guard — filepath should be str
+        if not isinstance(filepath, str):
+            logger.warning(
+                "%s: export filepath is not str — type=%s",
+                self.__class__.__name__, type(filepath).__name__
+            )
+            filepath = str(filepath)
+
+        try:
+            self._export_to_file(filepath)
+            logger.info(
+                "%s: 내보내기 완료 — %s",
+                self.__class__.__name__, filepath
+            )
+        except Exception as e:
+            # M: Silent failure 금지 — 구체적 에러 메시지
+            logger.warning(
+                "%s: 내보내기 실패 — %s: %s",
+                self.__class__.__name__, filepath, e
+            )
+            QMessageBox.critical(
+                self, "Export Error",
+                f"Failed to export spectrum:\n{filepath}\n\nError: {e}"
+            )
 
     def _export_to_file(self, filepath: str):
         """
@@ -218,9 +268,16 @@ class BaseSpectrumPopup(QDialog, metaclass=_ABCQMeta):
                 "status": "loaded" | "empty"
             }
         """
+        status = "loaded" if self.spectrum_data else "empty"
+        if status == "empty":
+            # M: Silent failure 금지 — 빈 데이터일 때 로깅
+            logger.warning(
+                "%s: spectrum_data is empty/None — returning empty summary",
+                self.__class__.__name__
+            )
         return {
             "type": self.__class__.__name__,
             "num_peaks": 0,
             "dominant_peak": "N/A",
-            "status": "loaded" if self.spectrum_data else "empty",
+            "status": status,
         }
