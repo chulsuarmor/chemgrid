@@ -6,10 +6,13 @@
 #          - _bfs_ring_distances(): 치환기 연결 탄소 기준 BFS 거리 계산
 #          - calculate_resonance_deltas(): 오쏘/파라/메타별 억제 계수 차등 적용
 #   v5.80: [CHEM-1/2/3] 방향족 균등 분배, 전하 필드, 라디칼 반영
+import logging
 import numpy as np
 from collections import deque
 from typing import Set, Dict, List, Tuple, Optional
 from chem_data import ELEMENT_DATA
+
+logger = logging.getLogger(__name__)
 
 # 타입 별칭 (engine_core.py와 동일)
 CoordKey = Tuple[float, float]
@@ -53,6 +56,8 @@ class ResonanceEngine:
             return deltas
 
         H = np.zeros((n, n))
+        # Rule N: 타입 가드 — adj/atoms는 dict
+        assert isinstance(adj, dict) and isinstance(atoms, dict)
         sym_adj = {}
         for u in island:
             for v, order in adj.get(u, []):
@@ -61,12 +66,21 @@ class ResonanceEngine:
                     sym_adj[pair] = max(sym_adj.get(pair, 0), order)
 
         for i, u in enumerate(nodes):
-            at_main = atoms[u].get("main") or "C"
-            u_en = ELEMENT_DATA.get(at_main, {"negativity": 2.5})["negativity"]
+            _atom_u = atoms.get(u, {})
+            if not isinstance(_atom_u, dict):
+                _atom_u = {}
+            at_main = _atom_u.get("main") or "C"
+            _el_data_u = ELEMENT_DATA.get(at_main, {"negativity": 2.5})
+            u_en = _el_data_u["negativity"] if isinstance(_el_data_u, dict) and "negativity" in _el_data_u else 2.5
             alpha = (2.5 - u_en) * 1.8
-            fc_bias = sum(4.0 if s == "+" else -4.0 for s in atoms[u].get("attach", {}).values())
+            _att_u = _atom_u.get("attach", {})
+            if not isinstance(_att_u, dict):
+                _att_u = {}
+            fc_bias = sum(4.0 if s == "+" else -4.0 for s in _att_u.values())
             # [CHEM-2] charge 필드 직접 반영
-            charge_field = atoms[u].get("charge", "")
+            charge_field = _atom_u.get("charge", "")
+            if not isinstance(charge_field, str):
+                charge_field = str(charge_field) if charge_field is not None else ""
             charge_field_bias = 4.0 if charge_field == "+" else (-4.0 if charge_field == "-" else 0.0)
             H[i, i] = alpha + fc_bias + charge_field_bias
 
@@ -108,8 +122,8 @@ class ResonanceEngine:
                         if node in deltas:
                             deltas[node] *= 0.1
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Resonance delta calculation error: %s", e)
         return deltas
 
     # ══════════════════════════════════════════════════════════════════
@@ -134,11 +148,16 @@ class ResonanceEngine:
             effect: "EDG" | "EWG" | "EDG_WEAK" | "NEUTRAL"
         """
         substituents = []
+        # Rule N: 타입 가드 — adj/atoms는 dict
+        assert isinstance(adj, dict) and isinstance(atoms, dict)
         for ar_node in aromatic_nodes:
             for neighbor, order in adj.get(ar_node, []):
                 # 방향족 고리 외부 원자인지 확인
                 if neighbor not in aromatic_nodes:
-                    n_main = atoms[neighbor].get("main", "C")
+                    _atom_nb = atoms.get(neighbor, {})
+                    if not isinstance(_atom_nb, dict):
+                        _atom_nb = {}
+                    n_main = _atom_nb.get("main", "C")
                     # H는 무시 (수소는 약한 EDG이나 지향성 효과 계산에서 제외)
                     if n_main == "H":
                         continue
@@ -173,7 +192,10 @@ class ResonanceEngine:
         Returns:
             "EDG" | "EWG" | "EDG_WEAK" | "NEUTRAL"
         """
-        sub_main = atoms[sub_key].get("main", "C")
+        _atom_sub = atoms.get(sub_key, {})
+        if not isinstance(_atom_sub, dict):
+            _atom_sub = {}
+        sub_main = _atom_sub.get("main", "C")
 
         # ── 할로겐: EDG (lone pair donation, 오쏘/파라 지향)
         if sub_main in ("F", "Cl", "Br", "I"):
@@ -183,11 +205,14 @@ class ResonanceEngine:
         if sub_main == "O":
             # C=O (알데히드, 케톤, 카르복실): EWG
             for neighbor, order in adj.get(sub_key, []):
-                n_main = atoms[neighbor].get("main", "C")
+                _atom_n = atoms.get(neighbor, {})
+                if not isinstance(_atom_n, dict):
+                    _atom_n = {}
+                n_main = _atom_n.get("main", "C")
                 if n_main == "C" and order >= 2:
                     return "EWG"
             # -O- (charge "-") → O- 음이온: 강한 EDG
-            if atoms[sub_key].get("charge") == "-":
+            if _atom_sub.get("charge") == "-":
                 return "EDG"
             # 단결합 O (-OH, -OR): EDG (lone pair donation)
             return "EDG"
@@ -195,11 +220,14 @@ class ResonanceEngine:
         # ── 질소
         if sub_main == "N":
             # NO2: N에 양전하 또는 N-O 이중결합 → EWG
-            if atoms[sub_key].get("charge") == "+":
+            if _atom_sub.get("charge") == "+":
                 return "EWG"
             # N과 연결된 O가 있고 이중결합 → EWG (NO2, NO 계열)
             for neighbor, order in adj.get(sub_key, []):
-                n_main = atoms[neighbor].get("main", "C")
+                _atom_n2 = atoms.get(neighbor, {})
+                if not isinstance(_atom_n2, dict):
+                    _atom_n2 = {}
+                n_main = _atom_n2.get("main", "C")
                 if n_main == "O" and order >= 2:
                     return "EWG"
             # CN (N가 C와 삼중결합): EWG (단, C쪽에서 감지해야 함)
@@ -210,7 +238,7 @@ class ResonanceEngine:
         if sub_main == "S":
             # SO2R, SO3H: S 주변 O가 2개 이상 → EWG
             o_count = sum(1 for nb, _ in adj.get(sub_key, [])
-                          if atoms[nb].get("main") == "O")
+                          if (atoms.get(nb, {}) if isinstance(atoms.get(nb), dict) else {}).get("main") == "O")
             if o_count >= 2:
                 return "EWG"
             # -SH, -SR: 약한 EDG
@@ -220,15 +248,21 @@ class ResonanceEngine:
         if sub_main == "C":
             # C≡N (CN): C와 삼중결합 N → EWG
             for neighbor, order in adj.get(sub_key, []):
-                if atoms[neighbor].get("main") == "N" and order >= 3:
+                _atom_cn = atoms.get(neighbor, {})
+                if not isinstance(_atom_cn, dict):
+                    _atom_cn = {}
+                if _atom_cn.get("main") == "N" and order >= 3:
                     return "EWG"
             # C=O: 알데히드(-CHO), 케톤(-COR), 카르복실(-COOH) → EWG
             for neighbor, order in adj.get(sub_key, []):
-                if atoms[neighbor].get("main") == "O" and order >= 2:
+                _atom_co = atoms.get(neighbor, {})
+                if not isinstance(_atom_co, dict):
+                    _atom_co = {}
+                if _atom_co.get("main") == "O" and order >= 2:
                     return "EWG"
             # CF3: C에 할로겐 3개 → EWG
             halogen_count = sum(1 for nb, _ in adj.get(sub_key, [])
-                                if atoms[nb].get("main") in ("F", "Cl", "Br"))
+                                if (atoms.get(nb, {}) if isinstance(atoms.get(nb), dict) else {}).get("main") in ("F", "Cl", "Br"))
             if halogen_count >= 2:
                 return "EWG"
             # 알킬기: 약한 EDG
@@ -262,6 +296,8 @@ class ResonanceEngine:
         queue = deque([attachment])
         while queue:
             current = queue.popleft()
+            # Rule N: isinstance guard for adj
+            if not isinstance(adj, dict): adj = {}
             for neighbor, _ in adj.get(current, []):
                 if neighbor in aromatic_nodes and neighbor not in distances:
                     distances[neighbor] = distances[current] + 1
@@ -356,17 +392,29 @@ class ResonanceEngine:
         Returns:
             기여 전자수 (0.0, 0.5, 1.0, 또는 2.0)
         """
+        _atom_node = atoms.get(node, {})
+        if not isinstance(_atom_node, dict):
+            _atom_node = {}
+        _att_node = _atom_node.get("attach", {})
+        if not isinstance(_att_node, dict):
+            _att_node = {}
         # [해결] 양이온(+) 탄소는 파이 시스템 기여 전자 0개 (attach 딕셔너리 기반)
-        if any(s == "+" for s in atoms[node].get("attach", {}).values()):
+        if any(s == "+" for s in _att_node.values()):
             return 0.0
         # [CHEM-2] charge 필드 기반 양이온 처리 (attach와 별도 필드)
-        if atoms[node].get("charge") == "+":
+        _charge_node = _atom_node.get("charge", "")
+        if not isinstance(_charge_node, str):
+            _charge_node = str(_charge_node) if _charge_node is not None else ""
+        if _charge_node == "+":
             return 0.0
 
         count = 0.0
-        if any(o >= 2 for _, o in adj.get(node, [])):
+        _adj_list = adj.get(node, [])
+        if not isinstance(_adj_list, list):
+            _adj_list = []
+        if any(o >= 2 for _, o in _adj_list):
             count += 1
-        for s in atoms[node].get("attach", {}).values():
+        for s in _att_node.values():
             if s in ["-", ".."]:
                 count += 1
             # [CHEM-3] 라디칼 전자 반영: 단전자(·) → 1개 π 전자 기여
@@ -374,7 +422,7 @@ class ResonanceEngine:
                 count += 1
 
         # [CHEM-2] charge 필드 음이온(-) 처리: 비공유전자쌍 추가
-        if atoms[node].get("charge") == "-":
+        if _charge_node == "-":
             count += 1
 
         return count
@@ -411,16 +459,24 @@ class ResonanceEngine:
 
             mol = Chem.RWMol()
             for n in nodes:
-                symbol = atoms[n].get("main") or "C"
+                _atom_rk = atoms.get(n, {})
+                if not isinstance(_atom_rk, dict):
+                    _atom_rk = {}
+                symbol = _atom_rk.get("main") or "C"
                 try:
                     atom_obj = Chem.Atom(symbol)
-                except Exception:
+                except Exception as e:
+                    logger.warning("Chem.Atom('%s') failed, falling back to 'C': %s", symbol, e)
                     atom_obj = Chem.Atom("C")
 
                 # ★ [v5.91 핵심 수정] 형식전하 설정 — Cp-/Tropylium 인식 필수
                 # charge 필드("+" / "-") 또는 formal_charge 정수 필드 모두 확인
-                charge_str = atoms[n].get("charge", "")
-                fc = atoms[n].get("formal_charge", 0)
+                charge_str = _atom_rk.get("charge", "")
+                if not isinstance(charge_str, str):
+                    charge_str = str(charge_str) if charge_str is not None else ""
+                fc = _atom_rk.get("formal_charge", 0)
+                if not isinstance(fc, (int, float)):
+                    fc = 0
                 if charge_str == "+":
                     atom_obj.SetFormalCharge(1)
                 elif charge_str == "-":
@@ -429,7 +485,10 @@ class ResonanceEngine:
                     atom_obj.SetFormalCharge(fc)
                 # attach 딕셔너리의 "+" / "-" 기호도 체크 (구형 데이터 호환)
                 else:
-                    for s in atoms[n].get("attach", {}).values():
+                    _att_rk = _atom_rk.get("attach", {})
+                    if not isinstance(_att_rk, dict):
+                        _att_rk = {}
+                    for s in _att_rk.values():
                         if s == "+":
                             atom_obj.SetFormalCharge(1)
                             break
@@ -458,8 +517,9 @@ class ResonanceEngine:
                 Chem.SanitizeMol(final_mol,
                                   catchErrors=True,
                                   sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL)
-            except Exception:
+            except Exception as e:
                 # RDKit 정규화 실패 → Hückel 폴백
+                logger.warning("RDKit SanitizeMol failed for island %s, using Hückel fallback: %s", island, e)
                 return self._huckel_aromatic_fallback(island, atoms, adj)
 
             # GetAromaticAtoms() + GetSSSR() 기반 방향족 원자 집합 추출
@@ -486,7 +546,8 @@ class ResonanceEngine:
 
         except ImportError:
             return self._huckel_aromatic_fallback(island, atoms, adj)
-        except Exception:
+        except Exception as e:
+            logger.warning("Aromaticity detection failed for island %s: %s", island, e)
             return set()
 
     # ══════════════════════════════════════════════════════════════════
@@ -556,6 +617,8 @@ class ResonanceEngine:
                 current, path, visited = queue.popleft()
                 if len(path) > 8:
                     continue
+                # Rule N: isinstance guard for adj
+                if not isinstance(adj, dict): adj = {}
                 for neighbor, _ in adj.get(current, []):
                     if neighbor not in island:
                         continue
