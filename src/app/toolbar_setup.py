@@ -38,7 +38,9 @@ def setup_toolbars(window):
     Args:
         window: MainWindow 인스턴스 (self)
     """
-    print("[TOOLBAR_V5] setup_toolbars loaded - 2-row layout with addToolBarBreak", flush=True)
+    # [LITE-EXE-003 fix] debug print() 제거 — Rule M/JJ 준수 (print → logger.debug)
+    import logging as _tb_logging
+    _tb_logging.getLogger(__name__).debug("[TOOLBAR_V5] setup_toolbars loaded - 2-row layout with addToolBarBreak")
     window.setWindowTitle("ChemGrid V5")   # ← 새 코드 적용 확인용 마커
     window.setStyleSheet(
         "QToolButton { font-size: 13px; font-weight: bold; padding: 2px; } "
@@ -162,6 +164,27 @@ def setup_toolbars(window):
         triggered=window.cv.redo
     ))
 
+    # [M843 #21] 줌 버튼 추가 — 마우스 휠과 동일한 scale_factor 조정 (동기화)
+    # 1.15/0.85 배율은 canvas.py wheelEvent와 동일 (매직넘버: wheelEvent 동기화용)
+    window.tb.addSeparator()
+
+    def _zoom_in():
+        window.cv.scale_factor = min(window.cv.scale_factor * 1.15, 10.0)  # [M843 #21] wheelEvent 동기
+        window.cv.update()
+
+    def _zoom_out():
+        window.cv.scale_factor = max(window.cv.scale_factor * 0.85, 0.1)  # [M843 #21] wheelEvent 동기
+        window.cv.update()
+
+    window.tb.addAction(QAction(
+        _make_text_icon("+", font_size=18), "줌 확대", window,
+        triggered=_zoom_in
+    ))
+    window.tb.addAction(QAction(
+        _make_text_icon("−", font_size=18), "줌 축소", window,
+        triggered=_zoom_out
+    ))
+
     # ==========================================
     # 줄바꿈 — 이 한 줄로 2줄 전환
     # ==========================================
@@ -207,6 +230,9 @@ def setup_toolbars(window):
     export_menu.addAction("선택 영역 내보내기...", window.export_selection_dialog)
     export_menu.addAction("스펙트럼 PDF 내보내기...", window.export_spectrum_to_pdf)
     export_menu.addSeparator()
+    export_menu.addAction("SVG 내보내기", window.export_svg)      # [M844-A3] SVG 벡터 내보내기
+    export_menu.addAction("MOL/SDF 내보내기", window.export_mol)  # [M844-A3] RDKit MOL 파일 내보내기
+    export_menu.addSeparator()
     export_menu.addAction("계산 히스토리 보기", window.show_calculation_history)
     export_menu.addAction("검증 보고서 생성", window.show_verification_report)
     export_btn = QAction("내보내기", window)
@@ -215,19 +241,7 @@ def setup_toolbars(window):
     export_btn.setEnabled(False)
     window.export_btn = export_btn
 
-    # 신약개발 메뉴 — 학생 친화적: 리드 최적화를 최상단 배치
-    drug_menu = QMenu("신약개발", window)
-    drug_menu.addAction("리드 최적화 (신약 설계)", window.open_lead_optimizer_popup)
-    drug_menu.addAction("ADMET 분석", window.open_admet_popup)
-    drug_menu.addSeparator()
-    adv_label = drug_menu.addAction("── 고급 (전문가용) ──")
-    adv_label.setEnabled(False)
-    drug_menu.addAction("AlphaFold 구조 예측", window.open_alphafold_popup)
-    drug_menu.addAction("분자 도킹", window.open_docking_popup)
-    drug_menu.addAction("신약 스크리닝", window.open_drug_screening_popup)
-    drug_btn = QAction("신약개발", window)
-    drug_btn.setMenu(drug_menu)
-    window.tb2.addAction(drug_btn)
+    # 신약개발/고분자 메뉴: 툴바에서 제거됨 (입체구조 팝업 탭에서만 접근)
 
     window.tb2.addSeparator()
 
