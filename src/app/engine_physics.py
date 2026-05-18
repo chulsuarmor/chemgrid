@@ -1,7 +1,10 @@
-# engine_physics.py (v8.00 - Enhanced Directing Effects + Multi-atom Substituent Recognition)
+# engine_physics.py (v8.01 - Enhanced Directing Effects + Multi-atom Substituent Recognition)
+import logging
 from typing import Set, Dict, List, Tuple
 from collections import deque
 from chem_data import ELEMENT_DATA
+
+logger = logging.getLogger(__name__)
 
 # 타입 별칭 (engine_core.py와 동일)
 CoordKey = Tuple[float, float]
@@ -34,28 +37,41 @@ class PhysicsEngine:
             charges: 부분 전하 딕셔너리 (in-place 수정)
         """
         for u in mol:
-            for s in atoms[u].get("attach", {}).values():
-                if s == "+":
-                    charges[u] += 2.2  # 청색 선명도 강화
-                elif s == "-":
-                    charges[u] -= 2.2
+            # [N] 타입 가드: atoms[u]가 dict인지 확인
+            # Rule N: isinstance guard for atoms
+            if not isinstance(atoms, dict): atoms = {}
+            u_data = atoms.get(u)
+            if not isinstance(u_data, dict):
+                logger.warning(f"apply_inductive: atoms[{u}] is not dict (type={type(u_data)}), skipping")
+                continue
 
-            u_main = atoms[u].get("main") or "C"
+            attach = u_data.get("attach")
+            if isinstance(attach, dict):
+                for s in attach.values():
+                    if s == "+":
+                        charges[u] += 2.2  # 청색 선명도 강화
+                    elif s == "-":
+                        charges[u] -= 2.2
+
+            u_main = u_data.get("main") or "C"
 
             # [PLAN-CHEM-003] 전이금속은 유발효과 대신 formal charge만 반영
             # Gasteiger 알고리즘은 d-orbital을 고려하지 않아 TM에 부정확
             if u_main in self.TM_SYMBOLS:
                 continue
 
-            u_en = ELEMENT_DATA.get(u_main, {"negativity": 2.5})["negativity"]
+            u_el_data = ELEMENT_DATA.get(u_main)
+            u_en = u_el_data["negativity"] if isinstance(u_el_data, dict) and "negativity" in u_el_data else 2.5
             for v, order in adj.get(u, []):
-                v_main = atoms[v].get("main") or "C"
+                v_data = atoms.get(v)
+                v_main = v_data.get("main") or "C" if isinstance(v_data, dict) else "C"
 
                 # 전이금속 이웃과의 유발효과도 skip
                 if v_main in self.TM_SYMBOLS:
                     continue
 
-                v_en = ELEMENT_DATA.get(v_main, {"negativity": 2.5})["negativity"]
+                v_el_data = ELEMENT_DATA.get(v_main)
+                v_en = v_el_data["negativity"] if isinstance(v_el_data, dict) and "negativity" in v_el_data else 2.5
 
                 # [핵심 수정] 수소 간섭 계수를 0.08로 극단적으로 낮춤 (수소 삽입 시 고리 붕괴 해결)
                 h_factor = 0.08 if (u_main == "C" and v_main == "H") or (u_main == "H" and v_main == "C") else 1.0
@@ -72,12 +88,22 @@ class PhysicsEngine:
         다원자 치환기도 전체적으로 분석하여 정확한 분류를 수행합니다.
         예: -NO2 (전체가 EWG), -OH (lone pair EDG), -COOH (EWG)
         """
-        sub_main = atoms.get(neighbor, {}).get("main") or "C"
-        sub_en = ELEMENT_DATA.get(sub_main, {"negativity": 2.5})["negativity"]
-        c_en = ELEMENT_DATA.get("C", {"negativity": 2.5})["negativity"]
+        # Rule N: isinstance guard for atoms
+        if not isinstance(atoms, dict): atoms = {}
+        # [N] 타입 가드: atoms.get() 결과가 dict인지 확인
+        neighbor_data = atoms.get(neighbor)
+        neighbor_data = neighbor_data if isinstance(neighbor_data, dict) else {}
+        sub_main = neighbor_data.get("main") or "C"
 
-        has_plus = any(s == "+" for s in atoms.get(neighbor, {}).get("attach", {}).values())
-        has_minus = any(s == "-" for s in atoms.get(neighbor, {}).get("attach", {}).values())
+        sub_el = ELEMENT_DATA.get(sub_main)
+        sub_en = sub_el["negativity"] if isinstance(sub_el, dict) and "negativity" in sub_el else 2.5
+        c_el = ELEMENT_DATA.get("C")
+        c_en = c_el["negativity"] if isinstance(c_el, dict) and "negativity" in c_el else 2.5
+
+        attach = neighbor_data.get("attach")
+        attach = attach if isinstance(attach, dict) else {}
+        has_plus = any(s == "+" for s in attach.values())
+        has_minus = any(s == "-" for s in attach.values())
 
         # 양/음 전하 → 강한 EWG/EDG
         if has_plus:
@@ -89,7 +115,8 @@ class PhysicsEngine:
         sub_neighbors = []
         for nb, nb_order in adj.get(neighbor, []):
             if nb != ring_node and nb not in ring_atoms:
-                nb_main = atoms.get(nb, {}).get("main") or "C"
+                nb_data = atoms.get(nb)
+                nb_main = nb_data.get("main") or "C" if isinstance(nb_data, dict) else "C"
                 sub_neighbors.append((nb_main, nb_order))
 
         # -NO2 패턴: N에 이중결합 O 2개 → 강한 EWG
@@ -170,12 +197,14 @@ class PhysicsEngine:
         ring_size = len(ring_atoms)
 
         # 치환기 찾기: 고리에 직접 연결된 비고리 원자
+        assert isinstance(adj, dict) and isinstance(atoms, dict)  # Rule N: 타입 가드
         for ring_node in ring_atoms:
             for neighbor, order in adj.get(ring_node, []):
                 if neighbor in ring_atoms:
                     continue
                 # H는 지향성 효과 무시 (모든 위치에 동일한 영향)
-                sub_main = atoms.get(neighbor, {}).get("main") or "C"
+                nb_data = atoms.get(neighbor)
+                sub_main = nb_data.get("main") or "C" if isinstance(nb_data, dict) else "C"
                 if sub_main == "H":
                     continue
 
@@ -192,6 +221,8 @@ class PhysicsEngine:
                 queue: deque = deque([ring_node])
                 while queue:
                     curr = queue.popleft()
+                    # Rule N: isinstance guard for adj
+                    if not isinstance(adj, dict): adj = {}
                     for nb, _ in adj.get(curr, []):
                         if nb in ring_atoms and nb not in distances:
                             distances[nb] = distances[curr] + 1
@@ -229,14 +260,27 @@ class PhysicsEngine:
         Returns:
             치환기 점수 (양수: 전자 끌기, 음수: 전자 밀기)
         """
-        at_main = atoms[node].get("main") or "C"
-        at_en = ELEMENT_DATA.get(at_main, {"negativity": 2.5})["negativity"]
+        # [N] 타입 가드: atoms[node]가 dict인지 확인
+        # Rule N: isinstance guard for atoms
+        if not isinstance(atoms, dict): atoms = {}
+        node_data = atoms.get(node)
+        if not isinstance(node_data, dict):
+            logger.warning(f"calculate_substituent_score: atoms[{node}] is not dict, returning 0.0")
+            return 0.0
+        at_main = node_data.get("main") or "C"
+        at_el = ELEMENT_DATA.get(at_main)
+        at_en = at_el["negativity"] if isinstance(at_el, dict) and "negativity" in at_el else 2.5
         # 양전하 측쇄의 전자 당김 효과 강화 (설폰산 메타 지향성 해결)
-        score = sum(3.5 if s == "+" else -3.5 for s in atoms[node].get("attach", {}).values())
+        attach = node_data.get("attach")
+        attach = attach if isinstance(attach, dict) else {}
+        score = sum(3.5 if s == "+" else -3.5 for s in attach.values())
         for neighbor, order in adj.get(node, []):
             if neighbor in pi_isl:
                 continue
-            n_en = ELEMENT_DATA.get(atoms[neighbor].get("main") or "C", {"negativity": 2.5})["negativity"]
+            nb_data = atoms.get(neighbor)
+            nb_main = nb_data.get("main") or "C" if isinstance(nb_data, dict) else "C"
+            n_el = ELEMENT_DATA.get(nb_main)
+            n_en = n_el["negativity"] if isinstance(n_el, dict) and "negativity" in n_el else 2.5
             score += (n_en - at_en) * order * 1.1
         return score
 
@@ -286,8 +330,11 @@ class PhysicsEngine:
         Returns:
             추정 결합 길이 (Angstrom)
         """
-        r1 = ELEMENT_DATA.get(elem1, {"radius": 0.77})["radius"]
-        r2 = ELEMENT_DATA.get(elem2, {"radius": 0.77})["radius"]
+        # [N] 타입 가드: ELEMENT_DATA 반환값 확인
+        e1_data = ELEMENT_DATA.get(elem1)
+        r1 = e1_data["radius"] if isinstance(e1_data, dict) and "radius" in e1_data else 0.77
+        e2_data = ELEMENT_DATA.get(elem2)
+        r2 = e2_data["radius"] if isinstance(e2_data, dict) and "radius" in e2_data else 0.77
         # 이중결합 ~13% 축소, 삼중결합 ~20% 축소
         shrink = {1: 1.0, 2: 0.87, 3: 0.80}.get(order, 1.0)
         return (r1 + r2) * shrink
