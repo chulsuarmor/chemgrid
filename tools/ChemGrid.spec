@@ -1,11 +1,35 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+
+
+SPEC_DIR = os.path.abspath(os.path.dirname(globals().get('__file__', 'ChemGrid.spec')))
+PROJECT_ROOT = os.path.abspath(os.path.join(SPEC_DIR, '..'))
+SRC_DIR = os.path.join(PROJECT_ROOT, 'src', 'app')
+REQUIRED_RESOURCES = [
+    'logo.png',
+    'logo.ico',
+    'undo.png',
+    'redo.png',
+    'hand.png',
+    'select.png',
+    'pen.png',
+    'eraser.png',
+    'bond.png',
+]
+datas = []
+for resource_name in REQUIRED_RESOURCES:
+    resource_path = os.path.join(SRC_DIR, resource_name)
+    if not os.path.exists(resource_path):
+        raise FileNotFoundError(f"Missing ChemGrid resource for PyInstaller: {resource_path}")
+    datas.append((resource_path, '_internal'))
+
 
 a = Analysis(
-    ['../src/app/draw.py'],
-    pathex=['../src/app'],
+    [os.path.join(SRC_DIR, 'draw.py')],
+    pathex=[SRC_DIR],
     binaries=[],
-    datas=[],
+    datas=datas,
     hiddenimports=[
         'rdkit',
         'rdkit.Chem',
@@ -31,6 +55,7 @@ a = Analysis(
         'OpenGL.GLU',
         'networkx',
         'requests',
+        'resource_paths',
     ],
     hookspath=[],
     hooksconfig={},
@@ -115,5 +140,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['logo.ico'],
+    icon=[os.path.join(SRC_DIR, 'logo.ico')],
 )
