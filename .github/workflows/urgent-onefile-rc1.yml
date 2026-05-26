@@ -27,9 +27,12 @@ jobs:
       - name: Build onefile ChemGrid.exe
         shell: pwsh
         run: |
+          Copy-Item -Force 'src/app/logo.ico' 'tools/logo.ico'
           python -m PyInstaller tools/ChemGrid.spec --clean --noconfirm
           if (-not (Test-Path 'dist/ChemGrid.exe')) { throw 'dist/ChemGrid.exe not found' }
-          Get-Item 'dist/ChemGrid.exe' | Format-List FullName,Length,LastWriteTime
+          $exe = Get-Item 'dist/ChemGrid.exe'
+          if ($exe.Length -lt 100MB) { throw "ChemGrid.exe too small; likely failed stub: $($exe.Length) bytes" }
+          $exe | Format-List FullName,Length,LastWriteTime
           Get-FileHash -Algorithm SHA256 'dist/ChemGrid.exe'
       - name: Upload rc1 ChemGrid.exe asset
         shell: pwsh
