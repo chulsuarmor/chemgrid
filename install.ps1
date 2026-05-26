@@ -19,7 +19,7 @@ try {
 }
 
 $Url = 'https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid.exe'
-$ExpectedSha256 = '8d97405535b601a1c54ca8a214591f2d991591699a53da89afadedc8fcf015ef'
+$ExpectedSha256 = '1f988c7ed455aa6dfa873eb14dcef07ad0b5f821e28798a2de51f31b98715dc1'
 $Desktop = [Environment]::GetFolderPath('Desktop')
 if ([string]::IsNullOrWhiteSpace($Desktop)) {
     $Desktop = Join-Path $env:USERPROFILE 'Downloads'
