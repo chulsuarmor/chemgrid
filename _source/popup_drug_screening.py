@@ -288,7 +288,7 @@ class DrugScreeningPopup(QDialog):
         self.tbl_results.setColumnCount(9)
         self.tbl_results.setHorizontalHeaderLabels([
             "순위", "분자명", "SMILES", "QED", "ADMET점수",
-            "도킹점수", "복합점수", "티어", "PAINS경고",
+            "도킹근거/점수", "복합점수", "티어", "PAINS경고",
         ])
         self.tbl_results.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Interactive
@@ -322,7 +322,7 @@ class DrugScreeningPopup(QDialog):
             ext_layout.setSpacing(4)
 
             ext_header = QLabel(
-                "외부 도킹 서비스 — 결합 강도(kcal/mol) 및 결합 방향 정밀 분석"
+                "외부 도킹/구조 참고 경로 — 로컬 점수와 분리"
             )
             ext_header.setStyleSheet(
                 "font-weight: bold; font-size: 11pt; color: #81d4fa; "
@@ -342,6 +342,16 @@ class DrugScreeningPopup(QDialog):
             ext_cite.setWordWrap(True)
             ext_layout.addWidget(ext_cite)
 
+            ext_boundary = QLabel(
+                "Local screening uses descriptor/ADMET scores only unless docking evidence is loaded. "
+                "These buttons open external routes; they do not add docking evidence to the table."
+            )
+            ext_boundary.setStyleSheet(
+                "color: #ffcc80; font-size: 9pt; background: transparent; border: none;"
+            )
+            ext_boundary.setWordWrap(True)
+            ext_layout.addWidget(ext_boundary)
+
             ext_btn_row = QHBoxLayout()
 
             btn_sw = QPushButton("SwissDock 외부 도킹")
@@ -352,7 +362,8 @@ class DrugScreeningPopup(QDialog):
             )
             btn_sw.setToolTip(
                 "SwissDock — 게스트 사용 가능 외부 AutoDock Vina 서비스.\n"
-                "결합 강도(kcal/mol) + 결합 방향 3D 포즈 제공.\n"
+                "외부 사이트에서 사용자가 별도로 제출한 경우에만 결합 강도/포즈를 확인합니다.\n"
+                "로컬 표 점수는 도킹 증거가 로드되기 전까지 descriptor/ADMET 기반입니다.\n"
                 "Grosdidier A. et al. 2011 NAR 39:W270"
             )
             SWISSDOCK_URL = "https://www.swissdock.ch/docking"  # [MAGIC] SwissDock 공식 서비스
@@ -370,6 +381,7 @@ class DrugScreeningPopup(QDialog):
             )
             btn_pdbe.setToolTip(
                 "PDBe-KB — UniProt 기반 결합 부위 + 상호작용 잔기 데이터.\n"
+                "참고 경로만 열며, 로컬 스크리닝 점수에 결합 증거를 자동 반영하지 않습니다.\n"
                 "학술 인용: Sehnal et al. 2021 NAR 49:W431"
             )
             PDBE_KB_URL = "https://www.ebi.ac.uk/pdbe/pdbe-kb/proteins"  # [MAGIC] PDBe-KB UniProt
@@ -387,6 +399,7 @@ class DrugScreeningPopup(QDialog):
             )
             btn_molstar.setToolTip(
                 "Mol* 공식 뷰어 — 단백질-리간드 3D 시각화 학술 표준.\n"
+                "구조 시각화 경로이며, 도킹 로그/포즈가 없으면 로컬 도킹 증거가 아닙니다.\n"
                 "Sehnal D. et al. 2021 Nucleic Acids Res 49:W431-W437"
             )
             MOLSTAR_URL = "https://molstar.org/viewer/"  # [MAGIC] Mol* 공식 뷰어
@@ -399,8 +412,8 @@ class DrugScreeningPopup(QDialog):
             ext_layout.addLayout(ext_btn_row)
 
             ext_info = QLabel(
-                "스크리닝 후 결과 분자를 선택하여 SwissDock에 SMILES를 입력하면\n"
-                "결합 강도(kcal/mol)와 결합 방향(3D 포즈)을 상세히 확인할 수 있습니다."
+                "스크리닝 후 결과 분자를 외부 서비스에 별도로 제출할 수 있습니다.\n"
+                "도킹 로그/포즈/결합 에너지 증거가 로드되기 전까지 이 화면의 순위는 로컬 descriptor/ADMET 추정입니다."
             )
             ext_info.setStyleSheet(
                 "color: #90a4ae; font-size: 9pt; background: transparent; border: none;"
@@ -630,7 +643,8 @@ class DrugScreeningPopup(QDialog):
             f"총 {len(self._all_hits)}개 중 {len(hits)}개 표시 | "
             f"A: {sum(1 for h in hits if h.tier == 'A')}  "
             f"B: {sum(1 for h in hits if h.tier == 'B')}  "
-            f"C: {sum(1 for h in hits if h.tier == 'C')}"
+            f"C: {sum(1 for h in hits if h.tier == 'C')} | "
+            "Local screening uses descriptor/ADMET scores only unless docking evidence is loaded."
         )
 
         for row, hit in enumerate(hits):
@@ -646,9 +660,17 @@ class DrugScreeningPopup(QDialog):
             # ADMET score
             admet_val = hit.admet.drug_likeness_score if hit.admet else 0.0
             self.tbl_results.setItem(row, 4, self._num_item(admet_val, fmt=".3f"))
-            # Docking score
-            dock_val = hit.docking.binding_affinity if hit.docking else 0.0
-            self.tbl_results.setItem(row, 5, self._num_item(dock_val, fmt=".2f"))
+            # Docking evidence/status: descriptor-only rows must not look docked.
+            if hit.docking:
+                dock_val = hit.docking.binding_affinity
+                dock_item = QTableWidgetItem(f"{dock_val:.2f} kcal/mol")
+                dock_item.setData(Qt.ItemDataRole.UserRole, float(dock_val))
+                dock_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            else:
+                dock_item = QTableWidgetItem("증거없음")
+                dock_item.setData(Qt.ItemDataRole.UserRole, float("-inf"))
+                dock_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.tbl_results.setItem(row, 5, dock_item)
             # Composite score
             self.tbl_results.setItem(
                 row, 6, self._num_item(hit.composite_score, fmt=".3f")
@@ -812,6 +834,17 @@ class DrugScreeningPopup(QDialog):
         lbl_citation.setStyleSheet("color: #555; font-size: 9px; padding: 2px 8px;")
         vbox.addWidget(lbl_citation)
 
+        lbl_boundary = QLabel(
+            "DrugBank local data may be missing. Matches require local vocabulary CSV and open structures SDF; "
+            "without them this tab cannot prove a DrugBank match."
+        )
+        lbl_boundary.setWordWrap(True)
+        lbl_boundary.setStyleSheet(
+            "QLabel { padding: 8px; background-color: #fff8e1; "
+            "border: 1px solid #f9a825; border-radius: 4px; font-size: 11px; }"
+        )
+        vbox.addWidget(lbl_boundary)
+
         # 검색 폼
         grp_search = QGroupBox("Tanimoto 유사도 검색 (현재 표 행 또는 SMILES 입력)")
         form_layout = QVBoxLayout(grp_search)
@@ -887,6 +920,7 @@ class DrugScreeningPopup(QDialog):
         self.tbl_drugbank.setToolTip(
             "DrugBank 6.0 (Knox et al. NAR 2024;52:D1265). "
             "Tanimoto 유사도는 Morgan ECFP4 fingerprint 기반 (Rogers&Hahn JCIM 2010;50:742). "
+            "DrugBank local data may be missing; local matches require CSV/SDF files. "
             "더블클릭하면 DrugBank 페이지를 엽니다."
         )
         res_layout.addWidget(self.tbl_drugbank)
@@ -1148,7 +1182,7 @@ class DrugScreeningPopup(QDialog):
         if not DRUGBANK_AVAILABLE:
             self.lbl_drugbank_status.setText(
                 "<b style='color:#e74c3c;'>DrugBank 모듈 미가용</b> — RDKit 설치 또는 "
-                "drugbank_local.py 임포트 실패. <i>SIMULATION_MODE</i>"
+                "drugbank_local.py 임포트 실패. DrugBank local data may be missing. <i>SIMULATION_MODE</i>"
             )
             return
         try:
@@ -1165,6 +1199,7 @@ class DrugScreeningPopup(QDialog):
                 f"data_root: <code>{status.get('data_root', '?')}</code><br>"
                 f"CSV: {'있음' if status.get('csv_exists') else '<b style=\"color:#e74c3c\">없음</b>'} | "
                 f"SDF: {'있음' if status.get('sdf_exists') else '<b style=\"color:#e74c3c\">없음</b>'}<br>"
+                f"<b>DrugBank local data may be missing; no DrugBank match is proven until both files are present.</b><br>"
                 f"<i>해결: drugbank.ca/release/latest 에서 vocabulary CSV + open structures SDF 다운로드 후 위 폴더에 복사.</i>"
             )
             return
