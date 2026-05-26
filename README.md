@@ -18,9 +18,7 @@ irm https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/in
 
 ### WSL / Linux / macOS
 
-```bash
-curl -sL https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install.sh | bash
-```
+현재 학생 배포 경로는 Windows onefile EXE입니다. WSL/Linux/macOS 설치 스크립트는 rc1 학생용 고정 경로로 검증되지 않았습니다.
 
 ---
 
@@ -31,7 +29,6 @@ curl -sL https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-r
 | [ChemGrid.exe](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid.exe) | 128.6 MB | Windows 단일 실행 파일 (설치 불필요) |
 | [ChemGrid_Lite.zip](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid_Lite.zip) | 305 MB | ZIP 패키지 |
 | [install.ps1](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install.ps1) | 1.1 KB | PowerShell 설치 스크립트 |
-| [install.sh](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install.sh) | - | Bash 설치 스크립트 (WSL/Linux) |
 
 ---
 
