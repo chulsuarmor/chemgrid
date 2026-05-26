@@ -1,0 +1,41 @@
+name: Urgent ChemGrid rc1 onefile
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install rdkit pyinstaller
+          if (Test-Path requirements.txt) { python -m pip install -r requirements.txt }
+      - name: Verify imports
+        shell: pwsh
+        run: |
+          python -c "import rdkit, PyQt6, numpy, matplotlib, PyInstaller; print('imports ok')"
+      - name: Build onefile ChemGrid.exe
+        shell: pwsh
+        run: |
+          python -m PyInstaller tools/ChemGrid.spec --clean --noconfirm
+          if (-not (Test-Path 'dist/ChemGrid.exe')) { throw 'dist/ChemGrid.exe not found' }
+          Get-Item 'dist/ChemGrid.exe' | Format-List FullName,Length,LastWriteTime
+          Get-FileHash -Algorithm SHA256 'dist/ChemGrid.exe'
+      - name: Upload rc1 ChemGrid.exe asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload v1.0.0-lite-rc1 dist/ChemGrid.exe --repo ${{ github.repository }} --clobber
