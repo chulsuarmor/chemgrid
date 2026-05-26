@@ -71,6 +71,12 @@ LOG_FILE = _SERVER_DIR / "orca_job_log.jsonl"
 STDOUT_HEAD_LINES = 10   # 허위방지: 실제 ORCA 버전/라이센스 라인 포함
 STDOUT_TAIL_LINES = 10   # 허위방지: 마지막 10줄 (FINAL SINGLE POINT ENERGY 포함)
 _UNSAFE_ORCA_PATH_TOKENS = {"archive", "backup", "quarantine", "legacy", "orca_legacy"}
+_KNOWN_WSL_ORCA_PATHS = (
+    "/home/skagjs/orca/orca_6_1_0_linux_x86-64_shared_openmpi418_avx2/orca",
+    "/opt/orca/orca",
+    "/usr/local/bin/orca",
+)
+_WSL_DISTRO_CANDIDATES = ("Ubuntu-24.04", "")
 
 
 def _empty_orca_path_state() -> dict:
@@ -86,6 +92,60 @@ def _empty_orca_path_state() -> dict:
 
 
 _orca_path_state: dict = _empty_orca_path_state()
+
+
+def _run_wsl_probe(args: list[str], timeout: int = 10) -> subprocess.CompletedProcess[bytes]:
+    """Run a bounded WSL probe without locale text decoding."""
+    if not shutil.which("wsl"):
+        raise FileNotFoundError("wsl executable not found")
+    last_error: Exception | None = None
+    for distro in _WSL_DISTRO_CANDIDATES:
+        command = ["wsl"]
+        if distro:
+            command.extend(["-d", distro])
+        command.extend(["--", *args])
+        try:
+            return subprocess.run(
+                command,
+                capture_output=True,
+                timeout=timeout,
+                check=False,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            last_error = exc
+            logger.debug("[wsl_probe] command failed %s: %s", command, exc)
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError("WSL probe did not run")
+
+
+def _decode_wsl_stdout(data: bytes) -> str:
+    """Decode WSL command output deterministically on Korean Windows locales."""
+    return data.decode("utf-8", errors="replace").strip()
+
+
+def _find_orca_wsl_server() -> Optional[str]:
+    """Find a WSL ORCA binary using server-local, locale-safe probes."""
+    for known_path in _KNOWN_WSL_ORCA_PATHS:
+        try:
+            result = _run_wsl_probe(["test", "-x", known_path], timeout=10)
+            if result.returncode == 0:
+                logger.info("[find_orca_wsl_server] ORCA found at known WSL path: %s", known_path)
+                return known_path
+        except Exception as e:
+            logger.warning("[find_orca_wsl_server] known path probe failed for %s: %s", known_path, e)
+
+    try:
+        result = _run_wsl_probe(["which", "orca"], timeout=15)
+        which_path = _decode_wsl_stdout(result.stdout)
+        if result.returncode == 0 and which_path:
+            logger.info("[find_orca_wsl_server] ORCA found in WSL PATH: %s", which_path)
+            return which_path
+    except Exception as e:
+        logger.warning("[find_orca_wsl_server] WSL PATH probe failed: %s", e)
+
+    return None
 
 def _load_project_env_value(name: str) -> str:
     """Read a single project .env value when this server is started detached."""
@@ -437,8 +497,8 @@ def submit_job(
     - JSONL 로그에 command_line 원본 기록 (Rule X 허위방지)
     """
     _check_api_key(authorization)
-    wsl_orca = None
-    if _ORCA_EXECUTOR_AVAILABLE and find_orca_wsl is not None:
+    wsl_orca = _find_orca_wsl_server()
+    if wsl_orca is None and _ORCA_EXECUTOR_AVAILABLE and find_orca_wsl is not None:
         try:
             wsl_orca = find_orca_wsl()  # type: ignore[misc]
         except Exception as e:
@@ -792,11 +852,13 @@ def health() -> dict:
     wsl_orca = None
     wsl_probe_setting = os.environ.get("ORCA_HEALTH_WSL_PROBE", "1").strip()
     wsl_probe_enabled = wsl_probe_setting != "0"
-    if wsl_probe_enabled and _ORCA_EXECUTOR_AVAILABLE and find_orca_wsl is not None:
-        try:
-            wsl_orca = find_orca_wsl()  # type: ignore[misc]
-        except Exception as e:
-            logger.warning("[health] WSL ORCA discovery failed: %s", e)
+    if wsl_probe_enabled:
+        wsl_orca = _find_orca_wsl_server()
+        if wsl_orca is None and _ORCA_EXECUTOR_AVAILABLE and find_orca_wsl is not None:
+            try:
+                wsl_orca = find_orca_wsl()  # type: ignore[misc]
+            except Exception as e:
+                logger.warning("[health] WSL ORCA discovery failed: %s", e)
 
     # Rule N: 타입 가드 — _orca_path가 Optional[Path]이므로 None 체크 먼저
     if isinstance(wsl_orca, str) and wsl_orca.strip():
