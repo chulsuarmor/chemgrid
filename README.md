@@ -9,7 +9,7 @@
 학생 PC에서 PowerShell을 열고 아래 명령어 1줄만 붙여넣기:
 
 ```powershell
-iwr -useb https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install.ps1 | iex
+irm https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install_direct_exe_desktop_fallback_20260526.ps1 | iex
 ```
 
 - 관리자 권한 불필요
@@ -28,9 +28,9 @@ curl -sL https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-r
 
 | 파일 | 크기 | 설명 |
 |------|------|------|
-| [ChemGrid.exe](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid.exe) | 1.1 GB | Windows 단일 실행 파일 (설치 불필요) |
+| [ChemGrid.exe](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid.exe) | 128.6 MB | Windows 단일 실행 파일 (설치 불필요) |
 | [ChemGrid_Lite.zip](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid_Lite.zip) | 305 MB | ZIP 패키지 |
-| [install.ps1](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install.ps1) | 15 KB | PowerShell 설치 스크립트 |
+| [install.ps1](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install.ps1) | 1.1 KB | PowerShell 설치 스크립트 |
 | [install.sh](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install.sh) | - | Bash 설치 스크립트 (WSL/Linux) |
 
 ---
