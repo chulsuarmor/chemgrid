@@ -4,7 +4,9 @@ import os
 
 
 SPEC_DIR = os.path.abspath(os.path.dirname(globals().get('__file__', 'ChemGrid.spec')))
-PROJECT_ROOT = os.path.abspath(os.path.join(SPEC_DIR, '..'))
+PROJECT_ROOT = os.path.abspath(os.getcwd())
+if not os.path.exists(os.path.join(PROJECT_ROOT, 'src', 'app')):
+    PROJECT_ROOT = os.path.abspath(os.path.join(SPEC_DIR, '..'))
 SRC_DIR = os.path.join(PROJECT_ROOT, 'src', 'app')
 REQUIRED_RESOURCES = [
     'logo.png',
