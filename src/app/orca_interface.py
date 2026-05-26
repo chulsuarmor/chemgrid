@@ -159,6 +159,53 @@ class OrcaParseError(OrcaError):
 # ============================================================================
 
 _SCRIPT_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
+_ORCA_ENV_LOADED = False
+
+
+def _load_orca_env_if_present() -> None:
+    """Load .env once so ORCA_PATH/ORCA_SERVER_URL works in packaged runs."""
+    global _ORCA_ENV_LOADED
+    if _ORCA_ENV_LOADED:
+        return
+    _ORCA_ENV_LOADED = True
+    try:
+        from dotenv import load_dotenv  # type: ignore
+    except ImportError:
+        logger.info("python-dotenv unavailable; ORCA env uses os.environ only")
+        return
+    candidates = [
+        _SCRIPT_DIR.parent.parent / ".env",
+        _SCRIPT_DIR.parent / ".env",
+        _SCRIPT_DIR / ".env",
+        Path("C:/chemgrid/.env"),
+    ]
+    for candidate in candidates:
+        try:
+            if candidate.exists():
+                load_dotenv(str(candidate), override=False)
+                return
+        except Exception as e:
+            logger.debug("ORCA dotenv candidate skipped %s: %s", candidate, e)
+
+
+def _explicit_orca_path_from_env() -> Optional[Path]:
+    """Return an explicitly configured ORCA executable path, if valid."""
+    _load_orca_env_if_present()
+    exe_names = ["orca.exe", "Orca6.1.1.Win64.exe", "orca"]
+    for key in ("CHEMGRID_ORCA_PATH", "ORCA_PATH", "ORCA_EXE"):
+        raw_value = os.environ.get(key, "")
+        if not isinstance(raw_value, str) or not raw_value.strip():
+            continue
+        expanded = Path(os.path.expandvars(os.path.expanduser(raw_value.strip())))
+        candidates = [expanded]
+        if expanded.is_dir():
+            candidates = [expanded / exe_name for exe_name in exe_names]
+        for candidate in candidates:
+            if candidate.is_file():
+                logger.info("ORCA found from %s: %s", key, candidate)
+                return candidate
+        logger.warning("%s is set but no ORCA executable was found at %s", key, expanded)
+    return None
 
 
 # ============================================================================
@@ -349,17 +396,22 @@ def find_orca_executable() -> Optional[Path]:
     then falls back to the system PATH.
 
     Search order:
-      1. _SCRIPT_DIR / "Orca.6.1.1" / "orca.exe"
-      2. _SCRIPT_DIR / "Orca.6.1.1" / "Orca6.1.1.Win64.exe"
-      3. _SCRIPT_DIR.parent / "Orca.6.1.1" / "orca.exe"
-      4. _SCRIPT_DIR.parent / "Orca.6.1.1" / "Orca6.1.1.Win64.exe"
-      5. _SCRIPT_DIR.parent.parent / "Orca.6.1.1" / "orca.exe"
-      6. _SCRIPT_DIR.parent.parent / "Orca.6.1.1" / "Orca6.1.1.Win64.exe"
-      7. System PATH (shutil.which("orca"))
+      1. Explicit env path: CHEMGRID_ORCA_PATH / ORCA_PATH / ORCA_EXE
+      2. _SCRIPT_DIR / "Orca.6.1.1" / "orca.exe"
+      3. _SCRIPT_DIR / "Orca.6.1.1" / "Orca6.1.1.Win64.exe"
+      4. _SCRIPT_DIR.parent / "Orca.6.1.1" / "orca.exe"
+      5. _SCRIPT_DIR.parent / "Orca.6.1.1" / "Orca6.1.1.Win64.exe"
+      6. _SCRIPT_DIR.parent.parent / "Orca.6.1.1" / "orca.exe"
+      7. _SCRIPT_DIR.parent.parent / "Orca.6.1.1" / "Orca6.1.1.Win64.exe"
+      8. System PATH (shutil.which("orca"))
 
     Returns:
         Path to ORCA executable, or None if not found.
     """
+    explicit_orca = _explicit_orca_path_from_env()
+    if explicit_orca is not None:
+        return explicit_orca
+
     exe_names = ["orca.exe", "Orca6.1.1.Win64.exe"]
     search_roots = [
         _SCRIPT_DIR,
@@ -400,6 +452,53 @@ def get_orca_dir() -> Optional[Path]:
 
 # Module-level lazy ORCA path (resolved on first use)
 _orca_exe_cache: Optional[Path] = None
+
+# ============================================================================
+# [M1436] SIMULATION_MODE 모듈 레벨 플래그 (Rule GG / Rule M 의무)
+# ORCA_SIMULATION_MODE=True 시 DFT 결과 SIMULATION 배너 표시 의무 (Rule GG)
+# XTB_SIMULATION_MODE=True 시 Mulliken 전하 계산 불가 — 사용자 피드백 의무 (Rule M)
+# ============================================================================
+# 지연 평가: 모듈 import 시점에 find_orca_executable()은 아직 탐색하지 않음
+# → is_orca_available()/is_xtb_available() 최초 호출 시 캐시
+_ORCA_SIM_CHECKED: bool = False
+_XTB_SIM_CHECKED: bool = False
+ORCA_SIMULATION_MODE: bool = True   # 기본값 True — 탐색 후 갱신
+XTB_SIMULATION_MODE: bool = True    # 기본값 True — 탐색 후 갱신
+
+
+def _ensure_sim_mode_checked() -> None:
+    """모듈 레벨 SIMULATION_MODE 플래그를 최초 1회 확정한다 (지연 초기화).
+
+    Rule GG: ORCA/xtb 미설치 시 SIMULATION_MODE 배너를 표시할 수 있도록
+    호출자(popup_3d, analyzer)에게 신뢰할 수 있는 플래그를 제공.
+    Rule M: 미설치 확인 즉시 logger.warning — silent 금지.
+    """
+    global _ORCA_SIM_CHECKED, _XTB_SIM_CHECKED
+    global ORCA_SIMULATION_MODE, XTB_SIMULATION_MODE
+
+    if not _ORCA_SIM_CHECKED:
+        _ORCA_SIM_CHECKED = True
+        remote_ready = RemoteOrcaClient().is_available()
+        orca_found = find_orca_executable() or find_orca_wsl()
+        ORCA_SIMULATION_MODE = (not remote_ready) and orca_found is None
+        if ORCA_SIMULATION_MODE:
+            logger.warning(
+                "[M1436] ORCA 미설치 - ORCA_SIMULATION_MODE=True. "
+                "DFT 결과는 경험적 추정값입니다 (Rule GG 배너 표시 의무). "
+                "설치: https://orcaforum.kofo.mpg.de/ 또는 ORCA_SERVER_URL 설정."
+            )
+
+    if not _XTB_SIM_CHECKED:
+        _XTB_SIM_CHECKED = True
+        xtb_found = find_xtb_executable()
+        XTB_SIMULATION_MODE = xtb_found is None
+        if XTB_SIMULATION_MODE:
+            logger.warning(
+                "[M1436] xtb 미설치 - XTB_SIMULATION_MODE=True. "
+                "GFN2-xTB Mulliken 전하 계산 불가 (Gasteiger fallback 사용). "
+                "설치: https://github.com/grimme-lab/xtb/releases "
+                "또는 XTB_PATH 환경변수 설정."
+            )
 
 
 def _get_orca_exe() -> Path:
@@ -1505,7 +1604,12 @@ def validate_orca_installation() -> bool:
     """
     exe = find_orca_executable()
     if exe is None:
-        logger.error("ORCA installation not found")
+        # [M1436] Rule M: logger.warning + 사용자 안내 의무 (logger.error → warning, 배포판 정상 케이스)
+        logger.warning(
+            "[M1436] ORCA 미설치 - ORCA_SIMULATION_MODE 활성화. "
+            "배포판(EXE)에서는 ORCA 없이도 경험적 스펙트럼/전하 계산 가능 (Rule GG). "
+            "설치 희망 시: https://orcaforum.kofo.mpg.de/"
+        )
         return False
     logger.info("ORCA installation verified: %s", exe)
     return True
@@ -1860,7 +1964,12 @@ def find_xtb_executable() -> Optional[Path]:
             logger.info("xtb available via WSL: %s", wsl_path)
             return _XTB_WSL_SENTINEL
 
-    logger.debug("xtb executable not found in any candidate path")
+    # [M1436] Rule M: silent return 금지 - 미설치 시 warning 필수
+    logger.warning(
+        "[M1436] xtb 미설치 - 네이티브/WSL 모두 미발견. "
+        "GFN2-xTB 전하 계산 불가 (Gasteiger fallback). "
+        "XTB_PATH 환경변수 또는 C:/chemgrid/bin/xtb 경로에 xtb.exe 배치 필요."
+    )
     return None
 
 
@@ -1878,7 +1987,12 @@ def validate_xtb_installation() -> bool:
     """
     exe = find_xtb_executable()
     if exe is None:
-        logger.info("xtb not installed — GFN2-xTB charges unavailable (graceful fallback)")
+        # [M1436] Rule M: silent failure 금지 - warning 승격 (사용자 가시성 필수)
+        logger.warning(
+            "[M1436] xtb 미설치 - GFN2-xTB 전하 계산 불가 (SIMULATION_MODE fallback). "
+            "배포판에서 xtb를 사용하려면 XTB_PATH 환경변수 또는 "
+            "C:/chemgrid/bin/xtb 경로 설정 필요."
+        )
         return False
     if _is_wsl_xtb(exe):
         logger.info("xtb installation verified via WSL: %s", _find_xtb_in_wsl())
@@ -2022,7 +2136,11 @@ def run_xtb_charges(
     """
     xtb_exe = find_xtb_executable()
     if xtb_exe is None:
-        logger.debug("xtb not available — returning empty charges")
+        # [M1436] Rule M: silent failure 금지 - Mulliken 전하 빈 dict 반환 시 warning 필수
+        logger.warning(
+            "[M1436] run_xtb_charges: xtb 미설치 - Mulliken 전하 계산 불가, 빈 dict 반환. "
+            "Gasteiger fallback이 대신 사용됩니다."
+        )
         return {}
 
     # Generate XYZ content (needed for both native and WSL modes)
@@ -3293,7 +3411,11 @@ def run_orca_dft_auto(
     Returns:
         OrcaDftResult from remote ORCA, or opt-in local ORCA if explicitly enabled.
     """
-    local_allowed = os.environ.get("CHEMGRID_ORCA_ALLOW_LOCAL", "0") == "1"
+    explicit_local_orca = _explicit_orca_path_from_env()
+    local_allowed = (
+        explicit_local_orca is not None
+        or os.environ.get("CHEMGRID_ORCA_ALLOW_LOCAL", "0") == "1"
+    )
 
     # Step 1: Try remote ORCA server first.  Student laptops such as LG Gram
     # must not require local ORCA/WSL installation for ChemGrid DFT features.
@@ -3312,20 +3434,44 @@ def run_orca_dft_auto(
             remote_result.error_message,
         )
 
-    # Step 2: Local ORCA is opt-in only, so a developer workstation WSL install
-    # cannot hide a broken student/remote deployment path.
+    # Step 2: Local ORCA is allowed when the user explicitly configured an
+    # executable path. Ambient PATH/WSL discovery remains opt-in so a developer
+    # workstation cannot hide a broken student/remote deployment path.
     if local_allowed:
-        local_orca = find_orca_wsl() or find_orca_executable()
+        local_orca = explicit_local_orca or find_orca_wsl() or find_orca_executable()
         if local_orca:
-            logger.info("run_orca_dft_auto: using opt-in local ORCA")
-            return run_orca_dft(
-                smiles=smiles, method=method, basis=basis,
-                calc_type=calc_type, charge=charge,
-                multiplicity=multiplicity, timeout=timeout,
-            )
+            logger.info("run_orca_dft_auto: using local ORCA at %s", local_orca)
+            try:
+                return run_orca_dft(
+                    smiles=smiles, method=method, basis=basis,
+                    calc_type=calc_type, charge=charge,
+                    multiplicity=multiplicity, timeout=timeout,
+                )
+            except Exception as e:
+                logger.warning(
+                    "run_orca_dft_auto: local ORCA execution failed via %s: %s",
+                    local_orca, e,
+                )
+                return OrcaDftResult(
+                    success=False,
+                    smiles=smiles,
+                    method=method,
+                    basis=basis,
+                    calc_type=calc_type,
+                    error_message=(
+                        "[ORCA_LOCAL_ERROR] Local ORCA execution failed. "
+                        f"path={local_orca}; error={type(e).__name__}: {e}"
+                    ),
+                )
 
-    # Step 3: Neither available
-    logger.warning("run_orca_dft_auto: remote ORCA unavailable and local fallback disabled")
+    # Step 3: Neither available — [M1436] Rule GG SIMULATION_MODE 배너 + Rule M warning 의무
+    logger.warning(
+        "[M1436] run_orca_dft_auto: ORCA SIMULATION_MODE - "
+        "원격 서버/로컬 ORCA 모두 미설치. "
+        "DFT 결과 표시 불가 - UI에 SIMULATION_MODE 배너 표시 의무 (Rule GG). "
+        "해결: (1) CHEMGRID_ORCA_SERVER_URL 환경변수에 ORCA 서버 URL 설정, "
+        "또는 (2) ORCA_PATH/CHEMGRID_ORCA_PATH에 로컬 ORCA 실행파일 설정."
+    )
     return OrcaDftResult(
         success=False,
         smiles=smiles,
@@ -3333,9 +3479,10 @@ def run_orca_dft_auto(
         basis=basis,
         calc_type=calc_type,
         error_message=(
-            "Remote ORCA server unavailable. Set CHEMGRID_ORCA_SERVER_URL to a "
-            "reachable ChemGrid ORCA server, or set CHEMGRID_ORCA_ALLOW_LOCAL=1 "
-            "only for lab/developer machines."
+            "[SIMULATION_MODE] ORCA 미설치 - DFT 계산 불가.\n"
+            "원격 서버: CHEMGRID_ORCA_SERVER_URL 환경변수 설정\n"
+            "로컬 설치: ORCA_PATH 또는 CHEMGRID_ORCA_PATH에 orca 실행파일 경로 설정\n"
+            "배포판 사용자는 SIMULATION_MODE 배너 표시 상태로 경험적 추정값 확인 가능."
         ),
     )
 
