@@ -21,9 +21,10 @@ try:
         QTextEdit, QFileDialog, QTabWidget, QTableWidget, QTableWidgetItem,
         QGroupBox, QFormLayout, QProgressBar, QListWidget, QListWidgetItem,
         QWidget, QHeaderView, QSizePolicy, QSlider, QCheckBox, QMessageBox,
+        QApplication,
     )
     from PyQt6.QtCore import Qt, QThread, pyqtSignal
-    from PyQt6.QtGui import QFont, QColor, QBrush
+    from PyQt6.QtGui import QFont, QColor, QBrush, QFontDatabase
     PYQT_AVAILABLE = True
 except ImportError:
     PYQT_AVAILABLE = False
@@ -51,6 +52,40 @@ if MATPLOTLIB_AVAILABLE:
             matplotlib.rcParams["font.family"] = _MPL_KR_FONT.get_name()
             fm.fontManager.addfont(_fp)
             break
+
+# M1461: Qt widget font registration for Korean offscreen captures.
+_QT_KR_FONT = "Malgun Gothic"
+_QT_KR_FONT_READY = False
+
+
+def _ensure_qt_korean_font_ready() -> str:
+    """Register a Korean Qt font and return the selected family name."""
+    global _QT_KR_FONT, _QT_KR_FONT_READY  # noqa: PLW0603
+    if _QT_KR_FONT_READY:
+        return _QT_KR_FONT
+    if not PYQT_AVAILABLE:
+        return _QT_KR_FONT
+    app = QApplication.instance()
+    if app is None:
+        return _QT_KR_FONT
+    for _font_path in (
+        r"C:\Windows\Fonts\malgun.ttf",
+        r"C:\Windows\Fonts\malgunbd.ttf",
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+    ):
+        try:
+            if os.path.exists(_font_path):
+                _font_id = QFontDatabase.addApplicationFont(_font_path)
+                if _font_id >= 0:
+                    _families = QFontDatabase.applicationFontFamilies(_font_id)
+                    if _families:
+                        _QT_KR_FONT = _families[0]
+                        break
+        except Exception as exc:
+            logger.warning("[M1461] Drug Screening Korean font load failed: %s", exc)
+    app.setFont(QFont(_QT_KR_FONT, 10))
+    _QT_KR_FONT_READY = True
+    return _QT_KR_FONT
 
 try:
     from drug_screening import (
@@ -141,6 +176,7 @@ class DrugScreeningPopup(QDialog):
         self._all_hits: List[ScreeningHit] = []
         self._filtered_hits: List[ScreeningHit] = []
         self._worker: Optional[_ScreeningWorker] = None
+        _ensure_qt_korean_font_ready()
 
         self.setWindowTitle("신약 스크리닝")
         self.resize(1100, 750)
@@ -150,6 +186,14 @@ class DrugScreeningPopup(QDialog):
 
     # ------------------------------------------------------------------ UI
     def _init_ui(self):
+        _kr_font = _ensure_qt_korean_font_ready()
+        self.setFont(QFont(_kr_font, 10))
+        self.setStyleSheet(f"""
+            QDialog, QWidget, QLabel, QGroupBox, QTabWidget, QTabBar,
+            QListWidget, QTableWidget, QTextEdit, QPushButton, QCheckBox {{
+                font-family: "{_kr_font}", "Malgun Gothic", "NanumGothic", sans-serif;
+            }}
+        """)
         layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs)
@@ -237,7 +281,7 @@ class DrugScreeningPopup(QDialog):
         vbox = QVBoxLayout(tab)
 
         self.lbl_summary = QLabel("스크리닝 결과가 없습니다. '후보 입력' 탭에서 시작하세요.")
-        self.lbl_summary.setFont(QFont("", 10))
+        self.lbl_summary.setFont(QFont(_QT_KR_FONT, 10))
         vbox.addWidget(self.lbl_summary)
 
         self.tbl_results = QTableWidget()
@@ -616,14 +660,14 @@ class DrugScreeningPopup(QDialog):
             tier_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             color = TIER_COLORS.get(tier_str, "#999999")
             tier_item.setForeground(QBrush(QColor(color)))
-            tier_item.setFont(QFont("", 10, QFont.Weight.Bold))
+            tier_item.setFont(QFont(_QT_KR_FONT, 10, QFont.Weight.Bold))
             self.tbl_results.setItem(row, 7, tier_item)
             # PAINS warning
             n_alerts = hit.qed.n_alerts if hit.qed else 0
             pains_item = QTableWidgetItem(str(n_alerts) if n_alerts else "-")
             if n_alerts > 0:
                 pains_item.setForeground(QBrush(QColor("#e74c3c")))
-                pains_item.setFont(QFont("", 9, QFont.Weight.Bold))
+                pains_item.setFont(QFont(_QT_KR_FONT, 9, QFont.Weight.Bold))
             pains_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.tbl_results.setItem(row, 8, pains_item)
 
@@ -1228,7 +1272,7 @@ class DrugScreeningPopup(QDialog):
             if isinstance(sim_val, (int, float)):
                 if sim_val >= 0.7:  # [MAGIC: 0.7] 강한 매칭 (ECFP4 표준)
                     sim_item.setForeground(QBrush(QColor("#27ae60")))
-                    sim_item.setFont(QFont("", 10, QFont.Weight.Bold))
+                    sim_item.setFont(QFont(_QT_KR_FONT, 10, QFont.Weight.Bold))
                 elif sim_val >= 0.4:  # [MAGIC: 0.4] 의미있는 매칭
                     sim_item.setForeground(QBrush(QColor("#f39c12")))
             self.tbl_drugbank.setItem(row, 2, sim_item)
