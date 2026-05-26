@@ -5,9 +5,11 @@
 
 import logging
 import math
+import os
 from collections import deque
 from pathlib import Path
 
+from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import (QPainter, QColor, QFont, QPen, QPainterPath,
                           QFontMetrics, QBrush, QPolygonF, QRadialGradient,
                           QFontDatabase)
@@ -15,6 +17,40 @@ from PyQt6.QtCore import Qt, QPointF, QRectF
 from rdkit import Chem  # 이론적 구조의 결합 타입 판별용
 
 logger = logging.getLogger(__name__)
+
+# ── Korean Qt font (G3 pattern — M1485) ──────────────────────────────────────
+# popup_polymer.py / toolbar_setup.py 동일 패턴 적용: Lewis/Theory 레이어 tofu 방지
+_QT_KR_FONT = "Malgun Gothic"   # Rule Q: 한국어+원소기호 폰트
+_QT_KR_FONT_READY = False       # 중복 QFontDatabase.addApplicationFont 호출 방지
+
+
+def _ensure_qt_korean_font_ready() -> str:
+    """[M1485] Lewis/Theory 레이어 offscreen tofu 근본 수정.
+    popup_polymer.py G3 패턴 동일:
+      - QFontDatabase.addApplicationFont(malgun.ttf) 명시적 등록
+      - QApplication.setFont(QFont("Malgun Gothic")) 전역 적용
+    Rule Q: Lewis/Theory 레이어 원소기호·한국어 tofu 방지.
+    """
+    global _QT_KR_FONT, _QT_KR_FONT_READY  # noqa: PLW0603
+    if _QT_KR_FONT_READY:
+        return _QT_KR_FONT
+    app = QApplication.instance()
+    if app is None:
+        return _QT_KR_FONT
+    for font_path in (r"C:\Windows\Fonts\malgun.ttf", r"C:\Windows\Fonts\malgunbd.ttf"):
+        try:
+            if os.path.exists(font_path):
+                font_id = QFontDatabase.addApplicationFont(font_path)
+                if font_id >= 0:
+                    families = QFontDatabase.applicationFontFamilies(font_id)
+                    if families:
+                        _QT_KR_FONT = families[0]
+                        break
+        except Exception as exc:
+            logger.warning("[M1485] layer_logic Korean font load failed: %s", exc)
+    app.setFont(QFont(_QT_KR_FONT, 10))
+    _QT_KR_FONT_READY = True
+    return _QT_KR_FONT
 
 
 # ============================================================================
@@ -212,7 +248,9 @@ class LewisRenderer:
     _BOND_WIDTH_SELECTED = 2.8 # 선택 시 결합선 두께
     _GAP_MARGIN = 8            # 기호-결합선 여백 (px)
     _MIN_ANGLE_GAP = 30.0      # 최소 배치 각도 간격 (°)
-    _H_COLLISION_RADIUS = 18.0 # [P0-2 v2] H 라벨 충돌 감지 반경 (px) — 18px for 12pt font
+    _H_COLLISION_RADIUS = 22.0 # [P0-2 v2] H 라벨 충돌 감지 반경 (px) — 12pt font plus anti-alias margin
+    _H_AVOID_STEP_DEG = 22.5   # [D891 item2] symmetric retry step for overlapped H labels
+    _H_AVOID_MAX_TRY = 8       # [D891 item2] tries ±22.5/45/67.5/90 degrees before keeping last candidate
     # [M647_W11] 사용자 격분 (2026-05-03 18:37): "산소 등 비공유 전자쌍의 표현이 너무 크고
     #   굵어 분자를 식별하는데 방해... 점의 두께를 절반 이상 줄이고 산소에 약간 더 붙여서 표현
     #   (C:\chemgrid\docs\in 내 전공서 이미지 참조)" → 3.5→1.5px (절반 이상 축소).
@@ -247,7 +285,80 @@ class LewisRenderer:
         return cls._FONT_FAMILY
 
     @staticmethod
-    def get_bond_gap(pt_key, atoms_data):
+    def _ascii_vector_text_size(text: str, height: float) -> tuple[float, float]:
+        """Return the stroke-label bounds used by the NaCl font fallback."""
+        width = 0.0
+        for ch in text:
+            if ch in ("+", "-"):
+                glyph_w = height * 0.55
+            elif ch in ("a", "l"):
+                glyph_w = height * 0.46
+            else:
+                glyph_w = height * 0.62
+            width += glyph_w + height * 0.16
+        if width > 0:
+            width -= height * 0.16
+        return width, height
+
+    @staticmethod
+    def _draw_ascii_vector_text(painter, center: QPointF, text: str,
+                                height: float, color) -> QRectF:
+        """Draw Na/Cl/+/- with QPainter strokes when Qt text renders tofu boxes."""
+        width, glyph_h = LewisRenderer._ascii_vector_text_size(text, height)
+        x = center.x() - width / 2.0
+        y = center.y() - glyph_h / 2.0
+        painter.save()
+        try:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(color, max(1.4, height * 0.095),
+                                Qt.PenStyle.SolidLine,
+                                Qt.PenCapStyle.RoundCap,
+                                Qt.PenJoinStyle.RoundJoin))
+            cursor = x
+            gap = height * 0.16
+            for ch in text:
+                if ch in ("+", "-"):
+                    gw = height * 0.55
+                    mid_y = y + glyph_h * 0.5
+                    painter.drawLine(QPointF(cursor + gw * 0.12, mid_y),
+                                     QPointF(cursor + gw * 0.88, mid_y))
+                    if ch == "+":
+                        mid_x = cursor + gw * 0.5
+                        painter.drawLine(QPointF(mid_x, y + glyph_h * 0.16),
+                                         QPointF(mid_x, y + glyph_h * 0.84))
+                elif ch == "N":
+                    gw = height * 0.62
+                    painter.drawLine(QPointF(cursor, y + glyph_h),
+                                     QPointF(cursor, y))
+                    painter.drawLine(QPointF(cursor, y),
+                                     QPointF(cursor + gw, y + glyph_h))
+                    painter.drawLine(QPointF(cursor + gw, y + glyph_h),
+                                     QPointF(cursor + gw, y))
+                elif ch == "a":
+                    gw = height * 0.46
+                    rect = QRectF(cursor, y + glyph_h * 0.34,
+                                  gw * 0.78, glyph_h * 0.50)
+                    painter.drawEllipse(rect)
+                    painter.drawLine(QPointF(cursor + gw * 0.80, y + glyph_h * 0.36),
+                                     QPointF(cursor + gw * 0.80, y + glyph_h * 0.88))
+                    painter.drawLine(QPointF(cursor + gw * 0.80, y + glyph_h * 0.64),
+                                     QPointF(cursor + gw, y + glyph_h * 0.64))
+                elif ch == "C":
+                    gw = height * 0.62
+                    painter.drawArc(QRectF(cursor, y, gw, glyph_h), 45 * 16, 270 * 16)
+                elif ch == "l":
+                    gw = height * 0.46
+                    x_mid = cursor + gw * 0.45
+                    painter.drawLine(QPointF(x_mid, y),
+                                     QPointF(x_mid, y + glyph_h))
+                cursor += gw + gap
+        finally:
+            painter.restore()
+        return QRectF(x, y, width, glyph_h)
+
+    @staticmethod
+    def get_bond_gap(pt_key, atoms_data, lewis_mode: bool = False):
         """
         결합선이 원소 기호로부터 떨어져야 하는 거리(px) 계산.
         기호 텍스트 크기의 절반 + 여백.
@@ -256,6 +367,10 @@ class LewisRenderer:
         vertex만 표시 → gap = 0. 이전 코드의 "C"로 대체 후 gap 계산이 문제였음.
         탄소에 17px gap을 부여해서 40px 결합이 6px로 줄어 점선처럼 보임.
         Rule I: Carbon = '' (빈 문자열) — 라벨 없는 탄소는 gap=0.
+
+        [M1431 FIX] lewis_mode=True 시 탄소도 "C" 표시됨 → gap 계산 필요.
+        Lewis 구조식은 모든 원소 명시(show_carbon=True), 결합선이 "C" 위를 지나면
+        사용자 격분 "골격 탄소에 결합선 간격 안 띄움".
         """
         if pt_key not in atoms_data:
             return 0
@@ -266,9 +381,12 @@ class LewisRenderer:
         symbol = atom.get("main", "")
 
         # [M501 FIX] 탄소(빈 문자열)는 라벨 없음 → gap = 0 (vertex 표시)
-        # Rule I: Carbon = '' (empty string). 결합이 vertex에서 만나므로 gap 불필요.
+        # [M1431 FIX] lewis_mode=True 이면 탄소도 "C"로 표시하므로 gap 계산 필요.
+        # Rule I: Carbon = '' (empty string) 저장 규칙. Lewis 렌더링 시 "C" 표시.
         if not symbol or symbol.strip() == "":
-            return 0  # Carbon vertex: no label, no gap needed
+            if not lewis_mode:
+                return 0  # Carbon vertex: no label, no gap needed (skeletal/Theory)
+            symbol = "C"  # [MAGIC: "C"] Lewis 모드 탄소 표시 기호 (M680 item2)
 
         font = QFont(LewisRenderer._get_font_family(),  # [M609] lazy resolved font
                       LewisRenderer._FONT_SIZE_MAIN, QFont.Weight.Bold)
@@ -280,18 +398,71 @@ class LewisRenderer:
         return base_gap + LewisRenderer._GAP_MARGIN
 
     @staticmethod
+    def _analysis_with_rdkit_display_hydrogens(analysis):
+        """Return a shallow analysis copy with RDKit-backed H/charge counts.
+
+        D891: SMILES-derived nitro/aromatic structures can arrive with stale
+        analyzer h_count values. Rendering labels must reflect RDKit valence so
+        nitro N/O atoms do not become NH/OH in Lewis/ElectronDist views.
+        """
+        if not isinstance(analysis, dict):
+            return analysis
+        atoms_data = analysis.get("atoms", {})
+        smiles = analysis.get("smiles", "")
+        if not isinstance(atoms_data, dict) or not atoms_data:
+            return analysis
+        if not isinstance(smiles, str) or not smiles.strip():
+            return analysis
+        try:
+            mol = Chem.MolFromSmiles(smiles.strip())  # Rule L: parse before use.
+            if mol is None:
+                logger.warning("[D891] RDKit display-H correction skipped: invalid SMILES %r", smiles)
+                return analysis
+            corrected_atoms = {}
+            fallback_keys = list(atoms_data.keys()) if len(atoms_data) == mol.GetNumAtoms() else []
+            for fallback_idx, (pt_key, atom_data) in enumerate(atoms_data.items()):
+                if not isinstance(atom_data, dict):
+                    corrected_atoms[pt_key] = atom_data
+                    continue
+                rdkit_idx = atom_data.get("rdkit_idx")
+                if not isinstance(rdkit_idx, int) and fallback_keys:
+                    rdkit_idx = fallback_idx
+                new_atom = dict(atom_data)
+                if isinstance(rdkit_idx, int) and 0 <= rdkit_idx < mol.GetNumAtoms():
+                    rd_atom = mol.GetAtomWithIdx(rdkit_idx)
+                    if rd_atom.GetAtomicNum() == 1:
+                        new_atom["h_count"] = 0
+                    else:
+                        new_atom["h_count"] = int(rd_atom.GetTotalNumHs())
+                    formal_charge = int(rd_atom.GetFormalCharge())
+                    new_atom["formal_charge"] = formal_charge
+                    if formal_charge:
+                        new_atom["charge"] = "+" if formal_charge > 0 else "-"
+                    else:
+                        new_atom["charge"] = ""
+                corrected_atoms[pt_key] = new_atom
+            corrected = dict(analysis)
+            corrected["atoms"] = corrected_atoms
+            return corrected
+        except Exception as e:
+            logger.warning("[D891] RDKit display-H correction failed: %s", e)
+            return analysis
+
+    @staticmethod
     def render(painter, atoms, bonds, analysis,
                selected_atoms=None, selected_bonds=None):
         """
         루이스 구조 메인 렌더 파이프라인
         Z-order: 결합선 → 원자기호 → H/LP → 형식전하
         """
+        _ensure_qt_korean_font_ready()  # [M1485] Rule Q: Lewis 레이어 tofu 방지
         if not analysis:
             logger.warning("LewisRenderer.render: analysis is empty or None")
             return
         if not isinstance(analysis, dict):
             logger.warning("LewisRenderer.render: analysis is not dict: %s", type(analysis).__name__)
             return
+        analysis = LewisRenderer._analysis_with_rdkit_display_hydrogens(analysis)
 
         logger.debug("LewisRenderer v3.0 activated")
         _theory_d = analysis.get("theory_data", {})
@@ -312,8 +483,9 @@ class LewisRenderer:
         painter.save()
 
         # === STAGE 1: 결합선 렌더링 ===
+        # [M1431] lewis_mode=True: 탄소도 "C" 표시(show_carbon=True)이므로 gap 계산 필요
         LewisRenderer._render_bonds(painter, analysis, t_map,
-                                     atoms_data, selected_bonds)
+                                     atoms_data, selected_bonds, lewis_mode=True)
 
         # === STAGE 1b: 입체화학 wedge/dash 렌더링 (B10-15) ===
         # 키랄 탄소 + 3개 이상 R기 → wedge(실선 삼각형)/dash(점선) 표시
@@ -344,8 +516,11 @@ class LewisRenderer:
     # STAGE 1: 결합선
     # ------------------------------------------------------------------
     @staticmethod
-    def _render_bonds(painter, analysis, t_map, atoms_data, selected_bonds):
-        """결합선 렌더링 (단일/이중/삼중, C=C 짧은 선 지원)"""
+    def _render_bonds(painter, analysis, t_map, atoms_data, selected_bonds,
+                      lewis_mode: bool = False):
+        """결합선 렌더링 (단일/이중/삼중, C=C 짧은 선 지원)
+        [M1431] lewis_mode=True: 탄소 gap 계산 포함 (Lewis 구조식 "C" 표시 간격).
+        """
         _bonds_data = analysis.get("bonds", {}) if isinstance(analysis, dict) else {}
         if not isinstance(_bonds_data, dict):
             logger.warning("_render_bonds: bonds data is not dict: %s", type(_bonds_data).__name__)
@@ -374,8 +549,9 @@ class LewisRenderer:
                 continue
 
             unit = vec / length
-            gap1 = LewisRenderer.get_bond_gap(k1, atoms_data)
-            gap2 = LewisRenderer.get_bond_gap(k2, atoms_data)
+            # [M1431] lewis_mode=True 전달: 탄소도 "C" 표시이므로 gap 계산 필요
+            gap1 = LewisRenderer.get_bond_gap(k1, atoms_data, lewis_mode=lewis_mode)
+            gap2 = LewisRenderer.get_bond_gap(k2, atoms_data, lewis_mode=lewis_mode)
 
             p1 = p1_orig + unit * gap1
             p2 = p2_orig - unit * gap2
@@ -534,21 +710,24 @@ class LewisRenderer:
                               show_carbon: bool = False):
         """
         원자 기호 렌더링 (모든 원소 표시, 선택 시 파란색 하이라이트)
-        [Fix v3] π 고리에 전하가 있으면 고리 전체 동일 색상 (비편재화)
 
         [M680 item2 fix] show_carbon=True 시 빈 symbol(탄소)을 "C"로 표시.
         Lewis 구조식은 모든 원소(탄소 포함)를 명시 표기해야 함.
         Rule I: Carbon='' (빈문자열) 규칙은 내부 저장 규칙 — 렌더링 시 Lewis 모드에선 "C" 표시.
+
+        [M1431 FIX] Lewis 구조식 모든 원자 = 검정(black).
+        이전 [Fix v3] 이온성 고리 원자에 빨강/파랑 색 전파 → 사용자 미요청 임의 색상 변경 제거.
+        Lewis 구조식 교과서 표준: 원소 기호는 색상 구분 없이 검정 단일색.
+        이온성 정보 시각화는 ESP 레이어(ElectronDist/Theory) 전담.
         """
         if not isinstance(analysis, dict):
             return
-        # π 비편재화 색상 맵 사전 계산
-        charged_color_map = LewisRenderer._get_charged_ring_atoms(analysis)
 
         _atoms_s2 = analysis.get("atoms", {})
         if not isinstance(_atoms_s2, dict):
             logger.warning("_render_atom_symbols: atoms data is not dict: %s", type(_atoms_s2).__name__)
             _atoms_s2 = {}
+        rendered_label_rects = []
         for pt_key, atom_data in _atoms_s2.items():
             if not isinstance(atom_data, dict):
                 continue
@@ -565,11 +744,11 @@ class LewisRenderer:
             center = t_map.get(pt_key, QPointF(*pt_key))
             is_selected = pt_key in selected_atoms
 
-            # [Fix v3] 전하 비편재화 색상 우선 적용
+            # [M1431 FIX] Lewis 원자 색상 = 검정 단일색 (선택 시 파랑).
+            # 이전 [Fix v3] charged_color_map 이온성 고리 색상 전파 제거 — 사용자 미요청.
+            # 교과서 Lewis 구조식: 모든 원소 기호 검정, 색 구분 없음.
             if is_selected:
                 atom_color = Qt.GlobalColor.blue
-            elif pt_key in charged_color_map:
-                atom_color = charged_color_map[pt_key]
             else:
                 atom_color = Qt.GlobalColor.black
 
@@ -583,16 +762,107 @@ class LewisRenderer:
 
             text_rect = QRectF(center.x() - tw / 2, center.y() - th / 2,
                                tw, th)
-            painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, symbol)
+            text_rect = LewisRenderer._avoid_atom_label_overlap(
+                text_rect, center, rendered_label_rects)
+            formal_charge = atom_data.get("formal_charge", 0)
+            if isinstance(formal_charge, bool) or not isinstance(formal_charge, (int, float)):
+                formal_charge = 0
+            formal_charge = int(formal_charge)
+            if formal_charge == 0:
+                _charge_field = atom_data.get("charge", "")
+                if _charge_field == "+":
+                    formal_charge = 1
+                elif _charge_field == "-":
+                    formal_charge = -1
+            if symbol in ("Na", "Cl") and formal_charge != 0:
+                LewisRenderer._draw_ascii_vector_text(
+                    painter, center, symbol,
+                    LewisRenderer._FONT_SIZE_MAIN + 2.0, atom_color
+                )
+            else:
+                painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, symbol)
+            rendered_label_rects.append(QRectF(text_rect))
 
             if is_selected:
                 painter.setPen(QPen(Qt.GlobalColor.blue, 1.5))
                 painter.setBrush(Qt.BrushStyle.NoBrush)
-                painter.drawRect(QRectF(center.x() - tw / 2 - 3,
-                                        center.y() - th / 2 - 2,
-                                        tw + 6, th + 4))
+                painter.drawRect(QRectF(text_rect.x() - 3,
+                                        text_rect.y() - 2,
+                                        text_rect.width() + 6,
+                                        text_rect.height() + 4))
 
         logger.debug("Atom symbols rendered")
+
+    @staticmethod
+    def _avoid_atom_label_overlap(text_rect, center, rendered_label_rects):
+        """Move only extremely close Lewis atom labels enough to keep glyphs readable."""
+        if not rendered_label_rects:
+            return text_rect
+        padding = 2.0  # [D891 item2] anti-alias guard around 14pt atom glyphs
+        inflated_existing = [
+            QRectF(r).adjusted(-padding, -padding, padding, padding)
+            for r in rendered_label_rects
+        ]
+
+        def _clear(candidate):
+            expanded = QRectF(candidate).adjusted(-padding, -padding, padding, padding)
+            return not any(expanded.intersects(existing) for existing in inflated_existing)
+
+        if _clear(text_rect):
+            return text_rect
+
+        # [D891 item2] Search small fixed offsets before larger ones so normal
+        # chemistry layouts remain anchored while artificial close placements split.
+        offsets = [
+            QPointF(0.0, -18.0),
+            QPointF(0.0, 18.0),
+            QPointF(-18.0, 0.0),
+            QPointF(18.0, 0.0),
+            QPointF(0.0, -28.0),
+            QPointF(0.0, 28.0),
+            QPointF(-28.0, 0.0),
+            QPointF(28.0, 0.0),
+        ]
+        for offset in offsets:
+            candidate = QRectF(text_rect)
+            candidate.moveCenter(center + offset)
+            if _clear(candidate):
+                return candidate
+        return text_rect
+
+    @staticmethod
+    def _label_rect(center, text, font_size):
+        """Return the painted text bounds used for Lewis overlap checks."""
+        font = QFont(LewisRenderer._get_font_family(), font_size,
+                     QFont.Weight.Bold)
+        fm = QFontMetrics(font)
+        width = fm.horizontalAdvance(text)
+        height = fm.height()
+        return QRectF(center.x() - width / 2.0, center.y() - height / 2.0,
+                      width, height)
+
+    @staticmethod
+    def _lewis_atom_label_rects(atoms_data, t_map, show_carbon=True):
+        """Mirror STAGE 2 label placement so H labels can avoid atom glyphs."""
+        if not isinstance(atoms_data, dict):
+            return []
+        rendered_label_rects = []
+        for pt_key, atom_data in atoms_data.items():
+            if not isinstance(atom_data, dict):
+                continue
+            symbol = atom_data.get("main", "")
+            if not symbol or symbol.strip() == "":
+                if show_carbon:
+                    symbol = "C"
+                else:
+                    continue
+            center = t_map.get(pt_key, QPointF(*pt_key))
+            text_rect = LewisRenderer._label_rect(
+                center, symbol, LewisRenderer._FONT_SIZE_MAIN)
+            text_rect = LewisRenderer._avoid_atom_label_overlap(
+                text_rect, center, rendered_label_rects)
+            rendered_label_rects.append(QRectF(text_rect))
+        return rendered_label_rects
 
     # ------------------------------------------------------------------
     # STAGE 1b: Wedge/Dash 입체화학 결합 렌더링 (B10-15 / M645_W26)
@@ -846,54 +1116,11 @@ class LewisRenderer:
     # ------------------------------------------------------------------
     @staticmethod
     def _render_aromatic_ring_circles(painter, analysis, t_map):
-        """6원 방향족 링에 내접원(정원) 표기 — Kekulé 이중결합 대신 비편재화 표현.
+        """Quarantined legacy aromatic-circle renderer."""
+        # D-20260519-CT-2D-LEWIS-ELECTRON-CLOUD-SCOPE-001:
+        # keep Lewis aromatic rings as Kekule-style alternating bonds only.
+        return None
 
-        근거: IUPAC 2013 §P-31.1.2 — 방향족 6원 링 circle 표기법.
-        popup_reaction.py L412-427 inscribed circle 로직 동일 패턴 (검증됨).
-
-        [M731/ISSUE-A58-002] 방향족 링 직사각형 왜곡 근본 원인:
-        - 방향족 결합은 order=1 저장 → STAGE 1에서 단일선만 그려짐
-        - 내접원 없으면 정육각형으로 보이지 않음
-        - 본 메서드로 링마다 정원 1개 추가
-        """
-        if not isinstance(analysis, dict):
-            return
-        rings = analysis.get("rings", [])
-        if not isinstance(rings, list):
-            return
-        if not rings:
-            return
-        aromatic_atoms = analysis.get("aromatic", set())
-        if not isinstance(aromatic_atoms, set):
-            aromatic_atoms = set()
-
-        painter.save()
-        painter.setPen(QPen(Qt.GlobalColor.black, LewisRenderer._BOND_WIDTH))
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-
-        for ring in rings:
-            if not isinstance(ring, (list, tuple)) or len(ring) < 5:
-                continue  # 5원 미만은 스킵
-            if not all(atom_key in aromatic_atoms for atom_key in ring):
-                continue  # non-aromatic rings must not get a delocalization circle
-            # 고리 중심 계산
-            positions = [t_map.get(atom_key, QPointF(*atom_key)) for atom_key in ring]
-            cx = sum(pt.x() for pt in positions) / len(positions)
-            cy = sum(pt.y() for pt in positions) / len(positions)
-            # 내접원 반지름 = 평균 거리의 55% (IUPAC 관행, popup_reaction.py 동일)
-            avg_r = sum(
-                math.hypot(pt.x() - cx, pt.y() - cy) for pt in positions
-            ) / len(positions)
-            circle_r = avg_r * 0.55  # [MAGIC: 0.55] IUPAC/표준 방향족 원 비율
-            if circle_r < 1.0:
-                continue  # 너무 작은 원은 스킵 (렌더링 노이즈 방지)
-            center_pt = QPointF(cx, cy)
-            painter.drawEllipse(center_pt, circle_r, circle_r)
-
-        painter.restore()
-        logger.debug("Aromatic ring circles rendered: %d rings", len(rings))
-
-    # ------------------------------------------------------------------
     # STAGE 3: VSEPR 기반 수소 + 비공유전자쌍 배치
     # ------------------------------------------------------------------
     @staticmethod
@@ -913,6 +1140,8 @@ class LewisRenderer:
 
         # [P0-2] Phase 1: 모든 H/LP 위치를 사전 계산 (렌더링 전에 충돌 감지용)
         h_label_positions = []  # [(QPointF center, atom_key), ...]
+        atom_label_rects = LewisRenderer._lewis_atom_label_rects(
+            atoms_data, t_map, show_carbon=True)
 
         for pt_key, atom_data in atoms_data.items():
             if not isinstance(atom_data, dict):
@@ -931,9 +1160,19 @@ class LewisRenderer:
             # NO2: N+(formal=+1) — 배위결합으로 비공유전자쌍 없음. 동일 원리: O+ S+ 적용.
             # 학술 근거: Clayden Organic Chemistry 3rd ed. §1.4 (배위결합 dative bond).
             # Rule L: formal_charge는 int. isinstance 가드 적용.
+            # Keep LP suppression in sync with formal-charge rendering fallback.
             _effective_fc = formal_charge
-            if not isinstance(_effective_fc, int):
+            if isinstance(_effective_fc, bool):
                 _effective_fc = 0
+            elif isinstance(_effective_fc, (int, float)):
+                _effective_fc = 1 if _effective_fc > 0 else (-1 if _effective_fc < 0 else 0)
+            else:
+                _effective_fc = 0
+            if _effective_fc == 0:
+                if user_charge in ("+", "+1", 1):
+                    _effective_fc = 1
+                elif user_charge in ("-", "-1", -1):
+                    _effective_fc = -1
             if _effective_fc > 0 and symbol in ("N", "O", "S", "P"):
                 lp_count = 0  # 양전하 N/O/S/P = 배위결합 또는 전자 이전으로 LP 없음
 
@@ -942,7 +1181,8 @@ class LewisRenderer:
             LewisRenderer._draw_vsepr_extensions(
                 painter, pt_key, atom_data, analysis, t_map,
                 lp_count_override=lp_count,
-                h_label_positions=h_label_positions)
+                h_label_positions=h_label_positions,
+                atom_label_rects=atom_label_rects)
 
         # [P0-2] Phase 2: H 라벨 충돌 감지 및 위치 조정은
         # _draw_vsepr_extensions 내부에서 수집된 좌표로 처리됨
@@ -950,7 +1190,8 @@ class LewisRenderer:
 
     @staticmethod
     def _draw_vsepr_extensions(painter, pos_tuple, data, analysis, t_map,
-                                lp_count_override=None, h_label_positions=None):
+                                lp_count_override=None, h_label_positions=None,
+                                atom_label_rects=None):
         """
         VSEPR 기반 수소 및 비공유전자쌍 배치 v3.1
 
@@ -968,6 +1209,8 @@ class LewisRenderer:
             return
         if h_label_positions is None:
             h_label_positions = []
+        if atom_label_rects is None:
+            atom_label_rects = []
         center = t_map.get(pos_tuple, QPointF(*pos_tuple))
         _adj_dict = analysis.get("adj", {}) if isinstance(analysis, dict) else {}
         if not isinstance(_adj_dict, dict):
@@ -1027,28 +1270,47 @@ class LewisRenderer:
                 # label_reach: distance from center to H text center
                 label_reach = base_gap + 20 + 10  # bond_line + H_text_offset
                 h_pos = center + direction * label_reach
-                # Iterative collision push: try up to 6 angles (±15° steps each)
-                # to find a slot with no overlap. Rule O: minimum 8px separation
+                # D891 item2: try symmetric offsets so the first retry is not biased
+                # into the same side of a crowded Lewis drawing.
                 adjusted_direction = direction
-                push_angle = angle_deg
-                for _push_try in range(6):  # max 6 attempts = 90° sweep
+                candidate_offsets = [0.0]
+                for _avoid_try in range(1, LewisRenderer._H_AVOID_MAX_TRY + 1):
+                    _step = (_avoid_try + 1) // 2
+                    _delta = LewisRenderer._H_AVOID_STEP_DEG * _step
+                    candidate_offsets.append(_delta if _avoid_try % 2 else -_delta)
+                for _offset in candidate_offsets:
+                    candidate_angle = angle_deg + _offset
+                    candidate_rad = math.radians(candidate_angle)
+                    candidate_direction = QPointF(
+                        math.cos(candidate_rad), math.sin(candidate_rad))
+                    candidate_pos = center + candidate_direction * label_reach
+                    candidate_rect = LewisRenderer._label_rect(
+                        candidate_pos, "H", LewisRenderer._FONT_SIZE_H)
+                    expanded_candidate = QRectF(candidate_rect).adjusted(
+                        -2.0, -2.0, 2.0, 2.0)
                     collision_found = False
+                    for atom_rect in atom_label_rects:
+                        expanded_atom = QRectF(atom_rect).adjusted(
+                            -2.0, -2.0, 2.0, 2.0)
+                        if expanded_candidate.intersects(expanded_atom):
+                            collision_found = True
+                            break
+                    if collision_found:
+                        adjusted_direction = candidate_direction
+                        h_pos = candidate_pos
+                        continue
                     for existing_pos, _ in h_label_positions:
                         dist_to_existing = math.hypot(
-                            h_pos.x() - existing_pos.x(),
-                            h_pos.y() - existing_pos.y()
+                            candidate_pos.x() - existing_pos.x(),
+                            candidate_pos.y() - existing_pos.y()
                         )
                         if dist_to_existing < LewisRenderer._H_COLLISION_RADIUS:
                             collision_found = True
                             break
+                    adjusted_direction = candidate_direction
+                    h_pos = candidate_pos
                     if not collision_found:
                         break  # no collision — keep current adjusted_direction
-                    # Push away: rotate by 15° and recompute position
-                    push_angle += 15.0
-                    push_rad = math.radians(push_angle)
-                    adjusted_direction = QPointF(
-                        math.cos(push_rad), math.sin(push_rad))
-                    h_pos = center + adjusted_direction * (label_reach + 10)
 
                 LewisRenderer._draw_h_bond(painter, center, adjusted_direction,
                                             gap=base_gap)
@@ -1101,6 +1363,13 @@ class LewisRenderer:
         # 케이스 A: H2O 류 (2 bonds + 2 LP) → LP는 H 결합의 반대쪽 두 사분면
         # 케이스 B: NH3 류 (3 bonds + 1 LP) → LP는 3 H 무게중심의 정반대 (tetrahedral)
         if n_occ == 2 and num_to_place == 2:
+            # Linear chain CH2 centers have opposite C-C bonds. The H labels must occupy
+            # the perpendicular slots; the H2O-style lone-pair branch below would place
+            # them back along the bond axis and collide with the carbon skeleton.
+            _gap_a = (normed[1] - normed[0]) % 360.0
+            _gap_b = 360.0 - _gap_a
+            if abs(_gap_a - 180.0) <= 12.0 and abs(_gap_b - 180.0) <= 12.0:
+                return [(normed[0] + 90.0) % 360.0, (normed[0] + 270.0) % 360.0]
             # [M650 H2O 4-quadrant] 두 H 결합 평균 각도 → 반대 방향 +/- 90°
             # Solomons §1.3: H2O는 sp3, 2 bonds + 2 LPs ≈ 109.5° 분포.
             # 시각적 단순화: H 결합 평균 반대 방향에서 +/- 90° 좌상/우상 사분면.
@@ -1114,6 +1383,12 @@ class LewisRenderer:
             # Clayden 2nd §1.6: NH3는 sp3, lone pair는 H trio 반대편 (umbrella up).
             sum_x = sum(math.cos(math.radians(a)) for a in normed)
             sum_y = sum(math.sin(math.radians(a)) for a in normed)
+            if math.hypot(sum_x, sum_y) < 0.01:
+                gap_size, start_a = max(
+                    [(((normed[(i + 1) % n_occ] - normed[i]) % 360.0), normed[i])
+                     for i in range(n_occ)],
+                    key=lambda g: g[0])
+                return [(start_a + gap_size / 2.0) % 360.0]
             # 합 벡터의 반대 방향 = LP 위치
             opp_angle = math.degrees(math.atan2(-sum_y, -sum_x)) % 360.0
             return [opp_angle]
@@ -1182,6 +1457,9 @@ class LewisRenderer:
                 continue
             formal_charge = atom_data.get("formal_charge", 0)
             # [Fix v2] charge 필드 fallback (lewis_data 주입 전 상태에서도 동작)
+            if isinstance(formal_charge, bool) or not isinstance(formal_charge, (int, float)):
+                formal_charge = 0
+            formal_charge = int(formal_charge)
             if formal_charge == 0:
                 _cf3 = atom_data.get("charge", "")
                 if _cf3 == "+": formal_charge = 1
@@ -1204,11 +1482,14 @@ class LewisRenderer:
             sym_h = main_fm.height()
 
             # [Fix v2] 전하 기호는 검은색 위첨자 (원자색이 이미 전하 상태 표시)
-            charge_text = "+" if formal_charge > 0 else "⁻"  # U+207B (Rule Q M433: 화학 음전하 위첨자)
+            # [NACL-VISUAL-REPAIR] ASCII minus avoids tofu glyphs in offscreen Qt fonts.
+            _charge_mag = abs(formal_charge)
+            _charge_sign = "+" if formal_charge > 0 else "-"
+            charge_text = f"{_charge_mag}{_charge_sign}" if _charge_mag > 1 else _charge_sign
 
             # 우상단 오프셋
             charge_font = QFont(LewisRenderer._get_font_family(),  # [M609]
-                                 LewisRenderer._FONT_SIZE_CHARGE,
+                                 max(LewisRenderer._FONT_SIZE_CHARGE + 2, 12),
                                  QFont.Weight.Bold)
             painter.setFont(charge_font)
             painter.setPen(Qt.GlobalColor.black)  # [Fix v2] 검은색
@@ -1217,13 +1498,90 @@ class LewisRenderer:
             ch = cfm.height()
 
             # [v5 Fix] 원자 기호의 우상단에 배치 — 중앙 가림 방지
-            min_offset = max(sym_w / 2, 8) + 3
-            cx = center.x() + min_offset
-            cy = center.y() - sym_h / 2 - 2
+            # Place charge labels in the least occupied local quadrant so
+            # bond, H, and lone-pair text remains readable.
+            _adj_dict = analysis.get("adj", {}) if isinstance(analysis, dict) else {}
+            if not isinstance(_adj_dict, dict):
+                _adj_dict = {}
+            _occupied_angles = []
+            _adj_info = _adj_dict.get(pt_key, [])
+            if not isinstance(_adj_info, list):
+                _adj_info = []
+            for _neighbor_pos, _bond_order in _adj_info:
+                _neighbor_center = t_map.get(_neighbor_pos, QPointF(*_neighbor_pos))
+                _vec = _neighbor_center - center
+                _mag = math.hypot(_vec.x(), _vec.y())
+                if _mag > 0:
+                    _occupied_angles.append(math.degrees(math.atan2(_vec.y(), _vec.x())))
+
+            _attach = atom_data.get("attach", {})
+            if not isinstance(_attach, dict):
+                _attach = {}
+            _user_placed_h = sum(1 for _sym in _attach.values() if _sym == "H")
+            _h_count = atom_data.get("h_count", 0)
+            if not isinstance(_h_count, int):
+                _h_count = 0
+            _lp_count = atom_data.get("lp_count", 0)
+            if not isinstance(_lp_count, int):
+                _lp_count = 0
+            _extensions = max(0, _h_count - _user_placed_h) + max(0, _lp_count)
+            if _extensions:
+                _occupied_angles.extend(
+                    LewisRenderer._find_available_angles(
+                        _occupied_angles, _extensions, len(_occupied_angles) + _extensions
+                    )
+                )
+
+            _radius_x = max(sym_w / 2.0 + cw / 2.0 + 8.0, 14.0)
+            _radius_y = max(sym_h / 2.0 + ch / 2.0 + 6.0, 14.0)
+            _candidates = [
+                (1.0, -1.0, 4.0),
+                (-1.0, -1.0, 3.0),
+                (1.0, 1.0, 2.0),
+                (-1.0, 1.0, 1.0),
+                (0.0, -1.0, 0.5),
+                (1.0, 0.0, 0.25),
+                (-1.0, 0.0, 0.0),
+                (0.0, 1.0, -0.25),
+            ]
+
+            def _candidate_score(dx, dy, tie_bonus):
+                if dx == 0.0 and dy == 0.0:
+                    return -1.0
+                _angle = math.degrees(math.atan2(dy, dx))
+                if not _occupied_angles:
+                    _sep_score = 180.0
+                else:
+                    _sep_score = min(
+                        abs(((_angle - _occ + 180.0) % 360.0) - 180.0)
+                        for _occ in _occupied_angles
+                    )
+                return _sep_score + tie_bonus
+
+            _best_dx, _best_dy, _ = max(
+                _candidates, key=lambda _item: _candidate_score(*_item)
+            )
+            cx = center.x() + _best_dx * _radius_x - cw / 2.0
+            cy = center.y() + _best_dy * _radius_y - ch / 2.0
 
             charge_rect = QRectF(cx, cy, cw, ch)
-            painter.drawText(charge_rect, Qt.AlignmentFlag.AlignCenter,
-                             charge_text)
+            charge_color = QColor(0, 0, 0)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(QColor(255, 255, 255, 230)))
+            painter.drawRoundedRect(charge_rect.adjusted(-3.0, -2.0, 3.0, 2.0), 3.0, 3.0)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.setPen(charge_color)
+            if symbol in ("Na", "Cl"):
+                LewisRenderer._draw_ascii_vector_text(
+                    painter,
+                    QPointF(cx + cw / 2.0, cy + ch / 2.0),
+                    charge_text,
+                    LewisRenderer._FONT_SIZE_CHARGE + 2.0,
+                    charge_color,
+                )
+            else:
+                painter.drawText(charge_rect, Qt.AlignmentFlag.AlignCenter,
+                                 charge_text)
 
         logger.debug("Formal charges rendered")
 
@@ -1720,9 +2078,11 @@ class TheoryRenderer:
         [Step 4 개선] 이론적 구조 레이어: MMFF94 최적 좌표 + 원소 표기 + 입체 표현
         - 선택 표시: 파란색 하이라이트
         """
+        _ensure_qt_korean_font_ready()  # [M1485] Rule Q: Theory 레이어 tofu 방지
         if not isinstance(analysis, dict):
             logger.warning("TheoryRenderer.render: analysis is not dict: %s", type(analysis).__name__)
             return
+        analysis = LewisRenderer._analysis_with_rdkit_display_hydrogens(analysis)
         t_data = analysis.get("theory_data")
         if not t_data or not isinstance(t_data, dict):
             logger.warning("TheoryRenderer.render: theory_data missing or invalid: %s",
@@ -1869,12 +2229,29 @@ class TheoryRenderer:
         _atoms_s2 = analysis.get("atoms", {})
         if not isinstance(_atoms_s2, dict):
             _atoms_s2 = {}
+        # [M1484 METHANE-FIX] 단독 원자(결합 없음) 판별을 위해 bonds 참조
+        # 골격 탄소(결합 있음)는 생략, 단독 탄소(메탄 등 결합 없음)는 "C" 표시
+        _bonds_s2 = analysis.get("bonds", {})
+        if not isinstance(_bonds_s2, dict):
+            _bonds_s2 = {}
+        # 원자별 결합 존재 여부 집합 (빠른 조회용)
+        _bonded_atoms: set = set()
+        for (bk1, bk2) in _bonds_s2.keys():
+            _bonded_atoms.add(bk1)
+            _bonded_atoms.add(bk2)
         for pt_key, atom_data in _atoms_s2.items():
             if not isinstance(atom_data, dict):
                 continue
             symbol = atom_data.get("main", "C")
             if not symbol or symbol.strip() == "" or symbol == "C":
-                continue  # 탄소는 생략
+                # [M1484] 단독 탄소 원자(결합 없음)는 "C" 표시 의무
+                # 예: 메탄("C") = 단일 탄소, Theory 레이어에서도 보여야 함
+                # Rule I 예외: Carbon='' 규칙은 골격 탄소에만 적용
+                _is_isolated = pt_key not in _bonded_atoms  # [MAGIC: bonded set] 결합 없음 = 고립
+                if _is_isolated:
+                    symbol = "C"  # 고립 탄소 라벨 강제 표시
+                else:
+                    continue  # 골격 탄소: skeletal notation 생략
 
             # [FIX-OH] 암묵적 수소 개수를 반영한 표시 라벨 생성
             # 사용자가 attach로 이미 배치한 H 수 차감 (중복 표시 방지)
@@ -2004,6 +2381,9 @@ class TheoryRenderer:
 
             # --- 3-A: 형식전하 (+/-) 기호 표시 ---
             formal_charge = atom_data.get("formal_charge", 0)
+            if isinstance(formal_charge, bool) or not isinstance(formal_charge, (int, float)):
+                formal_charge = 0
+            formal_charge = int(formal_charge)
             if formal_charge == 0:
                 _cf = atom_data.get("charge", "")
                 if _cf == "+":
@@ -2012,7 +2392,10 @@ class TheoryRenderer:
                     formal_charge = -1
 
             if formal_charge != 0:
-                charge_text = "+" if formal_charge > 0 else "⁻"  # Rule Q M433: direct charge superscript
+                # [NACL-VISUAL-REPAIR] ASCII minus avoids tofu glyphs in offscreen Qt fonts.
+                _charge_mag = abs(formal_charge)
+                _charge_sign = "+" if formal_charge > 0 else "-"
+                charge_text = f"{_charge_mag}{_charge_sign}" if _charge_mag > 1 else _charge_sign
                 painter.setFont(charge_font)
                 painter.setPen(Qt.GlobalColor.black)
                 cfm = QFontMetrics(charge_font)
@@ -2026,7 +2409,17 @@ class TheoryRenderer:
                 min_offset = max(sym_w / 2, 8) + 4
                 cx = center.x() + min_offset
                 cy = center.y() - sym_h * 0.5  # 원자 위로 충분히
-                painter.drawText(QPointF(cx, cy), charge_text)
+                if symbol in ("Na", "Cl"):
+                    LewisRenderer._draw_ascii_vector_text(
+                        painter,
+                        QPointF(cx + cfm.horizontalAdvance(charge_text) / 2.0,
+                                cy - cfm.ascent() / 2.0),
+                        charge_text,
+                        12.0,
+                        Qt.GlobalColor.black,
+                    )
+                else:
+                    painter.drawText(QPointF(cx, cy), charge_text)
 
             # --- 3-B: 비공유전자쌍 표시 ---
             # [M647_W11_A3 + M663 FIX] Theory 레이어에서 LP dot 제거.
@@ -2263,6 +2656,10 @@ class ElectronDistributionRenderer:
     _CONFIG_OFFSET_Y = -38            # 원자 중심으로부터 전자배치 텍스트 y 오프셋 (px, 위쪽)
     _CHARGE_OFFSET_Y = +42            # 원자 중심으로부터 charge 텍스트 y 오프셋 (px, 아래)
 
+    _LEWIS_UNDERLAY_OPACITY = 0.26     # [D891 item003] quiet Lewis underlay; charge text stays primary
+    _REDRAW_EXPLICIT_H_LABELS = False  # [D891 item003] avoid duplicate ElectronDist H over the underlay
+    _REDRAW_HETERO_H_LABELS = False    # [D891 item003] avoid duplicate NH/OH overlay over charge values
+
     @staticmethod
     def _compute_gasteiger_fallback(analysis: dict) -> dict:
         """ORCA 미실행 시 RDKit Gasteiger-Marsili 전하로 폴백.
@@ -2332,7 +2729,7 @@ class ElectronDistributionRenderer:
 
     @staticmethod
     def render(painter, atoms, bonds, analysis, orca_population_data=None,
-               selected_atoms=None, selected_bonds=None):
+               charge_provenance=None, selected_atoms=None, selected_bonds=None):
         """전자분포 레이어 메인 렌더 파이프라인.
 
         Args:
@@ -2355,6 +2752,7 @@ class ElectronDistributionRenderer:
             )
             return
 
+        analysis = LewisRenderer._analysis_with_rdkit_display_hydrogens(analysis)
         t_data = analysis.get("theory_data")
         # [M645_W25] theory_data 없어도 atoms 좌표에서 직접 t_map 생성 — W23 가짜 PASS 원인 수정
         # 원인: theory_data 부재 시 즉시 return → render() 0출력 → Lewis와 byte-identical
@@ -2411,13 +2809,18 @@ class ElectronDistributionRenderer:
                         if isinstance(_ck, (tuple, list)) and len(_ck) >= 2:
                             t_map[_ck] = QPointF(float(_ck[0]), float(_ck[1]))
 
-        # Rule M: orca_population_data 부재/비정상 → Gasteiger fallback 시도 후 ground-state 폴백
-        # [M645_W23] 사용자 요구: "숫자가 안나오고" — ORCA 없어도 Gasteiger 전하 숫자 표시
-        is_orca_available = isinstance(orca_population_data, dict) and len(orca_population_data) > 0
-        _effective_pop_data = orca_population_data  # 실제 렌더링에 사용할 charge 데이터
-        is_gasteiger_fallback = False
+        # D891: only provenance-confirmed ORCA/xTB data may be labeled as
+        # engine-backed. Gasteiger remains a SIMULATION_MODE fallback even
+        # though it uses the same population-data shape for rendering.
+        if not isinstance(charge_provenance, dict):
+            charge_provenance = {}
+        _charge_source = charge_provenance.get("source", "")
+        _has_population_data = isinstance(orca_population_data, dict) and len(orca_population_data) > 0
+        is_orca_available = _has_population_data and _charge_source in ("ORCA_MULLIKEN", "XTB_MULLIKEN")
+        is_gasteiger_fallback = _has_population_data and _charge_source == "GASTEIGER"
+        _effective_pop_data = orca_population_data if _has_population_data else None
 
-        if not is_orca_available:
+        if not is_orca_available and not is_gasteiger_fallback:
             logger.warning(
                 "[M541] ORCA Mulliken 데이터 없음 → Gasteiger fallback 시도"
             )
@@ -2526,9 +2929,11 @@ class ElectronDistributionRenderer:
         try:
             # [M647_W3] [MAGIC: 0.40] 사용자 명세 "반투명한 회색" — alpha ~0.4
             # 0.30(기존) 너무 옅음 / 0.50 가독성 양호 / 0.40 사용자 의도와 정확히 일치
-            painter.setOpacity(0.40)
+            # [M1433] opacity 0.40→0.55: 수소(H) 라벨 가시성 개선 (D-M1153-002 CRITICAL 격분)
+            # 사용자: "수소는 보이지도 않아" — 0.40 alpha가 흰 배경에서 H 텍스트 불가시
+            painter.setOpacity(ElectronDistributionRenderer._LEWIS_UNDERLAY_OPACITY)
             # LewisRenderer.render()는 검정 결합선 + 원소기호 + 수소 + lone pair 그림
-            # painter.setOpacity(0.40)이 적용된 상태로 호출되므로 모든 출력이 회색 톤
+            # painter.setOpacity(0.55)이 적용된 상태로 호출되므로 모든 출력이 회색 톤
             try:
                 LewisRenderer.render(
                     painter, atoms, bonds, analysis,
@@ -2685,12 +3090,44 @@ class ElectronDistributionRenderer:
                 fm_sym = QFontMetrics(font_sym)
                 text_w = fm_sym.horizontalAdvance(symbol)
                 text_h = fm_sym.ascent()
-                painter.drawText(
-                    QPointF(center.x() - text_w / 2.0, center.y() + text_h / 2.0 - 1),
-                    symbol
-                )
+                if symbol in ("Na", "Cl"):
+                    LewisRenderer._draw_ascii_vector_text(
+                        painter,
+                        center,
+                        symbol,
+                        12.0,
+                        QColor(255, 255, 255),
+                    )
+                else:
+                    painter.drawText(
+                        QPointF(center.x() - text_w / 2.0, center.y() + text_h / 2.0 - 1),
+                        symbol
+                    )
         finally:
             painter.restore()
+
+    @staticmethod
+    def _extract_formal_charge(atom_data):
+        """Return renderer-safe formal charge from analyzer/canvas atom data."""
+        if not isinstance(atom_data, dict):
+            return 0
+        formal_charge = atom_data.get("formal_charge", 0)
+        if isinstance(formal_charge, bool):
+            formal_charge = 0
+        if isinstance(formal_charge, (int, float)) and int(formal_charge) != 0:
+            return int(formal_charge)
+        charge_field = atom_data.get("charge", "")
+        if isinstance(charge_field, str) and len(charge_field) >= 2:
+            _sign = charge_field[-1]
+            _mag_text = charge_field[:-1]
+            if _sign in ("+", "-") and _mag_text.isdigit():
+                _mag = int(_mag_text)
+                return _mag if _sign == "+" else -_mag
+        if charge_field in ("+", "+1", 1):
+            return 1
+        if charge_field in ("-", "-1", -1):
+            return -1
+        return 0
 
     # ------------------------------------------------------------------
     # STAGE 3: 원자 위/아래 텍스트 (전자배치 + 부분전하 숫자)
@@ -2738,8 +3175,10 @@ class ElectronDistributionRenderer:
 
         # [M717] rdkit_idx 역방향 인덱스: coord_key → rdkit_idx (canvas_atoms 조회용)
         _coord_to_rdkit: dict = {}
+        _coord_to_atom_data: dict = {}
         for _ck, _ad in atoms_data.items():
             if isinstance(_ad, dict):
+                _coord_to_atom_data[_ck] = _ad
                 _ri = _ad.get("rdkit_idx")
                 if isinstance(_ri, int):
                     _coord_to_rdkit[_ck] = _ri
@@ -2775,6 +3214,21 @@ class ElectronDistributionRenderer:
                     if "rdkit_idx" in atom_data
                     else _coord_to_rdkit.get(coord_key)
                 )
+                meta_atom_data = _coord_to_atom_data.get(coord_key)
+                if meta_atom_data is None and isinstance(coord_key, (tuple, list)) and len(coord_key) >= 2:
+                    _rk_meta = (round(float(coord_key[0]), 2), round(float(coord_key[1]), 2))
+                    meta_atom_data = _coord_to_atom_data.get(_rk_meta)
+                    if rdkit_idx is None:
+                        rdkit_idx = _coord_to_rdkit.get(_rk_meta)
+                if meta_atom_data is None:
+                    meta_atom_data = atom_data
+
+                symbol = atom_data.get("main", "")
+                if not symbol and isinstance(meta_atom_data, dict):
+                    symbol = meta_atom_data.get("main", "")
+                formal_charge = ElectronDistributionRenderer._extract_formal_charge(atom_data)
+                if formal_charge == 0:
+                    formal_charge = ElectronDistributionRenderer._extract_formal_charge(meta_atom_data)
                 charge_value = None
                 if isinstance(orca_pop_data, dict) and isinstance(rdkit_idx, int):
                     pop_entry = orca_pop_data.get(rdkit_idx)
@@ -2788,41 +3242,87 @@ class ElectronDistributionRenderer:
 
                 # ----- 부분전하 숫자 텍스트 (원자 중앙 덧그리기) -----
                 # 학술 인용: Mulliken 1955 J.Chem.Phys 23:1833 / Gasteiger 1980 Tetrahedron 36:3219
-                if charge_value is None:
+                formal_ion_label = False
+                formal_charge_text_label = False
+                if (
+                    not is_orca_available
+                    and symbol in ("Na", "Cl")
+                    and formal_charge != 0
+                ):
+                    # [NACL-VISUAL-REPAIR] Font-safe formal fallback for disconnected salts.
+                    charge_text = f"{symbol}{'+' if formal_charge > 0 else '-'}"
+                    formal_ion_label = True
+                elif abs(formal_charge) > 1:
+                    _charge_mag = abs(formal_charge)
+                    _charge_sign = "+" if formal_charge > 0 else "-"
+                    charge_text = f"{_charge_mag}{_charge_sign}"
+                    formal_charge_text_label = True
+                elif charge_value is None and formal_charge != 0:
+                    charge_text = "+" if formal_charge > 0 else "-"
+                    formal_charge_text_label = True
+                elif charge_value is None:
                     # [MAGIC: em-dash] DFT 논문 형식 — 데이터 없음 표기 (Rule Q: 유니코드 직접)
                     charge_text = "—"  # em-dash
                 else:
                     charge_text = f"{charge_value:+.2f}"
 
                 painter.setFont(font_charge)
-                # [M895 D888-W9] ORCA/Gasteiger 데이터 소스에 따른 색상 구분
-                # ORCA Mulliken: 색상 숫자 — 음전하(red #D32F2F) / 양전하(blue #1976D2) / 중성(검정)
-                # Gasteiger fallback: 단일 검정 (경험적 모델, 색상 구분 미지원)
+                # D891 items 1/3: numeric labels carry sign color without
+                # restoring deprecated atom charge disks. Palette follows
+                # ChemGrid ESP convention: red = negative/electron-rich,
+                # blue = positive/electron-poor, green = near-neutral.
                 # Mulliken R.S. 1955 J.Chem.Phys 23:1833 / Gasteiger 1980 Tetrahedron 36:3219
-                if is_orca_available and charge_value is not None:
-                    # ORCA Mulliken: red/blue/black 색상 부분전하 (학술 논문 표준)
-                    if charge_value < -0.05:  # [MAGIC: -0.05] 음전하 임계값 (M645_W23 색상 표준)
-                        _charge_pen_color = QColor(0xD3, 0x2F, 0x2F)  # #D32F2F RED 음전하
-                    elif charge_value > 0.05:  # [MAGIC: +0.05] 양전하 임계값 (M645_W23 색상 표준)
-                        _charge_pen_color = QColor(0x19, 0x76, 0xD2)  # #1976D2 BLUE 양전하
-                    else:
-                        _charge_pen_color = QColor(0x38, 0x8E, 0x3C)  # #388E3C GREEN 중성 (±0.05 이내)
+                if formal_charge_text_label:
+                    _charge_pen_color = QColor(0, 0, 0)
+                elif isinstance(charge_value, (int, float)):
+                    _charge_pen_color = _charge_to_color_qcolor(float(charge_value))
                 else:
-                    # Gasteiger fallback 또는 데이터 없음: 단일 검정
-                    _charge_pen_color = QColor(0, 0, 0)  # 검정
+                    _charge_pen_color = QColor(0, 0, 0)
                 painter.setPen(QPen(_charge_pen_color, 1.5))
 
-                qw = fm_charge.horizontalAdvance(charge_text)
+                if formal_ion_label:
+                    qw, _vh = LewisRenderer._ascii_vector_text_size(
+                        charge_text,
+                        ElectronDistributionRenderer._CHARGE_FONT_SIZE + 2.0,
+                    )
+                else:
+                    qw = fm_charge.horizontalAdvance(charge_text)
                 # [M645_W32] x clamp — view_container 영역 침범 방지
                 chg_x = center.x() - qw / 2.0
                 if chg_x + qw > _safe_max_x:
                     chg_x = center.x() - qw - 4.0
                 # [M717 F5-2 item6] 원자 중심 덧그리기 — baseline 보정 ascent/2
                 # 이전: center.y() - 8.0 (원자 위 오프셋, 위치 어긋남)
-                painter.drawText(
-                    QPointF(chg_x, center.y() + _half_asc),
-                    charge_text
-                )
+                chg_y = center.y() + _half_asc
+                if formal_ion_label:
+                    chg_y = center.y() + ElectronDistributionRenderer._CHARGE_OFFSET_Y + _half_asc
+                if formal_ion_label:
+                    LewisRenderer._draw_ascii_vector_text(
+                        painter,
+                        QPointF(chg_x + qw / 2.0, chg_y - _half_asc),
+                        charge_text,
+                        ElectronDistributionRenderer._CHARGE_FONT_SIZE + 2.0,
+                        QColor(0, 0, 0),
+                    )
+                else:
+                    painter.setPen(Qt.PenStyle.NoPen)
+                    painter.setBrush(QBrush(QColor(255, 255, 255, 218)))
+                    painter.drawRoundedRect(
+                        QRectF(
+                            chg_x - 3.0,
+                            chg_y - fm_charge.ascent() - 2.0,
+                            qw + 6.0,
+                            fm_charge.height() + 4.0,
+                        ),
+                        3.0,
+                        3.0,
+                    )
+                    painter.setBrush(Qt.BrushStyle.NoBrush)
+                    painter.setPen(QPen(_charge_pen_color, 1.5))
+                    painter.drawText(
+                        QPointF(chg_x, chg_y),
+                        charge_text
+                    )
 
                 # [P1-FIX] NH2/OH subscript: _render_lewis_grey opacity=0.40 으로
                 # LewisRenderer가 NH2를 그리지만 너무 흐려 보이지 않음.
@@ -2830,8 +3330,36 @@ class ElectronDistributionRenderer:
                 # _draw_h_group_label과 동일 렌더링, 단 원자 위쪽 방향에 오프셋 배치.
                 # 학술 표준: Clayden Organic Chemistry §1.6 Lewis 구조식 필기 규범
                 sym = atom_data.get("main", "")
-                if sym and sym not in ("", "C", "H"):
-                    h_count = atom_data.get("h_count", 0)
+
+                # [M1433] explicit H 원자 선명 렌더링 — opacity=0.40 Lewis 골격이 너무 흐려 H 미표시
+                # 사용자 격분: "수소는 보이지도 않아" (D-M1153-002 CRITICAL)
+                # 원인: _render_lewis_grey(opacity=0.40) → 흰 배경에서 H 텍스트 거의 불가시
+                # 수정: sym=="H" 원자 → opacity=1.0, 회색(#555) Bold "H" 텍스트로 재렌더링
+                # K3 surgical: explicit H 원자만 대상. implicit H(h_count)는 Lewis 골격으로 표현.
+                if sym == "H" and ElectronDistributionRenderer._REDRAW_EXPLICIT_H_LABELS:
+                    _h_font = QFont(LewisRenderer._get_font_family(),
+                                    12, QFont.Weight.Bold)  # [MAGIC:12pt] Lewis H와 동일 크기
+                    _h_fm = QFontMetrics(_h_font)
+                    painter.setOpacity(1.0)
+                    # [RGB 85,85,85] 진한 회색 — 흰 배경 대비 가시, ESP cloud와 구별
+                    painter.setPen(QPen(QColor(85, 85, 85), 1))  # [MAGIC:#555555]
+                    painter.setFont(_h_font)
+                    _hw = _h_fm.horizontalAdvance("H")
+                    # [MAGIC: ascent/2] 원자 중심 수직 정렬 (LewisRenderer 동일 기준)
+                    painter.drawText(
+                        QPointF(center.x() - _hw / 2.0,
+                                center.y() + _h_fm.ascent() / 2.0),
+                        "H"
+                    )
+                    # charge_text는 이미 위에서 렌더링됨 (전하 숫자 중복 방지)
+
+                if (
+                    sym
+                    and sym not in ("", "C", "H")
+                    and ElectronDistributionRenderer._REDRAW_HETERO_H_LABELS
+                ):
+                    _h_atom_data = meta_atom_data if isinstance(meta_atom_data, dict) else atom_data
+                    h_count = _h_atom_data.get("h_count", 0)
                     if isinstance(h_count, int) and h_count >= 1:
                         # [MAGIC: 22] 원자 중심 위쪽으로 NH2 그룹 라벨 오프셋 (px)
                         # 전하 텍스트는 원자 중심에, NH2는 위쪽으로 분리 배치
@@ -2922,11 +3450,11 @@ class ElectronDistributionRenderer:
                 painter.setPen(QPen(QColor(0, 80, 160), 1.5))
                 painter.setBrush(QBrush(QColor(200, 230, 255, 220)))
                 # [M645_W32] 1줄: 한국어, 2줄: 영문 + 인용
-                line1 = "Gasteiger 부분전하 시각화 (ChemGrid Lite — 경험적 모델, ORCA 미연결)"
-                line2 = "Gasteiger/Marsili 1980 Tetrahedron 36:3219  |  정밀 DFT 계산: ORCA 설치 필요"
+                line1 = "SIMULATION_MODE: RDKit Gasteiger fallback partial charges"
+                line2 = "Gasteiger/Marsili 1980 Tetrahedron 36:3219 | not ORCA/xTB/DFT"
                 txt_color = QColor(0, 50, 120)
                 wm_color = QColor(0, 60, 140)
-                wm_text = "SIMULATION  /  학습 모드"  # 학습 모드
+                wm_text = "SIMULATION_MODE"
             else:
                 # ground-state 폴백: 노란색 배너
                 painter.setPen(QPen(QColor(180, 130, 0), 1.5))
