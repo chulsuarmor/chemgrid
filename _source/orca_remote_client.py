@@ -582,7 +582,7 @@ def quick_health_check() -> Dict[str, Any]:
         return out
     try:
         resp = requests.get(  # type: ignore[union-attr]
-            f"{get_server_url()}/health", timeout=5,  # [MAGIC: 5s]
+            f"{get_server_url()}/health", timeout=20,  # [MAGIC: 20s] cold WSL ORCA probe
         )
         out["health_status_code"] = resp.status_code
         payload: Dict[str, Any] = {}
