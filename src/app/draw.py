@@ -12,7 +12,10 @@ canvas.py에서 재임포트합니다.
 """
 import sys
 import os
+import argparse
+import json
 import logging
+import re
 import warnings
 
 # [LITE-EXE-003 fix] PyInstaller console=False 빌드에서 stdout/stderr를 완전 억제
@@ -57,6 +60,94 @@ except ImportError as e:
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
+
+from resource_paths import existing_resource_path, resource_path
+
+
+def _read_version_without_qt() -> str:
+    """Read ui_utils.VERSION without importing Qt-backed modules."""
+    ui_utils_path = os.path.join(_SCRIPT_DIR, "ui_utils.py")
+    try:
+        with open(ui_utils_path, "r", encoding="utf-8") as handle:
+            match = re.search(
+                r'^\s*VERSION\s*=\s*["\']([^"\']+)["\']',
+                handle.read(),
+                re.MULTILINE,
+            )
+        if match:
+            return match.group(1)
+    except OSError as e:
+        logger.warning("VERSION read failed before QApplication: %s", e)
+    return "unknown"
+
+
+def _build_pre_qapplication_health_payload(mode: str) -> dict:
+    return {
+        "schema_version": "chemgrid.pre_qapplication_health.v1",
+        "app": "ChemGrid",
+        "version": _read_version_without_qt(),
+        "mode": "pre_qapplication_health",
+        "command": mode,
+        "qapplication_created": False,
+        "main_window_instantiated": False,
+        "launch_attempted": False,
+        "safe_to_claim_gui_runtime": False,
+        "status": "ok",
+    }
+
+
+def _write_cli_json_out(path: str, payload: dict) -> int:
+    try:
+        out_path = os.path.abspath(path)
+        parent = os.path.dirname(out_path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        with open(out_path, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+            handle.write("\n")
+        return 0
+    except OSError as e:
+        logger.error("pre-QApplication json-out write failed: %s", e)
+        return 11
+
+
+def _handle_pre_qapplication_cli(argv: list[str]) -> int | None:
+    parser = argparse.ArgumentParser(add_help=False)
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument("--version", action="store_true")
+    mode_group.add_argument("--health", action="store_true")
+    parser.add_argument("--json-out", type=str, default=None)
+    parser.add_argument("--auto-exit-ms", type=int, default=None)
+    try:
+        args, _ = parser.parse_known_args(argv[1:])
+    except SystemExit:
+        return 2
+
+    if args.auto_exit_ms is not None and args.auto_exit_ms < 0:
+        logger.error("--auto-exit-ms must be zero or greater")
+        return 2
+
+    if not args.version and not args.health:
+        return None
+
+    try:
+        payload = _build_pre_qapplication_health_payload(
+            "version" if args.version else "health"
+        )
+        if args.json_out:
+            write_status = _write_cli_json_out(args.json_out, payload)
+            if write_status != 0:
+                return write_status
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+        return 0
+    except Exception as e:
+        logger.exception("pre-QApplication health contract failed: %s", e)
+        return 10
+
+
+_pre_qapplication_cli_exit = _handle_pre_qapplication_cli(sys.argv)
+if _pre_qapplication_cli_exit is not None:
+    sys.exit(_pre_qapplication_cli_exit)
 
 from PyQt6.QtWidgets import QApplication
 
@@ -106,10 +197,10 @@ if __name__ == "__main__":
 
     # [Issue Fix] Windows 작업표시줄: QApplication 아이콘을 창 생성 전에 설정
     # MainWindow.__init__에서도 설정하지만, 작업표시줄은 app-level 아이콘을 먼저 참조
-    _icon_path = os.path.join(_SCRIPT_DIR, "logo.ico")
-    if os.path.exists(_icon_path):
+    _icon_path = existing_resource_path("logo.ico")
+    if _icon_path is not None:
         from PyQt6.QtGui import QIcon
-        app.setWindowIcon(QIcon(_icon_path))
+        app.setWindowIcon(QIcon(str(_icon_path)))
 
     # ===== LITE-EXE-004: QSplashScreen — PyInstaller .exe 부팅 시 빈 화면 방지 =====
     # [W22-01 fix] PyInstaller .exe 기동 시 RDKit/PyQt6/matplotlib DLL 로딩에 최대 20초 소요.
@@ -122,11 +213,11 @@ if __name__ == "__main__":
     from PyQt6.QtGui import QPixmap, QColor
     from PyQt6.QtCore import Qt
 
-    _splash_pix_path = os.path.join(_SCRIPT_DIR, "logo.png")
+    _splash_pix_path = resource_path("logo.png")
     _splash_size = (480, 300)  # 480×300 px — 적당한 splash 크기 [MAGIC:480x300]
 
-    if os.path.exists(_splash_pix_path):
-        _splash_pix = QPixmap(_splash_pix_path)
+    if _splash_pix_path.exists():
+        _splash_pix = QPixmap(str(_splash_pix_path))
         # 고정 크기로 스케일 (원본 logo.png가 너무 크거나 작을 경우 대비)
         if not _splash_pix.isNull():
             _splash_pix = _splash_pix.scaled(
@@ -183,24 +274,30 @@ if __name__ == "__main__":
     # ========== CLI 자동 분자 로딩 (자동화 테스트용) ==========
     # Usage: python draw.py --auto-mol "benzene"
     #        python draw.py --auto-smiles "c1ccccc1"
-    import argparse
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--auto-mol', type=str, default=None,
                         help='Auto-load molecule by name on startup')
     parser.add_argument('--auto-smiles', type=str, default=None,
                         help='Auto-load molecule by SMILES on startup')
+    parser.add_argument('--auto-exit-ms', type=int, default=None,
+                        help='Exit automatically after this many milliseconds')
     args, _ = parser.parse_known_args()
 
+    from PyQt6.QtCore import QTimer
+
     if args.auto_mol:
-        from PyQt6.QtCore import QTimer
         def _auto_load_mol():
             win.mol_name_input.setText(args.auto_mol)
             win._on_mol_name_submitted()
         QTimer.singleShot(1500, _auto_load_mol)
     elif args.auto_smiles:
-        from PyQt6.QtCore import QTimer
         def _auto_load_smiles():
             win._draw_smiles_on_canvas(args.auto_smiles, "auto-test")
         QTimer.singleShot(1500, _auto_load_smiles)
+
+    if args.auto_exit_ms is not None:
+        if args.auto_exit_ms < 0:
+            raise ValueError("--auto-exit-ms must be zero or greater")
+        QTimer.singleShot(args.auto_exit_ms, app.quit)
 
     sys.exit(app.exec())
