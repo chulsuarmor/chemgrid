@@ -1,12 +1,19 @@
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
+$ReleaseTag = 'v1.0.0-lite-rc1'
+$AssetName = 'ChemGrid.exe'
+$ExpectedSha256 = '981898c1b88e3d512aae820eb7be812c27b4dd7dc217a3bd59522ba37d8f5a22'
+$Url = "https://github.com/chulsuarmor/chemgrid/releases/download/$ReleaseTag/$AssetName"
+
 $HelpArgs = @('/?', '-?', '--help', '/help', '-h')
-$DryRunArgs = @('/dryrun', '--dry-run', '-dryrun')
-$NoLaunchArgs = @('/nolaunch', '--no-launch', '-nolaunch', '-NoLaunch')
+$DryRunArgs = @('/dryrun', '--dry-run', '--dryrun', '-dryrun')
+$NoLaunchArgs = @('/nolaunch', '--no-launch', '--nolaunch', '-nolaunch', '-NoLaunch')
 if ($args | Where-Object { $HelpArgs -contains $_ }) {
-    Write-Host "Usage: powershell -ExecutionPolicy Bypass -File install.ps1"
-    Write-Host "Downloads the pinned ChemGrid v1.0.0-lite-rc1 onefile EXE to Desktop and starts it unless -NoLaunch is set."
+    Write-Host "Usage: powershell -ExecutionPolicy Bypass -File install.ps1 [-NoLaunch] [--dry-run]"
+    Write-Host "Downloads the pinned ChemGrid $ReleaseTag onefile EXE to Desktop and starts it unless -NoLaunch is set."
+    Write-Host "Expected $AssetName SHA256: $ExpectedSha256"
+    Write-Host "This installer is pinned to $ReleaseTag and does not follow releases/latest or rc8."
     exit 0
 }
 $DryRun = [bool]($args | Where-Object { $DryRunArgs -contains $_ })
@@ -18,8 +25,6 @@ try {
     Write-Warning "TLS 1.2 setup failed, continuing: $($_.Exception.Message)"
 }
 
-$Url = 'https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid.exe'
-$ExpectedSha256 = '1f988c7ed455aa6dfa873eb14dcef07ad0b5f821e28798a2de51f31b98715dc1'
 $Desktop = [Environment]::GetFolderPath('Desktop')
 if ([string]::IsNullOrWhiteSpace($Desktop)) {
     $Desktop = Join-Path $env:USERPROFILE 'Downloads'
@@ -39,7 +44,7 @@ if ($DryRun) {
     exit 0
 }
 
-Write-Host "Downloading ChemGrid v1.0.0-lite-rc1 to $TempOutput"
+Write-Host "Downloading ChemGrid $ReleaseTag to $TempOutput"
 Invoke-WebRequest -Uri $Url -OutFile $TempOutput -UseBasicParsing
 
 if (-not (Test-Path $TempOutput)) {

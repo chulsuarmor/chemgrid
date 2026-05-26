@@ -9,12 +9,15 @@
 학생 PC에서 PowerShell을 열고 아래 명령어 1줄만 붙여넣기:
 
 ```powershell
-irm https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install_direct_exe_desktop_fallback_20260526.ps1 | iex
+irm https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install.ps1 | iex
 ```
 
-- 관리자 권한 불필요
-- ChemGrid.exe 자동 다운로드 + 바탕화면 바로가기 생성
-- 설치 완료 후 ChemGrid 자동 실행
+- Canonical public install boundary: pinned `v1.0.0-lite-rc1` `ChemGrid.exe`.
+- Expected `ChemGrid.exe` SHA256: `981898c1b88e3d512aae820eb7be812c27b4dd7dc217a3bd59522ba37d8f5a22`.
+- The installer supports `-NoLaunch` and `--dry-run` when run from a saved script; the one-line command above is the public student install command.
+- 경고: 이 안내는 rc1 고정 `ChemGrid.exe` 설치 명령만 대상으로 합니다.
+- `releases/latest/download/install.ps1`, `v1.0.0-lite-rc8` 경로, ZIP/latest 설치 흐름은 학생용 고정 EXE 설치 명령이 아닙니다.
+- latest/rc8 경로는 별도 검증 전까지 위 rc1 고정 명령을 대체하지 마세요.
 
 ### WSL / Linux / macOS
 
@@ -26,9 +29,9 @@ irm https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/in
 
 | 파일 | 크기 | 설명 |
 |------|------|------|
-| [ChemGrid.exe](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid.exe) | 128.6 MB | Windows 단일 실행 파일 (설치 불필요) |
-| [ChemGrid_Lite.zip](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid_Lite.zip) | 305 MB | ZIP 패키지 |
-| [install.ps1](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install.ps1) | 2.5 KB | PowerShell 설치 스크립트 |
+| [ChemGrid.exe](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid.exe) | 422 MB / 422,218,217 bytes | Canonical pinned Windows onefile EXE; SHA256 above |
+| [ChemGrid_Lite.zip](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid_Lite.zip) | 305 MB | Archive only; not the canonical fixed EXE install command |
+| [install.ps1](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install.ps1) | 2,931 bytes | PowerShell installer for the pinned rc1 EXE |
 
 ---
 
@@ -41,7 +44,7 @@ irm https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/in
 - **단백질 구조 예측** — ColabFold / AlphaFold (인터넷 연결 시)
 - **PDBe Mol* 3D 뷰어** — 로그인 없이 단백질 3D 가시화
 - **DryLab 보고서** — 전국과학전람회 수준 실험 보고서 자동 생성
-- **SIMULATION_MODE** — 서버 없이도 핵심 기능 모두 작동
+- **SIMULATION_MODE** — 서버 미연결 시 모의/휴리스틱 결과를 명시하는 경계 표시 모드
 
 ---
 
@@ -67,7 +70,7 @@ irm https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/in
 
 ### 교사 PC: ORCA 서버 (DFT 계산 — 선택)
 
-ORCA 서버 없이도 ChemGrid은 SIMULATION_MODE로 완전 작동합니다.
+ORCA 서버는 선택 구성입니다. 이 README의 rc1 설치 안내는 고정 EXE 경로와 SHA를 문서화하며, SIMULATION_MODE의 전체 기능 준비 상태를 검증하지 않습니다.
 DFT 정밀 계산이 필요한 경우에만 교사 PC에 서버를 설치하세요.
 
 ```bash
