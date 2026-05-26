@@ -48,8 +48,9 @@ jobs:
             }
           }
           $selfTest = Join-Path $env:RUNNER_TEMP 'chemgrid_rdkit_lead_self_test.json'
-          & 'dist/ChemGrid.exe' --self-test-rdkit-lead --json-out $selfTest
-          if ($LASTEXITCODE -ne 0) { throw "ChemGrid RDKit/lead self-test failed with exit $LASTEXITCODE" }
+          $selfProcess = Start-Process -FilePath 'dist/ChemGrid.exe' -ArgumentList @('--self-test-rdkit-lead','--json-out',$selfTest) -Wait -PassThru -WindowStyle Hidden
+          if ($selfProcess.ExitCode -ne 0) { throw "ChemGrid RDKit/lead self-test failed with exit $($selfProcess.ExitCode)" }
+          if (-not (Test-Path $selfTest)) { throw "ChemGrid RDKit/lead self-test JSON was not written: $selfTest" }
           $selfPayload = Get-Content -Raw -Path $selfTest | ConvertFrom-Json
           if (-not $selfPayload.safe_to_claim_rdkit_lead_import) {
             throw "ChemGrid RDKit/lead self-test did not authorize import claim"
