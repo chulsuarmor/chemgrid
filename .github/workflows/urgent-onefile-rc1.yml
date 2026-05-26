@@ -33,12 +33,26 @@ jobs:
           $exe = Get-Item 'dist/ChemGrid.exe'
           if ($exe.Length -lt 100MB) { throw "ChemGrid.exe too small; likely failed stub: $($exe.Length) bytes" }
           $archiveNames = python -m PyInstaller.utils.cliutils.archive_viewer 'dist/ChemGrid.exe' --list --brief
+          $archiveRecursiveNames = python -m PyInstaller.utils.cliutils.archive_viewer 'dist/ChemGrid.exe' --list --recursive --brief
           foreach ($asset in @('logo.png','logo.ico','undo.png','redo.png','hand.png','select.png','pen.png','eraser.png','bond.png')) {
             $expected = "_internal\$asset"
             $found = $archiveNames | Where-Object { $_.Trim().Replace('/', '\') -eq $expected }
             if (-not $found) {
               throw "ChemGrid.exe missing bundled UI asset: $expected"
             }
+          }
+          foreach ($module in @('lead_optimizer','popup_lead_optimizer','admet_predictor','docking_data','docking_interface','drug_screening','rdkit.Chem.QED','rdkit.Chem.Crippen','rdkit.RDConfig')) {
+            $foundModule = $archiveRecursiveNames | Where-Object { $_.Trim() -eq $module }
+            if (-not $foundModule) {
+              throw "ChemGrid.exe missing lead/RDKit module: $module"
+            }
+          }
+          $selfTest = Join-Path $env:RUNNER_TEMP 'chemgrid_rdkit_lead_self_test.json'
+          & 'dist/ChemGrid.exe' --self-test-rdkit-lead --json-out $selfTest
+          if ($LASTEXITCODE -ne 0) { throw "ChemGrid RDKit/lead self-test failed with exit $LASTEXITCODE" }
+          $selfPayload = Get-Content -Raw -Path $selfTest | ConvertFrom-Json
+          if (-not $selfPayload.safe_to_claim_rdkit_lead_import) {
+            throw "ChemGrid RDKit/lead self-test did not authorize import claim"
           }
           $exe | Format-List FullName,Length,LastWriteTime
           Get-FileHash -Algorithm SHA256 'dist/ChemGrid.exe'

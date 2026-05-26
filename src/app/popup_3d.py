@@ -4597,7 +4597,7 @@ class FallbackRenderer2D(QWidget):
         """정규화된 전하 [-1,+1] → RGB (McMurry convention, QPainter용).
 
         5-anchor colormap:
-          -1.0 RED (electron-rich)  →  0.0 near-white  →  +1.0 BLUE (electron-poor)     
+          -1.0 RED (electron-rich)  →  0.0 near-white  →  +1.0 BLUE (electron-poor)
         중간 색상: red → orange → white → cyan → blue (코사인 보간)
         """
         anchors = [
@@ -12471,13 +12471,13 @@ class DockingEnergyPanel(QWidget):
         ("SGLT2 (당뇨/심부전)", "7VSI", "나트륨-포도당 공동수송체2 — 다파글리플로진"),
     ]
 
-    # 결합 에너지 임계값
+    # Reference score bands; displayed labels must not imply biological binding proof.
     THRESHOLDS = [
-        (-99.0, -12.0, "매우 강한 결합", "#e74c3c", "Ki < 1 μM"),
-        (-12.0,  -8.0, "강한 결합",     "#e67e22", "Ki 1–100 μM"),
-        (-8.0,   -5.0, "중간 결합",     "#f1c40f", "Ki 0.1–10 mM"),
-        (-5.0,   -2.0, "약한 결합",     "#27ae60", "Ki > 10 mM"),
-        (-2.0,   99.0, "비결합",        "#95a5a6", "결합 에너지 부족"),
+        (-99.0, -12.0, "참조 점수 A", "#e74c3c", "농도 참고: < 1 μM"),
+        (-12.0,  -8.0, "참조 점수 B", "#e67e22", "농도 참고: 1–100 μM"),
+        (-8.0,   -5.0, "참조 점수 C", "#f1c40f", "농도 참고: 0.1–10 mM"),
+        (-5.0,   -2.0, "참조 점수 D", "#27ae60", "농도 참고: > 10 mM"),
+        (-2.0,   99.0, "참조 점수 범위 밖", "#95a5a6", "농도 참고 없음"),
     ]
 
     def __init__(self, parent=None):
@@ -13177,7 +13177,7 @@ class DockingEnergyPanel(QWidget):
     def _show_docking_result(self, energy: float, method: str = "경험적 근사"):
         """도킹 점수 추정 결과 표시"""
         # 참조 구간 판정
-        grade_label, grade_color, grade_ki = "비결합", "#95a5a6", ""
+        grade_label, grade_color, grade_ki = "참조 점수 범위 밖", "#95a5a6", "농도 참고 없음"
         for lo, hi, label, color, ki in self.THRESHOLDS:
             if lo <= energy < hi:
                 grade_label, grade_color, grade_ki = label, color, ki
@@ -15503,7 +15503,7 @@ class Molecule3DPopup(QWidget):
         af_layout = QVBoxLayout(af_group)
 
         # [B7-1] af_desc: 드롭다운 미선택(idx==0) 또는 직접입력(__custom__) 시만 표시
-        self._af_desc = QLabel("현재 분자(리간드)가 결합할 표적 단백질을 선택하거나,\n"
+        self._af_desc = QLabel("현재 분자와 함께 비교할 표적 단백질 구조를 선택하거나,\n"
                                "PDB ID / UniProt ID를 직접 입력하세요.")
         self._af_desc.setStyleSheet("color: #aaa; font-size: 11px;")
         self._af_desc.setWordWrap(True)

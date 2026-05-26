@@ -16,6 +16,7 @@ import io
 import math
 import os
 import logging
+from html import escape as _html_escape
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -71,15 +72,18 @@ def _ensure_qt_korean_font_ready() -> str:
 
 
 # ── lead_optimizer (core engine) ─────────────────────────────────────────
+_LEAD_OPTIMIZER_IMPORT_ERROR = ""
 try:
     from lead_optimizer import (
         MoleculeVariantGenerator, translate_goal, call_llm,
         score_variant, calculate_sa_score, inject_api_keys,
         save_api_key, get_api_key, VariantResult, ModificationStrategy,
         LeadOptimizationResult, PRESET_GOALS, GOAL_RECEPTOR_MAP,
-        RDKIT_OK, GROQ_OK, GEMINI_OK, export_lead_optimizer_report,
+        RDKIT_OK, GROQ_OK, GEMINI_OK,
     )
-except ImportError:
+except ImportError as e:
+    _LEAD_OPTIMIZER_IMPORT_ERROR = f"{type(e).__name__}: {e}"
+    logger.warning("Lead optimizer engine import failed: %s", _LEAD_OPTIMIZER_IMPORT_ERROR)
     RDKIT_OK = GROQ_OK = GEMINI_OK = False
     PRESET_GOALS = {}
     GOAL_RECEPTOR_MAP = {}
@@ -117,24 +121,38 @@ except ImportError:
     def get_api_key(k):  # type: ignore[no-redef]
         return ""
 
+try:
+    from lead_optimizer import export_lead_optimizer_report
+except ImportError:
     def export_lead_optimizer_report(*args, **kwargs):  # type: ignore[no-redef]
         return False, "lead_optimizer report export is unavailable"
 
 # ── docking_data ─────────────────────────────────────────────────────────
 try:
-    from docking_data import (
-        RECEPTOR_DATABASE,
-        get_receptor_metadata,
-        get_receptor_dropdown_options,
-    )
+    from docking_data import RECEPTOR_DATABASE, get_receptor_metadata
 except ImportError:
     RECEPTOR_DATABASE = {}
 
     def get_receptor_metadata(pdb_id):  # type: ignore[no-redef]
         return None
 
+try:
+    from docking_data import get_receptor_dropdown_options
+except ImportError:
     def get_receptor_dropdown_options():  # type: ignore[no-redef]
-        return []
+        options = []
+        for pdb_id, meta in RECEPTOR_DATABASE.items():
+            receptor_id = str(pdb_id or "").strip().upper()
+            if not receptor_id:
+                continue
+            name = str(getattr(meta, "name", "") or receptor_id)
+            gene = str(getattr(meta, "gene", "") or "")
+            label = f"{name} ({receptor_id})"
+            if gene:
+                label = f"{label} - {gene}"
+            options.append({"pdb_id": receptor_id, "label": label})
+        return options
+
 
 try:
     from docking_interface import (
@@ -394,6 +412,45 @@ def _smiles_to_pixmap(smiles: str, width: int = 260, height: int = 200,
 def _smiles_to_small_pixmap(smiles: str, size: int = 64) -> Optional["QPixmap"]:
     """Small thumbnail for table cells."""
     return _smiles_to_pixmap(smiles, size, size)
+
+
+def _variant_text(value, default: str = "-") -> str:
+    """Return a compact, display-safe text value for optional variant fields."""
+    if value is None:
+        return default
+    text = str(value).strip()
+    return text if text else default
+
+
+def _variant_rationale_text(variant) -> str:
+    rationale = _variant_text(getattr(variant, "generation_rationale", ""), "")
+    if rationale:
+        return rationale
+    detail = _variant_text(getattr(variant, "modification_detail", ""), "")
+    mod_type = _variant_text(getattr(variant, "modification_type", ""), "")
+    if detail:
+        return f"Structural edit proposed by the RDKit derivative generator: {detail}"
+    if mod_type:
+        return f"Structural edit proposed by the RDKit derivative generator: {mod_type}"
+    return "RDKit-valid derivative generated for heuristic screening."
+
+
+def _variant_boundary_text(variant) -> str:
+    boundary = _variant_text(getattr(variant, "rationale_boundary", ""), "")
+    notes = _variant_text(getattr(variant, "validation_notes", ""), "")
+    parts = []
+    if boundary:
+        parts.append(boundary)
+    else:
+        parts.append(
+            "Boundary: RDKit structural validity plus descriptor/heuristic screening only; "
+            "no Vina pose, target-affinity measurement, or lead-success proof."
+        )
+    if getattr(variant, "rdkit_validated", False):
+        parts.append("RDKit validation: parsed, canonicalized, single-fragment derivative.")
+    if notes and notes != "-":
+        parts.append(f"Validation notes: {notes}")
+    return " ".join(parts)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -900,7 +957,7 @@ class LeadOptimizerPopup(QDialog):
         self._sim_banner = QLabel(
             # M1345: Rule Q bilingual prefix — Korean "[시뮬레이션 모드" mandatory per Rule GG.
             "[시뮬레이션 모드 / SIMULATION_MODE] 휴리스틱 점수 사용 중 / Heuristic scoring active. "
-            "Install Vina + AlphaFold for real binding analysis."
+            "Attach Vina pose/log evidence before interpreting target binding."
         )
         self._sim_banner.setWordWrap(True)
         self._sim_banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -962,6 +1019,7 @@ class LeadOptimizerPopup(QDialog):
 
         # ── 최적화 목표 ──
         grp_goal = QGroupBox("최적화 목표")
+        self.grp_goal = grp_goal
         goal_layout = QVBoxLayout(grp_goal)
 
         self.combo_goal = QComboBox()
@@ -978,6 +1036,7 @@ class LeadOptimizerPopup(QDialog):
 
         # ── 표적 수용체 ──
         grp_receptor = QGroupBox("표적 수용체")
+        self.grp_receptor = grp_receptor
         rec_layout = QVBoxLayout(grp_receptor)
 
         self.combo_receptor = QComboBox()
@@ -1192,8 +1251,8 @@ class LeadOptimizerPopup(QDialog):
         # [M505] 방법론 명시 배너 — 경험적 가중합 휴리스틱 표기 (Rule O 학술품질, FP-15 P-MOCK-DISGUISED 재발방지)
         # Hopkins 2007 LE (Lead Efficiency Index, J. Med. Chem.) 기반 가중합 구조이나 ML 모델 미사용
         methodology_label = QLabel(
-            "랭킹 방법: 경험적 가중합 (도킹 30% + QED 20% + ADMET 20% + SA 15% + 점수변화 15%)\n"
-            "    ML 모델 미사용 — RDKit 기반 휴리스틱 추정값 (실험적 결합 친화도 아님)\n"
+            "랭킹 방법: 경험적 가중합 (휴리스틱 점수 30% + QED 20% + ADMET 20% + SA 15% + 점수변화 15%)\n"
+            "    표시 근거: RDKit-valid 구조 변화 + descriptor/heuristic screening. 결합 개선 또는 lead 성공 증거가 아닙니다.\n"
             f"    {LEAD_ENGINE_DISCLOSURE_TEXT}"
         )
         methodology_label.setWordWrap(True)
@@ -1212,11 +1271,11 @@ class LeadOptimizerPopup(QDialog):
         self.tbl_results.setColumnCount(9)
         # [M505] 헤더에 (휴리스틱) 표기 — 학생 학습 오염 방지 (Rule O, FP-08 P-SCOPE 재발방지)
         self.tbl_results.setHorizontalHeaderLabels([
-            "순위", "구조", "SMILES", "변형", "결합에너지",
-            "점수변화", "QED", "SA", "종합 (휴리스틱)",
+            "순위", "구조", "SMILES", "변형", "휴리스틱 점수",
+            "점수 변화", "QED", "SA", "종합 (휴리스틱)",
         ])
         self.tbl_results.horizontalHeader().setToolTip(
-            "경험적 가중합 점수 — ML 모델 미사용, RDKit 기반 추정값"
+            "RDKit descriptor heuristic screening only; not a target-binding gain or docking-evidence claim."
         )
         self.tbl_results.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.tbl_results.horizontalHeader().setStretchLastSection(True)
@@ -1331,12 +1390,18 @@ class LeadOptimizerPopup(QDialog):
         self.lbl_d_mod_detail.setWordWrap(True)
         scores_form.addRow("변형 상세:", self.lbl_d_mod_detail)
         self.lbl_d_docking = QLabel("-")
-        scores_form.addRow("휴리스틱 도킹 점수:", self.lbl_d_docking)
+        scores_form.addRow("휴리스틱 스크리닝 점수:", self.lbl_d_docking)
         self.lbl_d_engine_basis = QLabel(LEAD_ENGINE_DISCLOSURE_TEXT)
         self.lbl_d_engine_basis.setWordWrap(True)
         scores_form.addRow("Engine basis:", self.lbl_d_engine_basis)
         self.lbl_d_delta = QLabel("-")
-        scores_form.addRow("점수 변화:", self.lbl_d_delta)
+        scores_form.addRow("휴리스틱 점수 변화:", self.lbl_d_delta)
+        self.lbl_d_rationale = QLabel("-")
+        self.lbl_d_rationale.setWordWrap(True)
+        scores_form.addRow("표시 근거:", self.lbl_d_rationale)
+        self.lbl_d_boundary = QLabel("-")
+        self.lbl_d_boundary.setWordWrap(True)
+        scores_form.addRow("한계:", self.lbl_d_boundary)
         self.lbl_d_qed = QLabel("-")
         scores_form.addRow("QED:", self.lbl_d_qed)
         self.lbl_d_sa = QLabel("-")
@@ -1358,10 +1423,13 @@ class LeadOptimizerPopup(QDialog):
         admet_d_layout.addWidget(self.lbl_d_bbb)
         scroll_layout.addWidget(grp_admet_d)
 
-        # Docking interaction summary
-        grp_dock_d = QGroupBox("도킹 상호작용 요약")
+        # Heuristic boundary summary
+        grp_dock_d = QGroupBox("휴리스틱 근거 및 한계")
         dock_d_layout = QVBoxLayout(grp_dock_d)
-        self.lbl_d_dock_summary = QLabel("간이 스코어링 모드 — 상세 상호작용은 전체 도킹 팝업에서 확인하세요.")
+        self.lbl_d_dock_summary = QLabel(
+            "RDKit descriptor heuristic only. No Vina pose/log is attached, so this view does not claim "
+            "a target-binding gain, target-affinity gain, or successful lead outcome."
+        )
         self.lbl_d_dock_summary.setWordWrap(True)
         dock_d_layout.addWidget(self.lbl_d_dock_summary)
         scroll_layout.addWidget(grp_dock_d)
@@ -1614,9 +1682,9 @@ class LeadOptimizerPopup(QDialog):
         # ── Goal → Receptor 자동 매핑 ──
         receptors = GOAL_RECEPTOR_MAP.get(text, [])
         if receptors:
-            pdb_id = receptors[0]
+            pdb_id = str(receptors[0] or "").strip().upper()
             for i in range(self.combo_receptor.count()):
-                if self.combo_receptor.itemData(i) == pdb_id:
+                if str(self.combo_receptor.itemData(i) or "").strip().upper() == pdb_id:
                     self.combo_receptor.setCurrentIndex(i)
                     # 수용체 이름 추출
                     meta = RECEPTOR_DATABASE.get(pdb_id)
@@ -1642,7 +1710,28 @@ class LeadOptimizerPopup(QDialog):
             return
 
         if not RDKIT_OK:
-            QMessageBox.warning(self, "경고", "RDKit가 설치되어 있지 않습니다. 유도체 생성이 불가능합니다.")
+            rdkit_detail = _LEAD_OPTIMIZER_IMPORT_ERROR or "lead_optimizer.RDKIT_OK is False"
+            try:
+                from rdkit import Chem as _Chem
+                rdkit_detail = (
+                    "RDKit import works, but the lead optimizer engine did not initialize: "
+                    f"{rdkit_detail}"
+                )
+                logger.warning(
+                    "Lead optimizer blocked although RDKit import works: Chem=%s detail=%s",
+                    _Chem,
+                    rdkit_detail,
+                )
+            except Exception as e:
+                rdkit_detail = f"RDKit runtime import failed: {type(e).__name__}: {e}"
+                logger.warning("Lead optimizer RDKit runtime unavailable: %s", rdkit_detail)
+            QMessageBox.warning(
+                self,
+                "경고",
+                "리드 최적화 엔진을 초기화하지 못했습니다.\n"
+                f"{rdkit_detail}\n"
+                "최신 ChemGrid.exe로 다시 설치한 뒤 재시도해 주세요.",
+            )
             return
 
         # Validate SMILES
@@ -1966,18 +2055,27 @@ class LeadOptimizerPopup(QDialog):
             self.tbl_results.setItem(row, 2, smi_item)
 
             # 변형
-            self.tbl_results.setItem(row, 3, QTableWidgetItem(v.modification_type))
+            mod_item = QTableWidgetItem(v.modification_type)
+            mod_item.setToolTip(
+                f"Rationale: {_variant_rationale_text(v)}\n"
+                f"Boundary: {_variant_boundary_text(v)}"
+            )
+            self.tbl_results.setItem(row, 3, mod_item)
 
-            # 결합에너지
+            # Heuristic screening score, not binding energy.
             dock_item = QTableWidgetItem(f"{v.docking_score:.2f}")
             dock_item.setData(Qt.ItemDataRole.UserRole, float(v.docking_score))
             dock_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            dock_item.setToolTip(
+                "RDKit descriptor heuristic score only; not a measured binding energy or Vina result."
+            )
             self.tbl_results.setItem(row, 4, dock_item)
 
-            # 개선도
+            # Directional score delta only; not a binding-improvement claim.
             delta_item = QTableWidgetItem(f"{v.docking_delta:+.2f}")
             delta_item.setData(Qt.ItemDataRole.UserRole, float(v.docking_delta))
             delta_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            delta_item.setToolTip("Directional heuristic-score delta; not a target-binding gain.")
             if v.docking_delta < 0:
                 delta_item.setForeground(QBrush(QColor(_TIER_A)))
             self.tbl_results.setItem(row, 5, delta_item)
@@ -2039,13 +2137,15 @@ class LeadOptimizerPopup(QDialog):
         self.lbl_d_mod_detail.setText(v.modification_detail)
         self.lbl_d_docking.setText(f"{v.docking_score:.2f} kcal/mol-style")
         self.lbl_d_delta.setText(f"{v.docking_delta:+.2f} kcal/mol-style")
+        self.lbl_d_rationale.setText(_variant_rationale_text(v))
+        self.lbl_d_boundary.setText(_variant_boundary_text(v))
         engine_basis = getattr(v, "engine_basis", "")
         if not engine_basis and self._result is not None:
             engine_basis = getattr(self._result, "engine_basis", "")
         if hasattr(self, "lbl_d_engine_basis"):
             self.lbl_d_engine_basis.setText(engine_basis or LEAD_ENGINE_DISCLOSURE_TEXT)
 
-        delta_color = _TIER_A if v.docking_delta < 0 else _TIER_C
+        delta_color = _TIER_B
         self.lbl_d_delta.setStyleSheet(f"color: {delta_color};")
 
         self.lbl_d_qed.setText(f"{v.qed_score:.3f}")
@@ -2161,26 +2261,33 @@ class LeadOptimizerPopup(QDialog):
         deriv_smi = v.smiles
         html_parts = []
 
-        # ── 1. 예상 개선 효과 (Expected Improvement) ──
+        # ── 1. 표시 근거 및 휴리스틱 점수 변화 ──
         html_parts.append(
             f'<p style="color:#4fc3f7; font-weight:bold; font-size:13px; '
-            f'margin-bottom:4px;">1. 예상 개선 효과</p>'
+            f'margin-bottom:4px;">1. 표시 근거 및 휴리스틱 점수 변화</p>'
         )
-        # Heuristic docking score change %
+        rationale_html = _html_escape(_variant_rationale_text(v))
+        boundary_html = _html_escape(_variant_boundary_text(v))
+        html_parts.append(f'<p><b>근거:</b> {rationale_html}</p>')
+        html_parts.append(
+            '<p style="font-size:11px;color:#9fb3c8;">'
+            f'<b>한계:</b> {boundary_html}</p>'
+        )
+        # Heuristic score change only; no target-binding interpretation.
         base_dock = 0.0
         if self._result and self._result.base_docking_score != 0:
             base_dock = self._result.base_docking_score
         if base_dock != 0:
             delta_pct = abs(v.docking_delta / base_dock) * 100
-            improve_dir = "감소" if v.docking_delta < 0 else "증가"
+            score_dir = "lower" if v.docking_delta < 0 else "higher"
             html_parts.append(
-                f'<p>기준 분자 대비 휴리스틱 도킹 점수 <b>{delta_pct:.1f}%</b> {improve_dir}</p>'
-                '<p style="font-size:11px;color:#9fb3c8;">탐색용 점수 변화이며 실제 결합 세기 해석에 사용할 수 없습니다.</p>'
+                f'<p>기준 분자 대비 휴리스틱 스크리닝 점수: <b>{delta_pct:.1f}%</b> {score_dir}</p>'
+                '<p style="font-size:11px;color:#9fb3c8;">탐색용 점수 변화이며 실제 결합 세기, target-binding gain, successful lead outcome 해석에 사용할 수 없습니다.</p>'
             )
         else:
             html_parts.append(
                 f'<p>기준 분자 대비 휴리스틱 점수 변화: <b>{v.docking_delta:+.2f}</b> kcal/mol-style</p>'
-                '<p style="font-size:11px;color:#9fb3c8;">탐색용 점수 변화이며 실제 Vina 결과가 아닙니다.</p>'
+                '<p style="font-size:11px;color:#9fb3c8;">탐색용 점수 변화이며 실제 Vina 결과나 target-binding gain 증거가 아닙니다.</p>'
             )
 
         # QED tier

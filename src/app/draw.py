@@ -96,6 +96,69 @@ def _build_pre_qapplication_health_payload(mode: str) -> dict:
     }
 
 
+def _build_rdkit_lead_self_test_payload() -> tuple[dict, int]:
+    """Import the lead-optimizer stack before QApplication for EXE packaging proof."""
+    payload = _build_pre_qapplication_health_payload("self-test-rdkit-lead")
+    checks: dict[str, object] = {}
+    status = 0
+    try:
+        import rdkit
+        from rdkit import Chem
+        from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors, Draw, RDConfig
+        mol = Chem.MolFromSmiles("CCO")
+        checks["rdkit_version"] = getattr(rdkit, "__version__", "unknown")
+        checks["rdkit_mol_from_smiles"] = mol is not None
+        checks["rdkit_rdcontrib_dir_exists"] = os.path.isdir(
+            getattr(RDConfig, "RDContribDir", "")
+        )
+        checks["rdkit_imports"] = all(
+            module is not None
+            for module in (AllChem, Descriptors, rdMolDescriptors, Draw)
+        )
+        if mol is None:
+            raise RuntimeError("RDKit MolFromSmiles('CCO') returned None")
+    except Exception as e:
+        checks["rdkit_error"] = f"{type(e).__name__}: {e}"
+        status = 21
+
+    try:
+        from lead_optimizer import (
+            RDKIT_OK,
+            MoleculeVariantGenerator,
+            calculate_sa_score,
+            normalize_lead_optimizer_input,
+        )
+        checks["lead_optimizer_imported"] = True
+        checks["lead_optimizer_rdkit_ok"] = bool(RDKIT_OK)
+        checks["lead_optimizer_alias"] = normalize_lead_optimizer_input("cadaverine")[0]
+        checks["lead_optimizer_sa_score"] = isinstance(
+            calculate_sa_score("CCO"), (int, float)
+        )
+        if not RDKIT_OK:
+            raise RuntimeError("lead_optimizer.RDKIT_OK is False")
+        generator = MoleculeVariantGenerator()
+        variants = generator.generate_all("CCO", n_target=1)
+        checks["lead_optimizer_generator"] = generator.__class__.__name__
+        checks["lead_optimizer_variant_list"] = isinstance(variants, list)
+    except Exception as e:
+        checks["lead_optimizer_error"] = f"{type(e).__name__}: {e}"
+        status = status or 22
+
+    try:
+        from popup_lead_optimizer import LeadOptimizerPopup
+        checks["popup_lead_optimizer_imported"] = (
+            LeadOptimizerPopup.__name__ == "LeadOptimizerPopup"
+        )
+    except Exception as e:
+        checks["popup_lead_optimizer_error"] = f"{type(e).__name__}: {e}"
+        status = status or 23
+
+    payload["checks"] = checks
+    payload["status"] = "ok" if status == 0 else "fail"
+    payload["safe_to_claim_rdkit_lead_import"] = status == 0
+    return payload, status
+
+
 def _write_cli_json_out(path: str, payload: dict) -> int:
     try:
         out_path = os.path.abspath(path)
@@ -116,6 +179,7 @@ def _handle_pre_qapplication_cli(argv: list[str]) -> int | None:
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument("--version", action="store_true")
     mode_group.add_argument("--health", action="store_true")
+    mode_group.add_argument("--self-test-rdkit-lead", action="store_true")
     parser.add_argument("--json-out", type=str, default=None)
     parser.add_argument("--auto-exit-ms", type=int, default=None)
     try:
@@ -127,19 +191,23 @@ def _handle_pre_qapplication_cli(argv: list[str]) -> int | None:
         logger.error("--auto-exit-ms must be zero or greater")
         return 2
 
-    if not args.version and not args.health:
+    if not args.version and not args.health and not args.self_test_rdkit_lead:
         return None
 
     try:
-        payload = _build_pre_qapplication_health_payload(
-            "version" if args.version else "health"
-        )
+        if args.self_test_rdkit_lead:
+            payload, status = _build_rdkit_lead_self_test_payload()
+        else:
+            payload = _build_pre_qapplication_health_payload(
+                "version" if args.version else "health"
+            )
+            status = 0
         if args.json_out:
             write_status = _write_cli_json_out(args.json_out, payload)
             if write_status != 0:
                 return write_status
         print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
-        return 0
+        return status
     except Exception as e:
         logger.exception("pre-QApplication health contract failed: %s", e)
         return 10

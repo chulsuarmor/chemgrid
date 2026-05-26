@@ -11,12 +11,40 @@ import json
 import math
 import os
 import logging
+import re
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
+
+SUPPORTED_LEAD_INPUT_ALIASES: Dict[str, Tuple[str, str]] = {
+    "cadaverine": ("NCCCCCN", "cadaverine"),
+    "cadaverin": ("NCCCCCN", "cadaverine"),
+    "cadeverin": ("NCCCCCN", "cadaverine"),
+}
+
+
+def normalize_lead_optimizer_input(input_text: str) -> Tuple[str, Optional[str]]:
+    """Normalize supported common-name lead inputs to SMILES.
+
+    Returns (smiles_or_original_text, normalized_name). normalized_name is None
+    when the input was not a supported alias and should be parsed as SMILES.
+    """
+    raw_text = str(input_text or "").strip()
+    alias_key = re.sub(r"[^a-z0-9]+", "", raw_text.lower())
+    alias = SUPPORTED_LEAD_INPUT_ALIASES.get(alias_key)
+    if alias:
+        smiles, normalized_name = alias
+        logger.warning(
+            "[D891] Lead optimizer input normalized: %r -> %s (%s)",
+            raw_text,
+            smiles,
+            normalized_name,
+        )
+        return smiles, normalized_name
+    return raw_text, None
 
 # ── API 키 관리 (config.json ↔ os.environ 자동 동기화) ───────────────
 CONFIG_DIR = Path.home() / ".chemgrid"
@@ -141,6 +169,71 @@ class LeadOptimizationResult:
     stages_completed: List[str] = field(default_factory=list)
     base_docking_score: float = 0.0
     error: str = ""
+
+
+LEAD_VARIANT_RATIONALE_BOUNDARY = (
+    "RDKit-only structural variant; heuristic rationale; "
+    "not experimental or engine-validated pharmacology."
+)
+
+
+def _canonical_single_fragment_smiles(smiles: str, parent_smiles: str, context: str) -> Optional[str]:
+    """Return canonical SMILES only for valid changed single-fragment variants."""
+    if not RDKIT_OK:
+        return None
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        logger.warning("[Rule L] MolFromSmiles failed for generated %s: %r", context, smiles)
+        return None
+    fragments = Chem.GetMolFrags(mol)
+    if len(fragments) != 1:
+        logger.warning("[D891] Rejected disconnected lead optimizer %s variant: %r", context, smiles)
+        return None
+    canonical = Chem.MolToSmiles(mol, canonical=True)
+    parent_mol = Chem.MolFromSmiles(parent_smiles)
+    parent_canonical = Chem.MolToSmiles(parent_mol, canonical=True) if parent_mol is not None else parent_smiles
+    if canonical == parent_canonical:
+        logger.warning("[D891] Rejected unchanged lead optimizer %s variant: %r", context, smiles)
+        return None
+    return canonical
+
+
+def _make_variant_result(
+    smiles: str,
+    parent_smiles: str,
+    modification_type: str,
+    modification_detail: str,
+) -> VariantResult:
+    variant = VariantResult(
+        smiles=smiles,
+        parent_smiles=parent_smiles,
+        modification_type=modification_type,
+        modification_detail=modification_detail,
+    )
+    variant.rdkit_validated = True
+    variant.generation_rationale = (
+        f"{modification_type}: RDKit sanitized single-fragment structural edit; "
+        f"{modification_detail}"
+    )
+    variant.rationale_boundary = LEAD_VARIANT_RATIONALE_BOUNDARY
+    variant.validation_notes = (
+        "MolFromSmiles parsed; Chem.GetMolFrags count=1; canonical SMILES differs from parent."
+    )
+    return variant
+
+
+def _annotate_variant_result(variant: VariantResult) -> VariantResult:
+    """Attach explicit RDKit-only rationale boundaries to an existing variant."""
+    variant.rdkit_validated = True
+    variant.generation_rationale = (
+        f"{variant.modification_type}: RDKit sanitized single-fragment structural edit; "
+        f"{variant.modification_detail}"
+    )
+    variant.rationale_boundary = LEAD_VARIANT_RATIONALE_BOUNDARY
+    variant.validation_notes = (
+        "MolFromSmiles parsed; Chem.GetMolFrags count=1; canonical SMILES differs from parent."
+    )
+    return variant
 
 
 # ============================================================================
@@ -468,7 +561,10 @@ class MoleculeVariantGenerator:
 
                     try:
                         Chem.SanitizeMol(ed)
-                        new_smi = Chem.MolToSmiles(ed)
+                        new_smi = Chem.MolToSmiles(ed, canonical=True)
+                        new_smi = _canonical_single_fragment_smiles(new_smi, parent_smi, "r_group")
+                        if new_smi is None:
+                            continue
                         if new_smi and new_smi not in seen:
                             # 유효성 재확인
                             check = Chem.MolFromSmiles(new_smi)
@@ -664,10 +760,19 @@ class MoleculeVariantGenerator:
         if not RDKIT_OK:
             return []
 
-        mol = Chem.MolFromSmiles(smiles)
+        normalized_smiles, normalized_name = normalize_lead_optimizer_input(smiles)
+        mol = Chem.MolFromSmiles(normalized_smiles)
         if mol is None:
-            logger.warning("[Rule L] MolFromSmiles 실패: %r", smiles)
+            logger.warning(
+                "[Rule L] MolFromSmiles failed for lead optimizer input: %r "
+                "(normalized=%r, alias=%r). Enter a valid SMILES or supported "
+                "common name such as cadaverine.",
+                smiles,
+                normalized_smiles,
+                normalized_name,
+            )
             return []
+        parent_smi = Chem.MolToSmiles(mol, canonical=True)
 
         strategies = strategy.strategies if strategy else ["r_group", "bioisostere", "chain", "ring"]
         preferred = strategy.preferred_substituents if strategy else []
@@ -730,9 +835,15 @@ class MoleculeVariantGenerator:
         seen = set()
         unique = []
         for v in all_variants:
-            if v.smiles not in seen:
-                seen.add(v.smiles)
-                unique.append(v)
+            valid_smi = _canonical_single_fragment_smiles(
+                v.smiles,
+                parent_smi,
+                getattr(v, "modification_type", "variant"),
+            )
+            if valid_smi and valid_smi not in seen:
+                v.smiles = valid_smi
+                seen.add(valid_smi)
+                unique.append(_annotate_variant_result(v))
 
         # n_target 이하로 잘라서 반환
         return unique[:n_target]
