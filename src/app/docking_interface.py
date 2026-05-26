@@ -30,6 +30,11 @@ def _external_probe_disabled() -> bool:
     )
 
 
+def _wsl_vina_probe_enabled() -> bool:
+    """WSL Vina probing is opt-in to avoid startup stalls on student PCs."""
+    return os.environ.get("CHEMGRID_ENABLE_WSL_VINA_PROBE", "0") == "1"
+
+
 try:
     from PyQt6.QtCore import QThread, pyqtSignal
     PYQT_AVAILABLE = True
@@ -80,7 +85,7 @@ if not (str(VINA_PATH) and VINA_PATH.is_file()):
 # WSL Vina detection (Windows Subsystem for Linux)
 _WSL_VINA_PATH = ""  # Linux path inside WSL
 _WSL_VINA_AVAILABLE = False
-if sys.platform == "win32" and not _external_probe_disabled():
+if sys.platform == "win32" and _wsl_vina_probe_enabled() and not _external_probe_disabled():
     _wsl_candidates = ["/tmp/vina", "/usr/local/bin/vina", "/usr/bin/vina", "/home/skagjs/bin/vina"]
     for _wpath in _wsl_candidates:
         try:
@@ -97,7 +102,7 @@ if sys.platform == "win32" and not _external_probe_disabled():
         except Exception as e:
             logger.warning("WSL vina detection failed for %s: %s", _wpath, e)
 elif sys.platform == "win32":
-    logger.info("[docking_interface] WSL Vina detection skipped for capture/external-probe-disabled mode")
+    logger.info("[docking_interface] WSL Vina detection skipped; set CHEMGRID_ENABLE_WSL_VINA_PROBE=1 to enable")
 
 # Check for vina Python package as alternative
 try:
@@ -144,6 +149,10 @@ except ImportError:
 
 # Vina availability (strict: must be an actual file, not empty path)
 _vina_exe_available = str(VINA_PATH) != '' and str(VINA_PATH) != '.' and VINA_PATH.is_file()
+VINA_EXECUTABLE_AVAILABLE = _vina_exe_available
+VINA_EXECUTABLE_PATH = str(VINA_PATH) if _vina_exe_available else ""
+VINA_WSL_AVAILABLE = _WSL_VINA_AVAILABLE
+VINA_WSL_PATH = _WSL_VINA_PATH
 
 # Overall docking availability (real Vina or simulation fallback)
 VINA_AVAILABLE = VINA_PYTHON_AVAILABLE or _vina_exe_available or _WSL_VINA_AVAILABLE
@@ -156,6 +165,14 @@ if SIMULATION_MODE:
         "[docking_interface] Vina 미설치 — SIMULATION_MODE 활성화. "
         "실제 도킹 결과를 얻으려면: pip install vina"
     )
+
+
+HEURISTIC_AFFINITY_FLOOR_KCAL_MOL = -15.0
+
+
+def bound_heuristic_affinity(base_affinity: float, noise: float = 0.0) -> float:
+    """Clamp heuristic fallback scores after noise so they cannot overstate binding."""
+    return round(max(HEURISTIC_AFFINITY_FLOOR_KCAL_MOL, base_affinity + noise), 1)
 
 
 def _win_to_wsl_path(win_path) -> str:
@@ -909,13 +926,13 @@ class VinaDockingThread(QThread):
                 base_affinity += excess * 0.2  # 초과 원자당 +0.2 kcal/mol (steric clash 추정)
 
             # [3] 상한 cap: 실제 강력한 결합제도 -15 kcal/mol 이내 (학계 관측 한계)
-            MAX_PHYSICAL_AFFINITY = -15.0  # kcal/mol — typical strong binder physical limit
+            MAX_PHYSICAL_AFFINITY = HEURISTIC_AFFINITY_FLOOR_KCAL_MOL  # kcal/mol fallback display floor
             # (Wang R. et al. J Med Chem 2004; Vina benchmarks: near-covalent binders ≈ -12~-14)
             base_affinity = max(MAX_PHYSICAL_AFFINITY, base_affinity)
             # ----------------------------------------------------------------
 
             noise = rng.gauss(0, 0.5) * (pose_id - 1) * 0.3
-            affinity = round(base_affinity + noise, 1)
+            affinity = bound_heuristic_affinity(base_affinity, noise)
 
             # Translated + perturbed coordinates
             perturb = [(rng.gauss(0, 0.3), rng.gauss(0, 0.3), rng.gauss(0, 0.3))
