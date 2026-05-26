@@ -1,4 +1,4 @@
-name: Urgent ChemGrid rc1 onefile
+﻿name: Urgent ChemGrid rc1 onefile
 
 on:
   workflow_dispatch:
@@ -32,6 +32,14 @@ jobs:
           if (-not (Test-Path 'dist/ChemGrid.exe')) { throw 'dist/ChemGrid.exe not found' }
           $exe = Get-Item 'dist/ChemGrid.exe'
           if ($exe.Length -lt 100MB) { throw "ChemGrid.exe too small; likely failed stub: $($exe.Length) bytes" }
+          $archiveNames = python -m PyInstaller.utils.cliutils.archive_viewer 'dist/ChemGrid.exe' --list --brief
+          foreach ($asset in @('logo.png','logo.ico','undo.png','redo.png','hand.png','select.png','pen.png','eraser.png','bond.png')) {
+            $expected = "_internal\$asset"
+            $found = $archiveNames | Where-Object { $_.Trim().Replace('/', '\') -eq $expected }
+            if (-not $found) {
+              throw "ChemGrid.exe missing bundled UI asset: $expected"
+            }
+          }
           $exe | Format-List FullName,Length,LastWriteTime
           Get-FileHash -Algorithm SHA256 'dist/ChemGrid.exe'
       - name: Upload rc1 ChemGrid.exe asset
