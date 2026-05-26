@@ -36,6 +36,7 @@ from PyQt6.QtGui import (
     QSurfaceFormat, QPainter, QColor, QPen, QBrush,
     QRadialGradient, QFont, QMouseEvent, QWheelEvent, QIcon,
     QPolygonF,  # [M549] ChemCharCanvas.paintEvent 루프 내 임포트 → 모듈레벨 이동
+    QFontDatabase,  # [M1461] Rule Q: 한국어 폰트 런타임 등록
 )
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
 # C2 Fix: Invalid import removed
@@ -63,6 +64,18 @@ except ImportError:
 
 # --- Logger ---
 logger = logging.getLogger(__name__)
+
+
+def _vibration_active_atom_indices(vectors) -> Tuple[int, ...]:
+    """Return highlight indices only when displacement vectors carry evidence."""
+    if not vectors:
+        return tuple()
+    try:
+        from vibration_engine import get_displacement_active_atom_indices
+    except Exception as e:  # Rule M: keep UI honest if helper import fails
+        logger.warning("[VibrationPanel] displacement-index helper unavailable: %s", e)
+        return tuple()
+    return get_displacement_active_atom_indices(vectors)
 
 # ─────────────────────────────────────────────────────────────────
 # M646_INTEGRATE: Materials Project API 헬퍼 (formula → 무기 재료 구조)
@@ -205,6 +218,44 @@ if MATPLOTLIB_AVAILABLE:
             matplotlib.rcParams["font.family"] = _MPL_KR_FONT.get_name()
             fm.fontManager.addfont(_fp)
             break
+
+# ── Korean Qt font (QWidget 렌더링용) ──────────────────────────────
+# [M1461] Rule Q: popup_polymer.py 패턴 동일 적용 (토푸 방지)
+_QT_KR_FONT = "Malgun Gothic"  # Windows 기본 한국어 폰트
+_QT_KR_FONT_READY = False
+
+
+def _ensure_qt_korean_font_ready() -> str:
+    """QFontDatabase에 한국어 폰트 등록 후 font-family 이름 반환.
+
+    Molecule3DPopup.__init__ + offscreen 캡처 환경 모두에서 토푸 방지.
+    popup_polymer.py _ensure_qt_korean_font_ready() 동일 패턴.
+    """
+    global _QT_KR_FONT, _QT_KR_FONT_READY  # noqa: PLW0603
+    if _QT_KR_FONT_READY:
+        return _QT_KR_FONT
+    app = QApplication.instance()
+    if app is None:
+        return _QT_KR_FONT
+    for _font_path in (
+        r"C:\Windows\Fonts\malgun.ttf",
+        r"C:\Windows\Fonts\malgunbd.ttf",
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",  # Linux fallback
+    ):
+        try:
+            if os.path.exists(_font_path):
+                _font_id = QFontDatabase.addApplicationFont(_font_path)
+                if _font_id >= 0:
+                    _families = QFontDatabase.applicationFontFamilies(_font_id)
+                    if _families:
+                        _QT_KR_FONT = _families[0]
+                        break
+        except Exception as _exc:
+            logger.warning("[M1461] popup_3d Korean font load failed: %s", _exc)
+    app.setFont(QFont(_QT_KR_FONT, 10))
+    _QT_KR_FONT_READY = True
+    return _QT_KR_FONT
+
 
 REQUESTS_AVAILABLE = False
 try:
@@ -3309,7 +3360,7 @@ class AdvancedOrbitalRenderer:
 
         McMurry / Atkins textbook convention (same as reference image):
           RED   = delta-minus  (electron-rich,  negative potential)
-          GREEN = neutral
+          WHITE = neutral / low-potential band
           BLUE  = delta-plus   (electron-poor,  positive potential)
 
         Surface generation:
@@ -3755,22 +3806,24 @@ class AdvancedOrbitalRenderer:
 
         McMurry 9th edition / reference image colormap:
           -1 (negative, electron-rich) -> RED   (0.90, 0.05, 0.05)
-           0 (neutral)                 -> GREEN (0.20, 0.80, 0.20)
+           0 (neutral)                 -> WHITE (0.94, 0.94, 0.90)
           +1 (positive, electron-poor) -> BLUE  (0.10, 0.15, 0.95)
 
         Uses smooth cosine interpolation for perceptually even gradient.
-        Intermediate colors: red -> orange -> yellow -> green -> cyan -> blue
+        Intermediate colors: red -> orange -> near-white -> cyan -> blue
         """
-        # 5-anchor colormap for richer intermediate colors
+        # 5-anchor colormap for richer intermediate colors.
+        # Neutral is intentionally near-white instead of green so ESP mode
+        # cannot create a green-filled molecule when the surface is enabled.
         # [-1.0]  RED       (0.90, 0.05, 0.05)
         # [-0.5]  ORANGE    (1.00, 0.55, 0.05)
-        # [ 0.0]  GREEN     (0.20, 0.80, 0.20)
+        # [ 0.0]  WHITE     (0.94, 0.94, 0.90)
         # [+0.5]  CYAN      (0.10, 0.65, 0.85)
         # [+1.0]  BLUE      (0.10, 0.15, 0.95)
         anchors = [
             (-1.0, (0.90, 0.05, 0.05)),
             (-0.5, (1.00, 0.55, 0.05)),
-            ( 0.0, (0.20, 0.80, 0.20)),
+            ( 0.0, (0.94, 0.94, 0.90)),
             ( 0.5, (0.10, 0.65, 0.85)),
             ( 1.0, (0.10, 0.15, 0.95)),
         ]
@@ -3927,9 +3980,11 @@ class AdvancedOrbitalRenderer:
     # ------------------------------------------------------------------
     # [FIX-HYB-001] 혼성궤도 유형별 색상 구분 (한눈에 식별 가능)
     # [FIX-BALLOON-001] σ 오비탈: 은은한 전자밀도 구름 스타일 (풍선 X)
-    COLOR_SP  = (0.60, 0.55, 0.75, 0.30)   # sp: 연회색-보라 — 선형
-    COLOR_SP2 = (0.45, 0.55, 0.85, 0.40)   # sp2: 더 채도 높은 파랑 — 삼각평면 [FIX-VIS-001]
-    COLOR_SP3 = (0.50, 0.75, 0.50, 0.40)   # sp3: 더 채도 높은 초록 — 사면체 [FIX-VIS-001]
+    COLOR_SP  = (0.72, 0.50, 0.92, 0.34)   # sp: purple, 180 degree linear
+    COLOR_SP2 = (0.22, 0.48, 1.00, 0.42)   # sp2: blue, trigonal planar + p-normal
+    COLOR_SP3 = (0.25, 0.82, 0.38, 0.42)   # sp3: green, tetrahedral
+    COLOR_SP3D = (1.00, 0.78, 0.12, 0.44)  # sp3d: yellow, trigonal bipyramidal
+    COLOR_SP3D2 = (1.00, 0.45, 0.08, 0.44) # sp3d2: orange, octahedral
 
     def _render_hybrid(self, sq, pos, info):
         # [FIX-ORB-H] H 원자는 1s 오비탈 — 로브 렌더링 생략 (페놀 sp3 오류 방지)
@@ -4007,6 +4062,7 @@ class AdvancedOrbitalRenderer:
         while len(ax)<2: ax.append(ax_ideal[len(ax)])
         # σ 로브: sparse dot cloud (is_sigma=True)
         sp3_col = (0.60, 0.65, 0.70, 0.30)  # 연회색-블루 for sp3d
+        sp3_col = self.COLOR_SP3D
         for i,d in enumerate(eq):
             self._lobe(sq, pos, d, 2.0, 0.50, sp3_col, is_sigma=True)
         for i,d in enumerate(ax):
@@ -4017,10 +4073,11 @@ class AdvancedOrbitalRenderer:
         dirs = list(ndirs[:6])
         ideal = [(1,0,0),(-1,0,0),(0,1,0),(0,-1,0),(0,0,1),(0,0,-1)]
         while len(dirs)<6: dirs.append(ideal[len(dirs)])
+        sp3d2_col = self.COLOR_SP3D2
         # σ 로브: sparse dot cloud (is_sigma=True)
         sp3d2_col = (0.60, 0.65, 0.70, 0.30)  # 연회색-블루 for sp3d2
         for i,d in enumerate(dirs[:6]):
-            self._lobe(sq, pos, d, 2.0, 0.48, sp3d2_col, is_sigma=True)
+            self._lobe(sq, pos, d, 2.0, 0.48, self.COLOR_SP3D2, is_sigma=True)
 
     # ------------------------------------------------------------------
     # d 오비탈 렌더링 (전이금속)
@@ -4196,8 +4253,14 @@ class AdvancedOrbitalRenderer:
         render_alpha = min(a, 0.20) if is_sigma else min(a, 0.25)
 
         dx, dy, dz = direction
-        lobe_radius = radius * 0.25
-        lobe_height = scale_z * 0.4
+        direction_len = math.sqrt(dx * dx + dy * dy + dz * dz)
+        if direction_len < 1e-6:
+            logger.warning("Hybrid orbital lobe skipped degenerate direction at pos=%s", pos)
+            return
+        dx, dy, dz = dx / direction_len, dy / direction_len, dz / direction_len
+        lobe_radius = radius * 0.32
+        lobe_height = max(radius * scale_z, radius * 0.75)
+        lobe_offset = lobe_height * 0.58
 
         dot_z = max(-1.0, min(1.0, dz))
         angle_deg = math.degrees(math.acos(dot_z))
@@ -4213,6 +4276,7 @@ class AdvancedOrbitalRenderer:
             elif angle_deg > 90.0:
                 glRotatef(180.0, 1.0, 0.0, 0.0)
 
+        glTranslatef(0.0, 0.0, lobe_offset)
         xy_scale = lobe_radius
         z_scale = lobe_height
         glScalef(xy_scale, xy_scale, z_scale)
@@ -4533,13 +4597,13 @@ class FallbackRenderer2D(QWidget):
         """정규화된 전하 [-1,+1] → RGB (McMurry convention, QPainter용).
 
         5-anchor colormap:
-          -1.0 RED (electron-rich)  →  0.0 GREEN (neutral)  →  +1.0 BLUE (electron-poor)
-        중간 색상: red → orange → green → cyan → blue (코사인 보간)
+          -1.0 RED (electron-rich)  →  0.0 near-white  →  +1.0 BLUE (electron-poor)     
+        중간 색상: red → orange → white → cyan → blue (코사인 보간)
         """
         anchors = [
             (-1.0, (0.90, 0.05, 0.05)),   # RED
             (-0.5, (1.00, 0.55, 0.05)),   # ORANGE
-            ( 0.0, (0.20, 0.80, 0.20)),   # GREEN
+            ( 0.0, (0.94, 0.94, 0.90)),   # WHITE / neutral, no green fill
             ( 0.5, (0.10, 0.65, 0.85)),   # CYAN
             ( 1.0, (0.10, 0.15, 0.95)),   # BLUE
         ]
@@ -4569,7 +4633,7 @@ class FallbackRenderer2D(QWidget):
         """[PI-QPainter] 오비탈 모드 설정 (QPainter 폴백).
 
         Args:
-            mode: 'none'|'pi'|'esp' 등
+            mode: 'none'|'pi'|'hybrid'|'all'|'esp' 등
         """
         # [BUG3-FIX] hybrid→pi 전환 시 캐시 무효화 — 잔류 금빛 오버레이 방지
         if mode != self.orbital_mode:
@@ -4999,6 +5063,91 @@ class FallbackRenderer2D(QWidget):
                 painter.drawEllipse(QPointF(ring_cx, ring_cy), outer_r * 0.9, outer_r * 0.9)
                 painter.restore()
 
+    def _project_direction_qp(self, direction, scale):
+        dx, dy, dz = direction
+        mag = math.sqrt(dx * dx + dy * dy + dz * dz)
+        if mag < 1e-6:
+            return (0.0, -1.0)
+        dx, dy, dz = dx / mag, dy / mag, dz / mag
+        crx, srx = math.cos(math.radians(self.rotation_x)), math.sin(math.radians(self.rotation_x))
+        cry, sry = math.cos(math.radians(self.rotation_y)), math.sin(math.radians(self.rotation_y))
+        rx = dx * cry + dz * sry
+        rz = -dx * sry + dz * cry
+        ry = dy * crx - rz * srx
+        sx, sy = rx * scale, ry * scale
+        smag = math.sqrt(sx * sx + sy * sy)
+        if smag < 1e-6:
+            return (0.0, -1.0)
+        return (sx / smag, sy / smag)
+
+    def _paint_hybrid_orbitals_qp(self, painter, spos, scale):
+        """QPainter fallback for hybrid orbital geometry in cursor-safe captures."""
+        if not self.mol_data or not self.mol_data.atom_positions:
+            logger.warning("Hybrid orbital QPainter render skipped: molecule data missing")
+            return
+        try:
+            atom_info = AdvancedOrbitalRenderer()._analyze_atoms(self.mol_data)
+        except Exception as e:
+            logger.warning("Hybrid orbital QPainter analysis failed: %s", e)
+            return
+
+        color_map = {
+            "sp": QColor(170, 150, 220, 82),
+            "sp2": QColor(90, 130, 235, 96),
+            "sp3": QColor(88, 190, 120, 96),
+            "sp3d": QColor(230, 190, 70, 100),
+            "sp3d2": QColor(230, 190, 70, 100),
+        }
+        ideal_dirs = {
+            "sp": [(1, 0, 0), (-1, 0, 0)],
+            "sp2": [(1, 0, 0), (-0.5, 0.866, 0), (-0.5, -0.866, 0)],
+            "sp3": [(0.577, 0.577, 0.577), (0.577, -0.577, -0.577),
+                    (-0.577, 0.577, -0.577), (-0.577, -0.577, 0.577)],
+            "sp3d": [(1, 0, 0), (-0.5, 0.866, 0), (-0.5, -0.866, 0), (0, 0, 1), (0, 0, -1)],
+            "sp3d2": [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)],
+        }
+
+        painter.save()
+        painter.setPen(QPen(QColor(245, 245, 245, 130), 1.2))
+        for key, info in atom_info.items():
+            if info.get("sym") == "H" or key not in spos:
+                continue
+            hyb = info.get("hyb", "sp3")
+            dirs = [(d[0], d[1], d[2]) for d in info.get("ndirs", [])]
+            needed = {"sp": 2, "sp2": 3, "sp3": 4, "sp3d": 5, "sp3d2": 6}.get(hyb, 4)
+            fallback = ideal_dirs.get(hyb, ideal_dirs["sp3"])
+            while len(dirs) < needed:
+                dirs.append(fallback[len(dirs) % len(fallback)])
+
+            sx, sy, df, _alpha = spos[key]
+            base_color = color_map.get(hyb, color_map["sp3"])
+            for direction in dirs[:needed]:
+                ux, uy = self._project_direction_qp(direction, scale)
+                length = max(22.0, scale * 0.42 * df)
+                width = max(8.0, scale * 0.12 * df)
+                cx = sx + ux * length * 0.62
+                cy = sy + uy * length * 0.62
+                angle = math.degrees(math.atan2(uy, ux))
+                painter.save()
+                painter.translate(QPointF(cx, cy))
+                painter.rotate(angle)
+                painter.setBrush(QBrush(base_color))
+                painter.drawEllipse(QPointF(0, 0), length * 0.55, width)
+                painter.restore()
+
+            if hyb == "sp2" and len(dirs) >= 2:
+                nx, ny, nz = AdvancedOrbitalRenderer._cross3(dirs[0], dirs[1])
+                ux, uy = self._project_direction_qp((nx, ny, nz), scale)
+                pi_color = QColor(80, 150, 255, 70)
+                pi_neg = QColor(255, 105, 105, 70)
+                painter.setBrush(QBrush(pi_color))
+                painter.drawEllipse(QPointF(sx + ux * scale * 0.28, sy + uy * scale * 0.28),
+                                    max(10.0, scale * 0.16), max(5.0, scale * 0.08))
+                painter.setBrush(QBrush(pi_neg))
+                painter.drawEllipse(QPointF(sx - ux * scale * 0.28, sy - uy * scale * 0.28),
+                                    max(10.0, scale * 0.16), max(5.0, scale * 0.08))
+        painter.restore()
+
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -5221,6 +5370,8 @@ class FallbackRenderer2D(QWidget):
         # [PI-QPainter] π 오비탈 렌더링 (bonds 뒤, atoms 앞에 — 반투명이므로 원자가 위에)
         if self.orbital_mode == 'pi':
             self._paint_pi_orbitals_qp(p, spos, scale, ox, oy, zmin, zr)
+        elif self.orbital_mode in ('hybrid', 'all'):
+            self._paint_hybrid_orbitals_qp(p, spos, scale)
         # Atoms — [VIB-SPEC] 진동 하이라이트 인덱스 확인
         _qp_atom_keys = list(self.mol_data.atom_positions.keys())
         _qp_highlight = self._vib_highlight_indices if hasattr(self, '_vib_highlight_indices') else set()
@@ -5277,7 +5428,7 @@ class FallbackRenderer2D(QWidget):
             p.drawEllipse(QPointF(sx, sy), rad, rad)
             if self.render_mode == "ball_and_stick" and sym not in ("C", "H") and rad > 8:
                 p.setPen(QColor(255, 255, 255, atom_alpha))
-                p.setFont(QFont("Arial", max(7, int(rad*0.6))))
+                p.setFont(QFont(_QT_KR_FONT, max(7, int(rad*0.6))))  # [M1461] Rule Q: offscreen 폰트
                 p.drawText(int(sx-rad*0.4), int(sy+rad*0.2), sym)
         # 진동 변위 화살표 표시 — [FIX-VIB-ARROW] 가시성 강화
         if self.vib_vectors and self._vib_active:
@@ -5326,7 +5477,7 @@ class FallbackRenderer2D(QWidget):
                 p.drawRoundedRect(int(bx1), int(by1), int(bx2 - bx1), int(by2 - by1), 6, 6)
                 # 라벨
                 p.setPen(QColor(255, 180, 80, 100))
-                p.setFont(QFont("Arial", 7))
+                p.setFont(QFont(_QT_KR_FONT, 7))  # [M1461] Rule Q: offscreen 폰트
                 p.drawText(int(bx1) + 4, int(by1) - 2, "Ligand")
         # 단백질/도킹 시각화 오버레이
         if self._protein_ca:
@@ -5335,7 +5486,7 @@ class FallbackRenderer2D(QWidget):
         if self._mode_indicator_alpha > 0:
             ind_alpha = self._mode_indicator_alpha
             p.setPen(QColor(180, 180, 180, ind_alpha))
-            p.setFont(QFont("Arial", 9))
+            p.setFont(QFont("Malgun Gothic", 9))  # [M1444] Rule Q: 한국어 텍스트
             p.drawText(8, h - 8, "2.5D 모드 (OpenGL 미사용)")
         p.end()
 
@@ -7033,13 +7184,13 @@ class Molecule3DViewer(QOpenGLWidget):
             p.drawEllipse(QPointF(sx, sy), rad, rad)
             if sym not in ('H', '', 'C') and rad >= 6:
                 p.setPen(QColor(255, 255, 255, alpha))
-                p.setFont(QFont("Arial", max(6, int(rad * 0.65))))
+                p.setFont(QFont(_QT_KR_FONT, max(6, int(rad * 0.65))))  # [M1461] Rule Q: offscreen 폰트
                 p.drawText(QRectF(sx - rad, sy - rad * 0.6, rad * 2, rad * 1.2),
                            Qt.AlignmentFlag.AlignCenter, sym)
 
         # 모드 표시기
         p.setPen(QColor(255, 171, 64, 200))
-        p.setFont(QFont("Arial", 9))
+        p.setFont(QFont("Malgun Gothic", 9))  # [M1444] Rule Q: 한국어 텍스트
         p.drawText(8, h - 8, "2.5D (OpenGL 폴백)")
         p.end()
 
@@ -7195,7 +7346,7 @@ class Molecule3DViewer(QOpenGLWidget):
             p = QPainter(self)
             p.setRenderHint(QPainter.RenderHint.Antialiasing)
             p.setPen(QColor(120, 220, 120, self._gl_mode_indicator_alpha))
-            p.setFont(QFont("Arial", 9))
+            p.setFont(QFont(_QT_KR_FONT, 9))  # [M1461] Rule Q: 한국어 텍스트
             p.drawText(8, self.height() - 8, "3D OpenGL 모드")
             p.end()
 
@@ -7280,7 +7431,7 @@ class Molecule3DViewer(QOpenGLWidget):
 # ============================================================
 
 class PropertiesPanel(QWidget):
-    """📊 속성 탭 — RDKit 계산값 + PubChem DB"""
+    """📊 속성 탭 — RDKit 계산값 + route-only DB links"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -7307,7 +7458,7 @@ class PropertiesPanel(QWidget):
         layout.addWidget(self.calc_group)
 
         # PubChem properties
-        self.pub_group = QGroupBox("🌐 PubChem DB")
+        self.pub_group = QGroupBox("🌐 PubChem lookup (optional web API)")
         self.pub_form = QFormLayout()
         self.pub_group.setLayout(self.pub_form)
         layout.addWidget(self.pub_group)
@@ -7337,7 +7488,7 @@ class PropertiesPanel(QWidget):
         layout.addWidget(self.meas_group)
 
         # ── 외부 API 링크 (M645_W9) ─────────────────────────────────────────
-        self.ext_group = QGroupBox("외부 DB 연결 (HTTP 200 확인)")
+        self.ext_group = QGroupBox("External DB web-search routes (not HTTP success)")
         ext_layout = QVBoxLayout()
         ext_layout.setSpacing(4)
 
@@ -7347,9 +7498,21 @@ class PropertiesPanel(QWidget):
         )
         ext_note.setWordWrap(True)
         ext_note.setStyleSheet("color: #90CAF9; font-size: 11px;")
+        ext_note.setObjectName("external_db_route_only_note")
+        ext_note.setText(
+            "PubChem, ChEMBL, DrugBank, and NCI Cactus buttons only build and open "
+            "deterministic web-search URLs from the current SMILES. They do not prove "
+            "HTTP 200 success, cross-device behavior, or a unique compound identity."
+        )
         ext_layout.addWidget(ext_note)
 
         btn_row = QHBoxLayout()
+
+        self.local_drugbank_status = QLabel(self._drugbank_status_text())
+        self.local_drugbank_status.setObjectName("local_drugbank_status_label")
+        self.local_drugbank_status.setWordWrap(True)
+        self.local_drugbank_status.setStyleSheet("color: #FFCC80; font-size: 11px;")
+        ext_layout.addWidget(self.local_drugbank_status)
 
         self.btn_nci = QPushButton("NCI Cactus")
         self.btn_nci.setObjectName("external_nci_cactus_btn")
@@ -7359,19 +7522,19 @@ class PropertiesPanel(QWidget):
 
         self.btn_opsin = QPushButton("PubChem")
         self.btn_opsin.setObjectName("external_pubchem_btn")
-        self.btn_opsin.setToolTip("PubChem — SMILES query로 compound 검색")
+        self.btn_opsin.setToolTip("PubChem web-search route only — no HTTP success or unique identity claim")
         self.btn_opsin.clicked.connect(self._open_opsin)
         btn_row.addWidget(self.btn_opsin)
 
         self.btn_chembl = QPushButton("ChEMBL")
         self.btn_chembl.setObjectName("external_chembl_btn")
-        self.btn_chembl.setToolTip("ChEMBL — 분자/표적 데이터베이스 (Mendez 2019)")
+        self.btn_chembl.setToolTip("ChEMBL web-search route only — no HTTP success or unique identity claim")
         self.btn_chembl.clicked.connect(self._open_chembl)
         btn_row.addWidget(self.btn_chembl)
 
         self.btn_reactome = QPushButton("DrugBank")
         self.btn_reactome.setObjectName("external_drugbank_btn")
-        self.btn_reactome.setToolTip("DrugBank — SMILES/이름 검색")
+        self.btn_reactome.setToolTip("DrugBank web-search route only — local CSV/SDF status is shown above")
         self.btn_reactome.clicked.connect(self._open_reactome)
         btn_row.addWidget(self.btn_reactome)
 
@@ -7391,6 +7554,31 @@ class PropertiesPanel(QWidget):
         self._last_external_urls: dict = {}
 
     # ── 외부 API 콜백 (M645_W9) ─────────────────────────────────────────────
+
+    @staticmethod
+    def _drugbank_status_text() -> str:
+        """Visible local DrugBank CSV/SDF state for route-only DB UX."""
+        try:
+            import drugbank_local
+            status = drugbank_local.get_data_status()
+            if not isinstance(status, dict):
+                logger.warning("[PropertiesPanel] DrugBank status not dict: %s", type(status).__name__)
+                return "Local DrugBank data unavailable: status probe returned a non-dict value."
+            csv_state = "present" if status.get("csv_exists") else "missing"
+            sdf_state = "present" if status.get("sdf_exists") else "missing"
+            data_root = status.get("data_root", "C:/chemgrid/data/drugbank")
+            if status.get("csv_exists") and status.get("sdf_exists"):
+                return (
+                    f"Local DrugBank data state: CSV {csv_state}; SDF {sdf_state}; "
+                    f"root {data_root}. Local-data presence only, not external query success."
+                )
+            return (
+                f"Local DrugBank data unavailable: CSV {csv_state}; SDF {sdf_state}; "
+                f"root {data_root}. DrugBank button remains a web-search route only."
+            )
+        except Exception as e:
+            logger.warning("[PropertiesPanel] DrugBank status probe failed: %s", e)
+            return "Local DrugBank data unavailable: status probe failed; DrugBank button is web-search route only."
 
     @staticmethod
     def build_external_db_urls(smiles: str) -> dict:
@@ -7884,6 +8072,114 @@ def predict_spectrum_from_smiles(smiles: str, spec_type: str = "IR"):
         return [], []
 
 
+class _LocalSpectrumCanvas(QWidget):
+    """Small Qt-only spectrum plot used when matplotlib is unavailable."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._freqs: List[float] = []
+        self._ints: List[float] = []
+        self._spec_type = "IR"
+        self._smiles = ""
+        self.setMinimumHeight(180)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+    def set_spectrum(self, freqs: List[float], intensities: List[float],
+                     spec_type: str, smiles: str):
+        self._freqs = [float(v) for v in freqs]
+        self._ints = [float(v) for v in intensities]
+        self._spec_type = spec_type or "IR"
+        self._smiles = smiles or ""
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.fillRect(self.rect(), QColor("#1e1e1e"))
+        plot = self.rect().adjusted(48, 18, -16, -34)
+        if plot.width() < 80 or plot.height() < 60:
+            painter.end()
+            return
+
+        painter.setPen(QPen(QColor("#555"), 1))
+        painter.drawRect(plot)
+        painter.setFont(QFont(_QT_KR_FONT, 8))
+        painter.setPen(QColor("#bdbdbd"))
+        title = f"Local predicted {self._spec_type} spectrum"
+        if self._smiles:
+            title += f" | {self._smiles[:24]}"
+        painter.drawText(self.rect().adjusted(8, 2, -8, -2),
+                         Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter,
+                         title)
+
+        if not self._freqs or not self._ints:
+            painter.setPen(QColor("#aaa"))
+            painter.drawText(plot, Qt.AlignmentFlag.AlignCenter,
+                             "No local predicted peaks for this molecule")
+            painter.end()
+            return
+
+        spec_key = self._spec_type.upper().replace("-", "").replace("_", "")
+        x_min = min(self._freqs)
+        x_max = max(self._freqs)
+        if spec_key in ("IR", "RAMAN"):
+            x_min, x_max = 400.0, 4000.0
+        elif spec_key in ("NMRH", "NMR", "1HNMR"):
+            x_min, x_max = -0.5, 12.0
+        elif spec_key in ("NMRC13", "13CNMR", "C13"):
+            x_min, x_max = -5.0, 220.0
+        elif spec_key in ("UVVIS", "UV"):
+            x_min, x_max = 180.0, 800.0
+        elif spec_key == "MS":
+            x_min, x_max = 0.0, max(self._freqs) + 20.0
+        if abs(x_max - x_min) < 1e-6:
+            x_max = x_min + 1.0
+        y_max = max(max(self._ints), 1.0)
+
+        for i in range(1, 5):
+            x = plot.left() + plot.width() * i / 5.0
+            y = plot.top() + plot.height() * i / 5.0
+            painter.setPen(QPen(QColor("#343434"), 1))
+            painter.drawLine(int(x), plot.top(), int(x), plot.bottom())
+            painter.drawLine(plot.left(), int(y), plot.right(), int(y))
+
+        def map_x(value: float) -> float:
+            frac = (value - x_min) / (x_max - x_min)
+            if spec_key == "IR":
+                frac = 1.0 - frac
+            return plot.left() + max(0.0, min(1.0, frac)) * plot.width()
+
+        def map_y(value: float) -> float:
+            frac = max(0.0, min(1.0, value / y_max))
+            return plot.bottom() - frac * plot.height()
+
+        color = QColor("#42A5F5")
+        if spec_key in ("RAMAN", "MS"):
+            color = QColor("#AB47BC")
+        elif spec_key.startswith("NMR") or spec_key in ("1HNMR", "13CNMR", "C13"):
+            color = QColor("#66BB6A")
+        elif spec_key in ("UVVIS", "UV"):
+            color = QColor("#FFA726")
+
+        painter.setPen(QPen(color, 2))
+        for freq, intensity in zip(self._freqs, self._ints):
+            x = map_x(freq)
+            y = map_y(intensity)
+            painter.drawLine(int(x), plot.bottom(), int(x), int(y))
+            painter.setBrush(QBrush(color))
+            painter.drawEllipse(QPointF(x, y), 2.2, 2.2)
+
+        painter.setPen(QColor("#ddd"))
+        axis = "cm-1" if spec_key in ("IR", "RAMAN") else ("ppm" if "NMR" in spec_key or spec_key in ("1HNMR", "13CNMR", "C13") else ("nm" if spec_key in ("UVVIS", "UV") else "m/z"))
+        painter.drawText(QRectF(plot.left(), plot.bottom() + 4, plot.width(), 22),
+                         Qt.AlignmentFlag.AlignCenter, axis)
+        painter.setPen(QColor("#FFCC00"))
+        painter.drawText(self.rect().adjusted(8, 0, -8, -4),
+                         Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter,
+                         "SIMULATION_MODE: local RDKit/SMARTS prediction only; no ORCA/DFT/lab measurement claimed.")
+        painter.end()
+
+
 class SpectrumPanel(QWidget):
     """📈 스펙트럼 탭 — IR/Raman/NMR/UV-Vis/MS 예측 스펙트럼 + ORCA 정밀 스펙트럼 + AI 피크 분석"""
 
@@ -7913,8 +8209,40 @@ class SpectrumPanel(QWidget):
         layout.setSpacing(4)
 
         if not MATPLOTLIB_AVAILABLE:
-            logger.warning("스펙트럼 패널 초기화 건너뜀: matplotlib 미설치")
-            layout.addWidget(QLabel("matplotlib 미설치 — 스펙트럼 표시 불가"))
+            logger.warning("matplotlib unavailable; using local Qt predicted-spectrum plot")
+            self._spec_type = "IR"
+            self._smiles_cache = ""
+            self._spec_btns: Dict[str, QPushButton] = {}
+            top_bar = QHBoxLayout()
+            for label, stype, color in [
+                    ("IR", "IR", "#1565C0"),
+                    ("Raman", "Raman", "#880E4F"),
+                    ("1H NMR", "NMR_H", "#1B5E20"),
+                    ("13C NMR", "NMR_C13", "#2E7D32"),
+                    ("MS", "MS", "#6A1B9A")]:
+                btn = QPushButton(label)
+                btn.setCheckable(True)
+                btn.setChecked(stype == "IR")
+                btn.setFixedHeight(26)
+                btn.setStyleSheet(
+                    f"QPushButton {{ background:#2a2a2a; border:1px solid #555; "
+                    f"color:#ccc; padding:2px 8px; border-radius:3px; font-size:9pt; }}"
+                    f"QPushButton:checked {{ background:{color}; color:white; }}"
+                )
+                btn.clicked.connect(lambda checked=False, s=stype: self._on_spec_type_changed(s))
+                self._spec_btns[stype] = btn
+                top_bar.addWidget(btn)
+            top_bar.addStretch()
+            layout.addLayout(top_bar)
+            self.qt_spectrum_canvas = _LocalSpectrumCanvas(self)
+            layout.addWidget(self.qt_spectrum_canvas, 1)
+            self.info_label = QLabel(
+                "SIMULATION_MODE: local RDKit/SMARTS predicted spectra. "
+                "No ORCA/DFT calculation, engine run, or lab measurement is claimed."
+            )
+            self.info_label.setStyleSheet(
+                "color:#FFCC00; font-size:8pt; padding:2px;")
+            layout.addWidget(self.info_label)
             self.setLayout(layout)
             return
 
@@ -7930,7 +8258,6 @@ class SpectrumPanel(QWidget):
             ("🔴 Raman",    "Raman",   "#880E4F"),
             ("⚛ ¹H NMR",   "NMR_H",   "#1B5E20"),
             ("¹³C NMR",    "NMR_C13", "#2E7D32"),
-            ("🌈 UV-Vis",   "UV-Vis",  "#E65100"),
             ("⚗ MS",        "MS",      "#6A1B9A"),
         ]
         self._spec_btns: Dict[str, QPushButton] = {}
@@ -7986,6 +8313,14 @@ class SpectrumPanel(QWidget):
         self.info_label = QLabel("분자 로드 시 예측 스펙트럼 자동 표시")
         self.info_label.setStyleSheet("color: #888; font-size: 8pt;")
         layout.addWidget(self.info_label)
+
+        self.claim_boundary_label = QLabel(
+            "SIMULATION_MODE: local RDKit/SMARTS prediction only; "
+            "no ORCA/DFT calculation, engine run, or lab measurement is claimed."
+        )
+        self.claim_boundary_label.setStyleSheet(
+            "color:#FFCC00; font-size:8pt; padding:2px;")
+        layout.addWidget(self.claim_boundary_label)
 
         # ── 하단 버튼 바: AI 분석 + 진동모드 버튼 ──
         bot_bar = QHBoxLayout()
@@ -8056,12 +8391,23 @@ class SpectrumPanel(QWidget):
         """SMILES 기반 예측 스펙트럼 로드 (ORCA 없을 때 호출).
         분광 유형은 현재 선택된 _spec_type 사용.
         """
-        if not RDKIT_AVAILABLE or not MATPLOTLIB_AVAILABLE or not smiles:
+        if not RDKIT_AVAILABLE or not smiles:
             logger.warning("예측 스펙트럼 로드 건너뜀: RDKIT=%s, MATPLOTLIB=%s, smiles=%r",
                            RDKIT_AVAILABLE, MATPLOTLIB_AVAILABLE, smiles)
             return
         self._smiles_cache = smiles
         spec_type = getattr(self, '_spec_type', 'IR')
+        if not MATPLOTLIB_AVAILABLE:
+            freqs, ints = predict_spectrum_from_smiles(smiles, spec_type)
+            self.frequencies = list(freqs)
+            self.intensities = list(ints)
+            if hasattr(self, "qt_spectrum_canvas"):
+                self.qt_spectrum_canvas.set_spectrum(freqs, ints, spec_type, smiles)
+            self.info_label.setText(
+                f"Local predicted {spec_type} spectrum: {len(freqs)} peaks. "
+                "No ORCA/DFT calculation, engine run, or lab measurement is claimed."
+            )
+            return
         # [GUIDE.md v2] 새로운 전문 분광 그래프 렌더링으로 위임
         self._render_guide_spectrum(smiles, spec_type)
         return
@@ -9618,7 +9964,9 @@ class VibrationPanel(QWidget):
 
                 self.info_label.setText(
                     f"내부 엔진: {len(result.modes)}개 모드 "
-                    f"(↔{n_stretch} ∠{n_bend} ⟳{n_torsion})")
+                    f"(↔{n_stretch} ∠{n_bend} ⟳{n_torsion}) | "
+                    "SIMULATION_MODE: empirical internal estimate; "
+                    "yellow atoms follow nonzero displacement vectors, not ORCA/DFT modes.")
                 self.no_data_widget.setVisible(False)
                 self.data_widget.setVisible(True)
 
@@ -9983,9 +10331,9 @@ class AIAnalysisPanel(QWidget):
                 # Lipinski 약물유사성
                 lipinski_pass = (mw <= 500 and logp <= 5 and n_donors <= 5 and n_accept <= 10)
                 lipinski_score = sum([mw <= 500, logp <= 5, n_donors <= 5, n_accept <= 10])
-                lines.append(f"• Lipinski Rule of Five: {lipinski_score}/4 통과 {'✅' if lipinski_pass else '⚠️'}")
+                lines.append(f"• Lipinski Rule of Five: {lipinski_score}/4 descriptor criteria met {'✅' if lipinski_pass else '⚠️'}")
                 if lipinski_pass:
-                    lines.append("  → 경구 투여 약물 후보로 적합한 물리화학적 특성")
+                    lines.append("  -> rule-favorable physicochemical descriptor bucket only; not PK evidence")
                 else:
                     violations = []
                     if mw > 500: violations.append(f"MW {mw:.0f}>500")
@@ -9994,7 +10342,7 @@ class AIAnalysisPanel(QWidget):
                     if n_accept > 10: violations.append(f"HBA {n_accept}>10")
                     lines.append(f"  → 위반: {', '.join(violations)}")
                 # TPSA (혈뇌장벽)
-                lines.append(f"• TPSA: {tpsa:.1f} Å² — {'BBB 투과 가능 (CNS 약물 후보)' if tpsa < 90 else '경구 흡수 가능' if tpsa < 140 else '낮은 경구 흡수 예상'}")
+                lines.append(f"• TPSA: {tpsa:.1f} Å² — {'low-polar-surface descriptor bucket; not BBB/CNS evidence' if tpsa < 90 else 'oral-absorption descriptor bucket only' if tpsa < 140 else 'high-polar-surface descriptor bucket'}")
                 # 회전 가능 결합
                 if n_rot > 10:
                     lines.append(f"• ⚠️ 회전 가능 결합 {n_rot}개 — 유연성 과다, 결합 엔트로피 불리")
@@ -10017,9 +10365,9 @@ class AIAnalysisPanel(QWidget):
                 # 용도 추정
                 n_ar = rdMolDescriptors.CalcNumAromaticRings(mol)
                 if n_ar >= 2 and mw > 250:
-                    lines.append("• 💊 방향족 다환 구조 → 키나아제 억제제/항암제 스캐폴드 가능성")
+                    lines.append("• 💊 Aromatic-rich descriptor cue only; not target, activity, or scaffold evidence")
                 elif any(a.GetAtomicNum() == 7 for a in mol.GetAtoms()) and n_donors >= 2:
-                    lines.append("• 💊 질소 함유 + H-bond 공여 → CNS/신경계 약물 스캐폴드 가능성")
+                    lines.append("• 💊 Amine/H-bond donor descriptor cue only; not CNS, delivery, or scaffold evidence")
                 elif logp < 0:
                     lines.append("• 💧 높은 친수성 → 수용성 약물/프로드럭 후보")
                 return "\n".join(lines)
@@ -10192,7 +10540,7 @@ class DockingVisualizationWidget(QWidget):
 
         if not self._proj_receptor:
             p.setPen(QColor(90, 90, 110))
-            p.setFont(QFont("Arial", 10))
+            p.setFont(QFont("Malgun Gothic", 10))  # [M1444] Rule Q: 한국어 텍스트
             p.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter,
                        "🧬  도킹 완료 후 결합 포켓 시각화가 표시됩니다")
             p.end()
@@ -10247,12 +10595,12 @@ class DockingVisualizationWidget(QWidget):
         p.setBrush(center_col)
         p.drawEllipse(lsx-6, lsy-6, 12, 12)
         p.setPen(QColor(255, 255, 255))
-        p.setFont(QFont("Arial", 7, QFont.Weight.Bold))
+        p.setFont(QFont(_QT_KR_FONT, 7, QFont.Weight.Bold))  # [M1461] Rule Q: offscreen 폰트
         p.drawText(lsx-4, lsy+4, "L")   # L = Ligand
 
         # 결합 포켓 레이블
         p.setPen(gc.lighter(170))
-        p.setFont(QFont("Arial", 8))
+        p.setFont(QFont("Malgun Gothic", 8))  # [M1444] Rule Q: 한국어 텍스트
         p.drawText(lsx-pocket_r, lsy-pocket_r-12, "결합 포켓 (15Å)")
 
         # ── 리간드 2D 구조 이미지 (우상단) ───────────────────────────
@@ -10266,12 +10614,12 @@ class DockingVisualizationWidget(QWidget):
             p.setBrush(Qt.BrushStyle.NoBrush)
             p.drawRect(img_x-1, 5, 130, 98)
             p.setPen(QColor(160, 200, 220))
-            p.setFont(QFont("Arial", 7))
+            p.setFont(QFont("Malgun Gothic", 7))  # [M1444] Rule Q: 한국어 텍스트
             p.drawText(img_x+10, 106, "리간드 구조")
         else:
             # 텍스트 대체
             p.setPen(QColor(100, 170, 220))
-            p.setFont(QFont("Arial", 7))
+            p.setFont(QFont("Malgun Gothic", 7))  # [M1444] Rule Q
             smiles_disp = (self._ligand_smiles[:22] + "…"
                            if len(self._ligand_smiles) > 22
                            else self._ligand_smiles)
@@ -10280,7 +10628,7 @@ class DockingVisualizationWidget(QWidget):
         # ── 에너지 표시 (좌하단) ─────────────────────────────────────
         if self._docking_energy is not None:
             p.setPen(gc.lighter(170))
-            p.setFont(QFont("Arial", 10, QFont.Weight.Bold))
+            p.setFont(QFont(_QT_KR_FONT, 10, QFont.Weight.Bold))  # [M1461] Rule Q: offscreen 폰트
             p.drawText(pad, h-30, f"ΔG = {self._docking_energy:+.2f} kcal/mol")
 
         # ── 하단 범례 ────────────────────────────────────────────────
@@ -10295,12 +10643,12 @@ class DockingVisualizationWidget(QWidget):
             p.setBrush(lc)
             p.drawEllipse(lx, h-20, 10, 10)
             p.setPen(QColor(170, 170, 185))
-            p.setFont(QFont("Arial", 8))
+            p.setFont(QFont("Malgun Gothic", 8))  # [M1444] Rule Q: 한국어 텍스트
             p.drawText(lx+14, h-9, lt)
 
         # 원자 수 안내
         p.setPen(QColor(80, 80, 100))
-        p.setFont(QFont("Arial", 7))
+        p.setFont(QFont("Malgun Gothic", 7))  # [M1444] Rule Q: 한국어 텍스트
         p.drawText(pad, h-10,
                    f"총 Cα: {len(self._receptor_atoms)}  |  포켓 내: {len(self._pocket_atoms)}")
         p.end()
@@ -10309,6 +10657,94 @@ class DockingVisualizationWidget(QWidget):
 # ============================================================
 # Section 10-4.5: ADMET 약물성 분석 패널 (임베디드 탭)
 # ============================================================
+
+class ADMETEmbeddedRadarChartWidget(QWidget):
+    """Native Qt radar chart for the embedded ADMET panel fallback path."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("qt_embedded_admet_radar_chart")
+        self.setFixedHeight(200)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self._categories = ["MW", "LogP", "TPSA", "HBD", "HBA"]
+        self._values = [0.0] * len(self._categories)
+
+    def set_values(self, values: List[float]) -> None:
+        clean_values = []
+        for value in values[:len(self._categories)]:
+            try:
+                clean_values.append(max(0.0, min(1.0, float(value))))
+            except (TypeError, ValueError):
+                clean_values.append(0.0)
+        while len(clean_values) < len(self._categories):
+            clean_values.append(0.0)
+        self._values = clean_values
+        self.update()
+
+    def paintEvent(self, event):  # noqa: N802 - Qt override
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        rect = self.rect().adjusted(8, 8, -8, -8)
+        painter.fillRect(rect, QColor("#fdf6ff"))
+
+        count = len(self._categories)
+        if count < 3:
+            painter.end()
+            return
+
+        center = QPointF(rect.center().x(), rect.center().y() + 8)
+        radius = max(36.0, min(rect.width(), rect.height() - 34) * 0.34)
+        angles = [(2.0 * math.pi * idx / count) - (math.pi / 2.0) for idx in range(count)]
+
+        def point(angle: float, scale: float) -> QPointF:
+            return QPointF(
+                center.x() + math.cos(angle) * radius * scale,
+                center.y() + math.sin(angle) * radius * scale,
+            )
+
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        grid_pen = QPen(QColor("#cc99dd"), 1, Qt.PenStyle.DashLine)
+        axis_pen = QPen(QColor("#b98ac8"), 1)
+        for scale in (0.25, 0.5, 0.75, 1.0):
+            painter.setPen(grid_pen)
+            painter.drawPolygon(QPolygonF([point(angle, scale) for angle in angles]))
+        painter.setPen(axis_pen)
+        for angle in angles:
+            painter.drawLine(center, point(angle, 1.0))
+
+        values = self._values or [0.0] * count
+        all_pass = all(value <= 1.0 for value in values)
+        color = QColor("#2e7d32" if all_pass else "#b71c1c")
+        value_poly = QPolygonF([point(angle, value) for angle, value in zip(angles, values)])
+        painter.setPen(QPen(color, 2))
+        fill = QColor(color)
+        fill.setAlpha(75)
+        painter.setBrush(QBrush(fill))
+        painter.drawPolygon(value_poly)
+        painter.setBrush(QBrush(color))
+        for pt in value_poly:
+            painter.drawEllipse(pt, 3, 3)
+
+        painter.setFont(QFont(_QT_KR_FONT, 8, QFont.Weight.Bold))
+        painter.setPen(QPen(QColor("#4a0072")))
+        for angle, label in zip(angles, self._categories):
+            label_pt = point(angle, 1.18)
+            painter.drawText(
+                QRectF(label_pt.x() - 34, label_pt.y() - 10, 68, 20),
+                Qt.AlignmentFlag.AlignCenter,
+                label,
+            )
+
+        painter.setFont(QFont(_QT_KR_FONT, 8, QFont.Weight.Bold))
+        painter.setPen(QPen(QColor("#6a1b9a")))
+        painter.drawText(
+            QRectF(rect.left(), rect.top(), rect.width(), 18),
+            Qt.AlignmentFlag.AlignCenter,
+            f"Drug-likeness {'PASS' if all_pass else 'FAIL'} ({sum(1 for v in values if v <= 1.0)}/5)",
+        )
+        painter.end()
+
 
 class ADMETEmbeddedPanel(QWidget):
     """💊 ADMET 분석 탭 — 약물 유사성 분석 (Lipinski, Veber, ADMET 프로파일).
@@ -10377,7 +10813,7 @@ class ADMETEmbeddedPanel(QWidget):
         self._content_layout.addWidget(self._lipinski_group)
 
         # Veber Rules 그룹
-        self._veber_group = QGroupBox("Veber Rules (경구 생체이용률)")
+        self._veber_group = QGroupBox("Veber Rules (descriptor screen)")
         self._veber_layout = QFormLayout(self._veber_group)
         self._lbl_tpsa = QLabel("—")
         self._lbl_rotatable = QLabel("—")
@@ -10394,11 +10830,13 @@ class ADMETEmbeddedPanel(QWidget):
         self._admet_layout = QFormLayout(self._admet_group)
         self._lbl_bbb = QLabel("—")
         self._lbl_pgp = QLabel("—")
+        self._lbl_ld50 = QLabel("unavailable")
         self._lbl_bioavail = QLabel("—")
-        self._admet_layout.addRow("BBB 투과:", self._lbl_bbb)
+        self._admet_layout.addRow("BBB screen:", self._lbl_bbb)
         self._admet_layout.addRow("P-gp 기질:", self._lbl_pgp)
-        self._admet_layout.addRow("경구 생체이용률:", self._lbl_bioavail)
-        for lbl in [self._lbl_bbb, self._lbl_pgp, self._lbl_bioavail]:
+        self._admet_layout.addRow("LD50:", self._lbl_ld50)
+        self._admet_layout.addRow("Oral rule screen:", self._lbl_bioavail)
+        for lbl in [self._lbl_bbb, self._lbl_pgp, self._lbl_ld50, self._lbl_bioavail]:
             lbl.setStyleSheet("color: #333;")
         self._content_layout.addWidget(self._admet_group)
 
@@ -10414,6 +10852,8 @@ class ADMETEmbeddedPanel(QWidget):
         radar_layout = QVBoxLayout(radar_grp)
         radar_layout.setContentsMargins(4, 4, 4, 4)
         try:
+            if not MATPLOTLIB_AVAILABLE:
+                raise ImportError("matplotlib unavailable")
             import matplotlib
             matplotlib.use("QtAgg")
             from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
@@ -10463,10 +10903,13 @@ class ADMETEmbeddedPanel(QWidget):
             radar_layout.addWidget(self._radar_canvas)
             plt.close(_fig)
         except Exception as _e:
-            logger.warning("ADMET radar chart 생성 실패: %s", _e)
-            _lbl_radar = QLabel("[레이더 차트: matplotlib 미설치 또는 오류]")
-            _lbl_radar.setStyleSheet("color: #666; font-size: 8pt;")
-            radar_layout.addWidget(_lbl_radar)
+            logger.warning("ADMET matplotlib radar chart creation failed, using Qt fallback: %s", _e)
+            self._radar_qt_widget = ADMETEmbeddedRadarChartWidget()
+            radar_layout.addWidget(self._radar_qt_widget)
+            _qt_note = QLabel("Qt radar chart rendered with QPainter.")
+            _qt_note.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            _qt_note.setStyleSheet("color: #666; font-size: 8pt;")
+            radar_layout.addWidget(_qt_note)
             self._radar_canvas = None
         self._content_layout.addWidget(radar_grp)
 
@@ -10560,24 +11003,50 @@ class ADMETEmbeddedPanel(QWidget):
             self._lbl_veber_result.setText("PASS" if veber_pass else "FAIL")
             self._lbl_veber_result.setStyleSheet(pass_style if veber_pass else fail_style)
 
-            # 간이 ADMET 예측 (경험적 규칙 기반)
-            # BBB 투과: MW<450, TPSA<90, LogP 1~3 → 높음
-            bbb_score = (mw < 450) + (tpsa < 90) + (1.0 <= logp <= 3.0)
-            bbb_txt = ["낮음", "보통", "높음", "매우 높음"][bbb_score]
-            self._lbl_bbb.setText(bbb_txt)
-            # [FIX-ADMET-BG] Dark orange on white background
-            self._lbl_bbb.setStyleSheet(pass_style if bbb_score >= 2 else
-                                         "color: #e65100; font-weight: bold;" if bbb_score == 1 else fail_style)
+            # D891 Item009: use the provenance-bound predictor, not a separate
+            # high/low-looking BBB shortcut in the embedded panel.
+            try:
+                from admet_predictor import predict_admet as _predict_admet
+                _admet_profile = _predict_admet(smiles)
+                _bbb = getattr(_admet_profile, "bbb", None)
+                _ld50 = getattr(_admet_profile, "ld50_provenance", None)
+            except Exception as e:
+                logger.warning("Embedded ADMET provenance route failed: %s", e)
+                _bbb = None
+                _ld50 = None
+
+            if _bbb is None:
+                self._lbl_bbb.setText("unavailable - RDKit heuristic not run")
+                self._lbl_bbb.setStyleSheet("color: #e65100; font-weight: bold;")
+            else:
+                _bbb_class = getattr(_bbb, "classification", "uncertain")
+                if _bbb_class == "BBB-":
+                    _bbb_text = "descriptor-unfavorable screen only; not BBB evidence"
+                    _bbb_style = fail_style
+                elif _bbb_class == "BBB+":
+                    _bbb_text = "descriptor-favorable screen only; not BBB evidence"
+                    _bbb_style = "color: #e65100; font-weight: bold;"
+                else:
+                    _bbb_text = "uncertain / unavailable boundary; not BBB evidence"
+                    _bbb_style = "color: #e65100; font-weight: bold;"
+                self._lbl_bbb.setText(_bbb_text)
+                self._lbl_bbb.setStyleSheet(_bbb_style)
+
+            if _ld50 is None:
+                self._lbl_ld50.setText("unavailable - not connected/not run")
+            else:
+                self._lbl_ld50.setText("unavailable - no model/database route connected")
+            self._lbl_ld50.setStyleSheet("color: #e65100; font-weight: bold;")
 
             # P-gp 기질 예측: MW>400 and TPSA>75 → likely substrate
             pgp_likely = mw > 400 and tpsa > 75
-            self._lbl_pgp.setText("기질 가능성 높음" if pgp_likely else "비기질 가능성")
+            self._lbl_pgp.setText("substrate heuristic flag present" if pgp_likely else "substrate heuristic flag absent")
             self._lbl_pgp.setStyleSheet(fail_style if pgp_likely else pass_style)
 
-            # 경구 생체이용률: Lipinski + Veber 통합
+            # Oral rule screen: Lipinski + Veber only, not PK evidence.
             bioavail = lip_pass and veber_pass
-            self._lbl_bioavail.setText("양호" if bioavail else "우려")
-            self._lbl_bioavail.setStyleSheet(pass_style if bioavail else fail_style)
+            self._lbl_bioavail.setText("rule-favorable heuristic" if bioavail else "rule concern heuristic")
+            self._lbl_bioavail.setStyleSheet("color: #e65100; font-weight: bold;" if bioavail else fail_style)
 
             self._lbl_status.setText(f"분석 완료: {smiles[:30]}...")
 
@@ -10600,6 +11069,10 @@ class ADMETEmbeddedPanel(QWidget):
           HBD  / 5    (≤5   = PASS)
           HBA  / 10   (≤10  = PASS)
         """
+        raw = [mw / 500.0, logp / 5.0, tpsa / 140.0, hbd / 5.0, hba / 10.0]
+        norm = [max(0.0, min(1.0, v)) for v in raw]
+        if getattr(self, "_radar_qt_widget", None) is not None:
+            self._radar_qt_widget.set_values(norm)
         if not hasattr(self, "_radar_canvas") or self._radar_canvas is None:
             return
         try:
@@ -10974,6 +11447,8 @@ class _ChemCharFetchThread(QThread):
             logger.warning("PubChem CID 미발견: smiles=%s", smiles[:50])
 
         center_comment = self._classify_korean(smiles)
+        # [M1436] PubChem 연결 실패 여부를 결과 dict에 포함 — _on_data_received에서 fallback 트리거
+        pubchem_reachable = center_cid is not None
 
         # ── 3) 유사 분자 검색 ────────────────────────────────────────────────
         neighbors = []
@@ -11070,6 +11545,8 @@ class _ChemCharFetchThread(QThread):
                 "PubChem (NCBI); Shulgin TIHKAL 1997; "
                 "Pegg A.E. IUBMB Life 2009, 61:880 (DOI:10.1002/iub.230)"
             ),
+            # [M1436] Rule M: PubChem 연결 실패 여부 명시 — _on_data_received fallback 트리거용
+            "pubchem_failed": not pubchem_reachable,
         })
 
 
@@ -11288,6 +11765,378 @@ class ChemCharCanvas(QWidget):
                 )
 
 
+class ChemCharCanvas(QWidget):
+    """RDKit structure-based derivative view for the chemical properties tab.
+
+    This replacement intentionally preserves the existing fetch/data contract
+    while changing the visual surface from text-only similarity cards to
+    a central current molecule with derivative structure panels and
+    common-substructure highlighting.
+    """
+
+    CANVAS_W = 900
+    CANVAS_H = 640
+    CX = CANVAS_W // 2
+    CY = 318
+    R_CENTER = 92
+    R_ORBIT = 255
+    BOX_W = 158
+    BOX_H = 132
+    MOL_W = 142
+    MOL_H = 82
+    ARROW_GAP = 12
+    MAX_NEIGHBORS = 8
+    DERIV_COLS = 4
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        _ensure_qt_korean_font_ready()
+        self._data = None
+        self._last_render_stats = {}
+        self.setFixedSize(self.CANVAS_W, self.CANVAS_H)
+        self.setStyleSheet("background-color: #ffffff;")
+
+    def set_data(self, data: dict):
+        if not isinstance(data, dict):
+            logger.warning("ChemCharCanvas.set_data: non-dict type=%s", type(data).__name__)
+            return
+        self._data = data
+        self.update()
+
+    @staticmethod
+    def _sim_color(sim: float) -> QColor:
+        if sim >= 0.85:
+            return QColor("#059669")
+        if sim >= 0.70:
+            return QColor("#2563eb")
+        if sim >= 0.50:
+            return QColor("#d97706")
+        return QColor("#6b7280")
+
+    @staticmethod
+    def _safe_text(value, fallback: str = "") -> str:
+        if isinstance(value, str):
+            value = value.strip()
+            return value if value else fallback
+        return fallback
+
+    @staticmethod
+    def _shorten(value: str, max_len: int) -> str:
+        value = ChemCharCanvas._safe_text(value)
+        if len(value) <= max_len:
+            return value
+        return value[:max(0, max_len - 1)] + "..."
+
+    @staticmethod
+    def _mol_from_smiles(smiles: str):
+        if not RDKIT_AVAILABLE or not isinstance(smiles, str) or not smiles.strip():
+            return None
+        mol = Chem.MolFromSmiles(smiles.strip())
+        if mol is None:
+            logger.warning("ChemCharCanvas: SMILES parse failed smiles=%s", smiles[:50])
+            return None
+        try:
+            from rdkit.Chem import rdDepictor
+            rdDepictor.Compute2DCoords(mol)
+        except Exception as e:
+            logger.warning("ChemCharCanvas: 2D coordinate generation failed: %s", e)
+        return mol
+
+    @staticmethod
+    def _mcs_match_atoms(center_smiles: str, target_smiles: str):
+        if not RDKIT_AVAILABLE:
+            return [], []
+        center_mol = ChemCharCanvas._mol_from_smiles(center_smiles)
+        target_mol = ChemCharCanvas._mol_from_smiles(target_smiles)
+        if center_mol is None or target_mol is None:
+            return [], []
+        try:
+            from rdkit.Chem import rdFMCS
+            result = rdFMCS.FindMCS(
+                [center_mol, target_mol],
+                timeout=1,
+                ringMatchesRingOnly=True,
+                completeRingsOnly=False,
+            )
+            if not result.smartsString:
+                return [], []
+            patt = Chem.MolFromSmarts(result.smartsString)
+            if patt is None:
+                return [], []
+            center_match = list(center_mol.GetSubstructMatch(patt))
+            target_match = list(target_mol.GetSubstructMatch(patt))
+            if len(target_match) < 2:
+                return [], []
+            return center_match, target_match
+        except Exception as e:
+            logger.warning("ChemCharCanvas: MCS highlight failed: %s", e)
+            return [], []
+
+    @staticmethod
+    def _highlight_bonds(mol, atoms: list):
+        atom_set = set(atoms)
+        bonds = []
+        if mol is None or not atom_set:
+            return bonds
+        for bond in mol.GetBonds():
+            if bond.GetBeginAtomIdx() in atom_set and bond.GetEndAtomIdx() in atom_set:
+                bonds.append(bond.GetIdx())
+        return bonds
+
+    @staticmethod
+    def _molecule_image(smiles: str, width: int, height: int, highlight_atoms=None):
+        mol = ChemCharCanvas._mol_from_smiles(smiles)
+        if mol is None:
+            return None, 0
+        highlight_atoms = list(highlight_atoms or [])
+        highlight_bonds = ChemCharCanvas._highlight_bonds(mol, highlight_atoms)
+        try:
+            from PyQt6.QtGui import QImage
+            from rdkit.Chem.Draw import rdMolDraw2D
+            drawer = rdMolDraw2D.MolDraw2DCairo(width, height)
+            opts = drawer.drawOptions()
+            opts.clearBackground = False
+            opts.bondLineWidth = 2
+            opts.padding = 0.08
+            atom_colors = {idx: (0.05, 0.62, 0.33) for idx in highlight_atoms}
+            bond_colors = {idx: (0.05, 0.62, 0.33) for idx in highlight_bonds}
+            drawer.DrawMolecule(
+                mol,
+                highlightAtoms=highlight_atoms,
+                highlightBonds=highlight_bonds,
+                highlightAtomColors=atom_colors,
+                highlightBondColors=bond_colors,
+            )
+            drawer.FinishDrawing()
+            image = QImage.fromData(drawer.GetDrawingText(), "PNG")
+            if image.isNull():
+                logger.warning("ChemCharCanvas: null molecule image smiles=%s", smiles[:50])
+                return None, 0
+            return image, len(highlight_atoms)
+        except Exception as e:
+            logger.warning("ChemCharCanvas: RDKit molecule drawing failed: %s", e)
+            return None, 0
+
+    @staticmethod
+    def _compact_property_label(smiles: str, comment: str = "") -> list:
+        labels = []
+        compact = ChemCharCanvas._safe_text(comment)
+        if compact:
+            labels.append(ChemCharCanvas._shorten(compact, 34))
+        if RDKIT_AVAILABLE and isinstance(smiles, str) and smiles.strip():
+            try:
+                mol = Chem.MolFromSmiles(smiles.strip())
+                if mol is not None:
+                    mw = Descriptors.MolWt(mol)
+                    logp = Descriptors.MolLogP(mol)
+                    hbd = rdMolDescriptors.CalcNumHBD(mol)
+                    hba = rdMolDescriptors.CalcNumHBA(mol)
+                    rotb = rdMolDescriptors.CalcNumRotatableBonds(mol)
+                    labels.append(f"MW {mw:.1f} | LogP {logp:.1f}")
+                    if len(labels) < 2:
+                        labels.append(f"HBD {hbd} HBA {hba} RotB {rotb}")
+                    return labels[:2]
+            except Exception as e:
+                logger.warning("ChemCharCanvas: compact property calculation failed: %s", e)
+        if labels:
+            return labels[:2]
+        return ["property data unavailable"]
+
+    @staticmethod
+    def _draw_lines(painter: QPainter, lines: list, x: int, y: int,
+                    w: int, line_h: int, color: QColor, bold: bool = False):
+        weight = QFont.Weight.Bold if bold else QFont.Weight.Normal
+        painter.setPen(color)
+        painter.setFont(QFont(_QT_KR_FONT, 7 if not bold else 8, weight))
+        for idx, line in enumerate(lines):
+            painter.drawText(
+                x, y + idx * line_h, w, line_h,
+                int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop),
+                ChemCharCanvas._shorten(str(line), 34),
+            )
+
+    def _draw_panel(self, painter: QPainter, rect: QRectF, border: QColor, fill: QColor):
+        painter.setPen(QPen(border, 1.2))
+        painter.setBrush(fill)
+        painter.drawRoundedRect(rect, 6, 6)
+
+    def _first_neighbor_smiles(self) -> str:
+        if not isinstance(self._data, dict):
+            return ""
+        neighbors = self._data.get("neighbors", [])
+        if isinstance(neighbors, list):
+            for item in neighbors:
+                if isinstance(item, dict) and isinstance(item.get("smiles"), str):
+                    return item["smiles"]
+        return ""
+
+    def _draw_molecule_panel(self, painter: QPainter, x: int, y: int, w: int, h: int,
+                             item: dict, center_smiles: str, is_center: bool = False):
+        smiles = self._safe_text(item.get("smiles"))
+        name = self._safe_text(item.get("name"), "Molecule")
+        comment = self._safe_text(item.get("comment_korean"))
+        sim = item.get("similarity", None)
+        sim_val = float(sim) if isinstance(sim, (int, float)) else None
+        color = QColor("#2563eb") if is_center else self._sim_color(sim_val or 0.0)
+
+        if is_center:
+            highlight_atoms, _ = self._mcs_match_atoms(smiles, self._first_neighbor_smiles())
+            image, highlight_count = self._molecule_image(
+                smiles, self.MOL_W + 18, self.MOL_H + 18, highlight_atoms
+            )
+        else:
+            _, target_match = self._mcs_match_atoms(center_smiles, smiles)
+            image, highlight_count = self._molecule_image(
+                smiles, self.MOL_W, self.MOL_H, target_match
+            )
+
+        self._draw_panel(painter, QRectF(x, y, w, h), color, QColor("#ffffff"))
+        if highlight_count > 0:
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor("#d1fae5"))
+            painter.drawRoundedRect(QRectF(x + 6, y + 6, w - 12, 13), 4, 4)
+            painter.setPen(QColor("#047857"))
+            painter.setFont(QFont(_QT_KR_FONT, 6, QFont.Weight.Bold))
+            painter.drawText(x + 8, y + 6, w - 16, 13, int(Qt.AlignmentFlag.AlignCenter), "COMMON CORE")
+
+        if image is not None:
+            img_x = x + int((w - image.width()) / 2)
+            painter.drawImage(img_x, y + 22, image)
+            if is_center:
+                self._last_render_stats["central_molecule_rendered"] = True
+            else:
+                self._last_render_stats["derivative_render_count"] += 1
+            if highlight_count > 0:
+                self._last_render_stats["highlight_indicator_count"] += 1
+
+        label_y = y + h - 44
+        title = "Central molecule" if is_center else self._shorten(name, 24)
+        if sim_val is not None and not is_center:
+            title = f"{self._shorten(name, 19)} | {sim_val * 100:.0f}%"
+        self._draw_lines(painter, [title], x + 4, label_y, w - 8, 14, QColor("#111827"), True)
+        props = self._compact_property_label(smiles, comment)
+        self._draw_lines(painter, props[:2], x + 4, label_y + 16, w - 8, 13, QColor("#374151"))
+        self._last_render_stats["compact_property_label_count"] += 1
+        self._last_render_stats["compact_property_labels"].extend(props[:2])
+
+    def paintEvent(self, event):
+        self._last_render_stats = {
+            "layout": "structure_derivative_network",
+            "central_molecule_rendered": False,
+            "derivative_render_count": 0,
+            "highlight_indicator_count": 0,
+            "compact_property_label_count": 0,
+            "common_substructure_highlighted": False,
+            "used_text_only_radial_substitute": False,
+            "radial_placeholder_visible": False,
+            "derivative_panel_positions": [],
+            "compact_property_labels": [],
+            "neighbor_count": 0,
+        }
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.fillRect(self.rect(), QColor("#ffffff"))
+
+        if not self._data or not isinstance(self._data, dict):
+            painter.setPen(QColor("#94a3b8"))
+            painter.setFont(QFont(_QT_KR_FONT, 10))
+            painter.drawText(
+                self.rect(),
+                Qt.AlignmentFlag.AlignCenter,
+                "Load a molecule to render derivative structures.",
+            )
+            return
+
+        neighbors = self._data.get("neighbors", [])
+        if not isinstance(neighbors, list):
+            logger.warning("ChemCharCanvas.paintEvent: neighbors non-list type=%s", type(neighbors).__name__)
+            neighbors = []
+        neighbors = neighbors[:self.MAX_NEIGHBORS]
+        n = len(neighbors)
+        self._last_render_stats["neighbor_count"] = n
+
+        center_info = self._data.get("center")
+        if not isinstance(center_info, dict):
+            center_info = {}
+        center_smiles = self._safe_text(center_info.get("smiles"))
+        center_item = {
+            "smiles": center_smiles,
+            "name": self._safe_text(center_info.get("name"), "center"),
+            "comment_korean": self._safe_text(center_info.get("comment_korean")),
+        }
+
+        cx = self.CX
+        painter.setPen(QColor("#047857"))
+        painter.setFont(QFont(_QT_KR_FONT, 8, QFont.Weight.Bold))
+        painter.drawText(18, 14, 320, 18, int(Qt.AlignmentFlag.AlignLeft), "Green overlay = common substructure")
+
+        center_x = cx - 112
+        center_y = 42
+        center_w = 224
+        center_h = 188
+        self._draw_molecule_panel(
+            painter,
+            center_x,
+            center_y,
+            center_w,
+            center_h,
+            center_item,
+            center_smiles,
+            is_center=True,
+        )
+
+        grid_top = 284
+        grid_left = 36
+        grid_gap_x = 42
+        grid_gap_y = 30
+        panel_w = 172
+        panel_h = 142
+        for i, nbr in enumerate(neighbors):
+            if not isinstance(nbr, dict):
+                continue
+            sim = float(nbr.get("similarity", 0.0)) if isinstance(nbr.get("similarity"), (int, float)) else 0.0
+            sim_color = self._sim_color(sim)
+            row = i // self.DERIV_COLS
+            col = i % self.DERIV_COLS
+            panel_x = grid_left + col * (panel_w + grid_gap_x)
+            panel_y = grid_top + row * (panel_h + grid_gap_y)
+
+            # Connector is a short scaffold cue, not a radial placeholder.
+            start_x = center_x + center_w / 2
+            start_y = center_y + center_h
+            end_x = panel_x + panel_w / 2
+            end_y = panel_y
+            painter.setPen(QPen(sim_color, 1.2, Qt.PenStyle.DashLine))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawLine(int(start_x), int(start_y), int(end_x), int(end_y))
+
+            mid_x = (start_x + end_x) / 2
+            mid_y = (start_y + end_y) / 2
+            painter.setPen(sim_color)
+            painter.setFont(QFont(_QT_KR_FONT, 8, QFont.Weight.Bold))
+            sim_text = f"{sim * 100:.0f}%"
+            tw = painter.fontMetrics().horizontalAdvance(sim_text)
+            painter.drawText(int(mid_x - tw / 2), int(mid_y - 2), sim_text)
+
+            self._draw_molecule_panel(
+                painter,
+                panel_x,
+                panel_y,
+                panel_w,
+                panel_h,
+                nbr,
+                center_smiles,
+                is_center=False,
+            )
+            self._last_render_stats["derivative_panel_positions"].append(
+                {"x": panel_x, "y": panel_y, "w": panel_w, "h": panel_h}
+            )
+
+        self._last_render_stats["common_substructure_highlighted"] = (
+            self._last_render_stats["highlight_indicator_count"] > 0
+        )
+
+
 class ChemCharPanel(QWidget):
     """화학적 특성 분석 패널 — 방사형 유사 분자 8개 QPainter 시각화.
     Source: ChemicalCharacteristicsPanel.tsx (Rule Y 1:1 번역).
@@ -11334,6 +12183,19 @@ class ChemCharPanel(QWidget):
         self._status_label = QLabel("분자를 로드하면 유사 분자 검색이 시작됩니다.")
         self._status_label.setStyleSheet("font-size: 8pt; color: #94a3b8; font-style: italic;")
         outer.addWidget(self._status_label)
+
+        # ── [M1436] SIMULATION_MODE 배너 (Rule GG: PubChem 실패 시 노랑 배너 의무) ──
+        # 기본 hidden — PubChem fallback 시 setVisible(True)
+        self._sim_banner = QLabel(
+            "SIMULATION MODE  |  PubChem 연결 실패 — RDKit 로컬 분석 결과 (Lipinski Ro5 물성)"
+        )
+        self._sim_banner.setStyleSheet(
+            "background-color: #fef08a; color: #713f12; font-size: 8pt; font-weight: bold;"
+            "border: 1px solid #ca8a04; border-radius: 3px; padding: 2px 6px;"
+        )
+        self._sim_banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._sim_banner.setVisible(False)  # 기본 숨김 — fallback 시에만 표시
+        outer.addWidget(self._sim_banner)
 
         # ── 스크롤 영역에 캔버스 ──────────────────────────────────────────────
         scroll = QScrollArea()
@@ -11429,25 +12291,36 @@ class ChemCharPanel(QWidget):
         self._btn_refresh.setEnabled(True)
 
         if not isinstance(data, dict):  # Rule N
+            # [M1436] Rule M: silent return 금지 — logger.warning + 사용자 피드백 필수
+            logger.warning("ChemCharPanel._on_data_received: dict 아님 type=%s", type(data).__name__)
+            self._status_label.setText("검색 결과 형식 오류 (dict 아님)")
+            self._status_label.setStyleSheet("font-size: 8pt; color: #dc2626;")
             return
 
-        # 에러 체크 — [F5-13 M745] 네트워크 실패 시 로컬 RDKit fallback (Rule M)
-        if data.get("error"):
-            err_msg = str(data["error"])
-            logger.warning("ChemCharPanel: 검색 오류 — %s. 로컬 RDKit fallback 시도", err_msg)
-            # [F5-13] PubChem 불가 시 RDKit 로컬 기본 물성으로 대체 — silent return 금지 (Rule M)
+        # [M1436] 에러 또는 PubChem 연결 실패 시 로컬 RDKit fallback (Rule M + GG)
+        # pubchem_failed: CID 조회 실패(네트워크 타임아웃 포함) — 에러 없이도 fallback 필요한 경우
+        need_fallback = bool(data.get("error")) or bool(data.get("pubchem_failed"))
+        if need_fallback:
+            err_msg = str(data.get("error", "PubChem 연결 실패"))
+            logger.warning("ChemCharPanel: PubChem 불가 — %s. 로컬 RDKit fallback 시도", err_msg)
+            # [F5-13 M745] PubChem 불가 시 RDKit 로컬 기본 물성으로 대체 — silent return 금지 (Rule M)
             fallback_data = self._compute_local_rdkit_props()
             if fallback_data:
                 self._status_label.setText(
-                    f"PubChem 연결 실패 (네트워크 오류) — 로컬 RDKit 물성 표시 중"
+                    "PubChem 연결 실패 — RDKit 로컬 Lipinski Ro5 물성 표시 중"
                 )
                 self._status_label.setStyleSheet("font-size: 8pt; color: #d97706; font-style: italic;")
+                # [M1436] Rule GG SIMULATION_MODE 배너 표시 (노랑)
+                self._sim_banner.setVisible(True)
                 self._data = fallback_data
                 self._canvas.set_data(fallback_data)
                 return
             self._status_label.setText(f"검색 실패: {err_msg}")
             self._status_label.setStyleSheet("font-size: 8pt; color: #dc2626;")
             return
+
+        # PubChem 성공 — SIMULATION 배너 숨김
+        self._sim_banner.setVisible(False)
 
         neighbors = data.get("neighbors")
         if not isinstance(neighbors, list):  # Rule N
@@ -11501,11 +12374,24 @@ class ChemCharPanel(QWidget):
             hbd = rdMolDescriptors.CalcNumHBD(mol)
             hba = rdMolDescriptors.CalcNumHBA(mol)
             rotb = rdMolDescriptors.CalcNumRotatableBonds(mol)
+            # Lipinski Ro5 위반 여부 계산
+            ro5_violations = sum([
+                mw > 500,      # MW ≤ 500 Da
+                logp > 5,      # LogP ≤ 5
+                hbd > 5,       # HBD ≤ 5
+                hba > 10,      # HBA ≤ 10
+            ])
+            ro5_msg = "Ro5 준수" if ro5_violations == 0 else f"Ro5 위반 {ro5_violations}건"
+            # [M1436] comment_korean 추가 — canvas paintEvent에서 표시됨
+            local_comment = (
+                f"MW={mw} Da | LogP={logp} | TPSA={tpsa} Å² | "
+                f"HBD={hbd} HBA={hba} | {ro5_msg}"
+            )
             # neighbors 형식: 중심 분자만 1개, similarity=1.0 (자기 자신)
             local_entry = {
                 "cid": 0,
                 "smiles": self._smiles,
-                "name": f"[로컬] MW={mw} LogP={logp}",
+                "name": f"[로컬] MW={mw}",
                 "similarity": 1.0,
                 "mw": mw,
                 "logp": logp,
@@ -11513,6 +12399,8 @@ class ChemCharPanel(QWidget):
                 "hbd": hbd,
                 "hba": hba,
                 "rotb": rotb,
+                # [M1436] canvas 렌더링에 필요한 comment_korean 필드 추가
+                "comment_korean": local_comment,
             }
             return {
                 "neighbors": [local_entry],
@@ -11530,13 +12418,13 @@ class ChemCharPanel(QWidget):
 # ============================================================
 
 class DockingEnergyPanel(QWidget):
-    """🧬 도킹 탭 — RCSB PDB 수용체 검색 + 분자 도킹 시뮬레이션
+    """도킹 탭 — RCSB PDB 수용체 검색 + 로컬 점수 추정
 
     기능:
     1. RCSB PDB 검색으로 수용체 단백질 선택 및 다운로드
     2. 프리셋 수용체 목록 (GABA-A, ACE2, COX-2 등)
     3. 경험적 결합 에너지 예측 (Vina 점수 함수 근사)
-    4. 결합 등급 평가 및 임상 약물 비교
+    4. 참조 점수 구간 및 임상 약물 비교
     5. 3D 시각화 (리간드+수용체 Cα 백본)
     """
 
@@ -11618,12 +12506,12 @@ class DockingEnergyPanel(QWidget):
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(6)
 
-        title = QLabel("🧬 분자 도킹 — RCSB PDB 수용체 선택 + 결합 에너지 예측")
+        title = QLabel("분자 도킹 컨텍스트 — RCSB PDB 수용체 선택 + 로컬 점수 추정")
         title.setStyleSheet("font-size:11pt; color:#90CAF9; font-weight:bold;")
         layout.addWidget(title)
 
         # ── [1] 수용체 선택 섹션 ─────────────────────────────────────
-        recv_grp = QGroupBox("🔍 수용체 단백질 선택")
+        recv_grp = QGroupBox("수용체 단백질 선택")
         recv_layout = QVBoxLayout()
         recv_layout.setSpacing(4)
 
@@ -11637,7 +12525,7 @@ class DockingEnergyPanel(QWidget):
             "background:#252525; color:#ddd; border:1px solid #555; "
             "font-size:10pt; padding:2px 4px;")
         search_row.addWidget(self.search_input)
-        btn_search = QPushButton("🔍 검색")
+        btn_search = QPushButton("검색")
         btn_search.setFixedHeight(30)
         btn_search.setFixedWidth(70)
         btn_search.setStyleSheet(
@@ -11650,7 +12538,7 @@ class DockingEnergyPanel(QWidget):
 
         # 프리셋 콤보박스
         preset_row = QHBoxLayout()
-        preset_row.addWidget(QLabel("📋 프리셋:"))
+        preset_row.addWidget(QLabel("프리셋:"))
         self.preset_combo = QComboBox()
         self.preset_combo.setStyleSheet(
             "QComboBox { background:#2a2a2a; color:#ddd; border:1px solid #555; "
@@ -11696,7 +12584,7 @@ class DockingEnergyPanel(QWidget):
         self.btn_pdbe_molstar.clicked.connect(self._open_pdbe_molstar)
         pdbe_row.addWidget(self.btn_pdbe_molstar)
 
-        self.btn_alphafold_ext = QPushButton("AlphaFold DB")
+        self.btn_alphafold_ext = QPushButton("AlphaFold/PDB ref")
         self.btn_alphafold_ext.setToolTip(
             "AlphaFold Protein Structure Database (웹 브라우저)\n"
             "Jumper et al. (2021) Nature 596: 583-589."
@@ -11716,7 +12604,7 @@ class DockingEnergyPanel(QWidget):
         # 수용체 로드 버튼 (스크롤 영역 내부에 표시)
         btn_row = QHBoxLayout()
         btn_row.addStretch()
-        self.btn_load_receptor = QPushButton("📥 수용체 로드 (RCSB 다운로드)")
+        self.btn_load_receptor = QPushButton("수용체 로드 (RCSB 다운로드)")
         self.btn_load_receptor.setEnabled(False)
         self.btn_load_receptor.setStyleSheet(
             "QPushButton { background:#2E7D32; color:#A5D6A7; border:1px solid #43A047; "
@@ -11730,7 +12618,7 @@ class DockingEnergyPanel(QWidget):
         layout.addWidget(recv_grp)
 
         # ── [2] 도킹 결과 표시 영역 ──────────────────────────────────
-        dock_grp = QGroupBox("⚗ 도킹 시뮬레이션")
+        dock_grp = QGroupBox("로컬 도킹 점수 추정")
         dock_layout = QVBoxLayout()
         dock_layout.setSpacing(4)
 
@@ -11742,14 +12630,17 @@ class DockingEnergyPanel(QWidget):
             "QTextEdit { background:#252525; color:#A5D6A7; font-size:9pt; "
             "border:1px solid #333; font-family:monospace; }")
         self.dock_result.setPlainText(
-            "수용체를 로드하고 [🔬 도킹 시뮬레이션 실행] 버튼을 클릭하세요.\n"
-            "리간드(현재 분자)와 수용체의 결합 에너지를 예측합니다.")
+            "No docking evidence is loaded.\n"
+            "Select/load a receptor to run a local score estimate. AutoDock Vina is reported "
+            "only when the backend returns a pose; otherwise this remains SIMULATION_MODE "
+            "and is not binding proof."
+        )
         dock_layout.addWidget(self.dock_result)
         dock_grp.setLayout(dock_layout)
         layout.addWidget(dock_grp)
 
-        # ── [3] 결합 등급 결과 ────────────────────────────────────────
-        self.grade_lbl = QLabel("— 도킹 실행 후 결합 등급이 표시됩니다 —")
+        # ── [3] 참조 점수 구간 결과 ──────────────────────────────────
+        self.grade_lbl = QLabel("No validation band yet. No Vina pose or binding-success evidence loaded.")
         self.grade_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.grade_lbl.setStyleSheet(
             "font-size:12pt; color:#bbb; padding:8px; border:2px dashed #444; "
@@ -11758,7 +12649,7 @@ class DockingEnergyPanel(QWidget):
         layout.addWidget(self.grade_lbl)
 
         # ── [4] 임계값 참조표 (접기 가능) ────────────────────────────
-        thresh_grp = QGroupBox("📊 결합 등급 기준표 (AutoDock Vina 기준)")
+        thresh_grp = QGroupBox("Reference score bands (not validation)")
         thresh_layout = QVBoxLayout()
         for lo, hi, label, color, ki in self.THRESHOLDS:
             row = QHBoxLayout()
@@ -11780,7 +12671,7 @@ class DockingEnergyPanel(QWidget):
         layout.addWidget(thresh_grp)
 
         # ── [DOCK-2] 결합 포켓 2D 시각화 위젯 ────────────────────────
-        viz_grp = QGroupBox("🗺 결합 포켓 시각화 (수용체 Cα + 리간드)")
+        viz_grp = QGroupBox("Receptor/ligand context view (not binding proof)")
         viz_grp_layout = QVBoxLayout()
         viz_grp_layout.setContentsMargins(4, 4, 4, 4)
         self.viz_widget = DockingVisualizationWidget()
@@ -11802,7 +12693,7 @@ class DockingEnergyPanel(QWidget):
         bottom_layout = QHBoxLayout(bottom_bar)
         bottom_layout.setContentsMargins(8, 6, 8, 6)
 
-        self.btn_dock = QPushButton("🔬 도킹 시뮬레이션 실행")
+        self.btn_dock = QPushButton("Run local score estimate")
         self.btn_dock.setEnabled(False)
         self.btn_dock.setStyleSheet(
             "QPushButton { background:#880E4F; color:#F48FB1; border:1px solid #C2185B; "
@@ -11812,7 +12703,7 @@ class DockingEnergyPanel(QWidget):
         self.btn_dock.clicked.connect(self._run_docking)
         bottom_layout.addWidget(self.btn_dock)
 
-        self.btn_dock_3d = QPushButton("🎬 3D 도킹 시각화")
+        self.btn_dock_3d = QPushButton("Show 3D context")
         self.btn_dock_3d.setEnabled(False)
         self.btn_dock_3d.setStyleSheet(
             "QPushButton { background:#1565C0; color:#90CAF9; border:1px solid #1976D2; "
@@ -11820,8 +12711,9 @@ class DockingEnergyPanel(QWidget):
             "QPushButton:hover { background:#1976D2; }"
             "QPushButton:disabled { background:#333; color:#666; }")
         self.btn_dock_3d.setToolTip(
-            "도킹 결과를 3D 뷰어에서 시각화합니다.\n"
-            "단백질 백본 + 리간드 접근 애니메이션을 표시합니다.")
+            "Shows receptor/ligand context after a docking result or estimate. "
+            "This is not proof of binding or target affinity."
+        )
         self.btn_dock_3d.clicked.connect(self._show_dock_3d)
         bottom_layout.addWidget(self.btn_dock_3d)
 
@@ -11842,24 +12734,27 @@ class DockingEnergyPanel(QWidget):
         if not query:
             return
         self.result_list.clear()
-        self.result_list.addItem("🔄 검색 중...")
+        self.result_list.addItem("검색 중...")
         QApplication.processEvents()
 
         if not REQUESTS_AVAILABLE:
             logger.warning("PDB 검색 건너뜀: requests 라이브러리 미설치")
             self.result_list.clear()
-            self.result_list.addItem("⚠️ requests 미설치 — pip install requests")
+            self.result_list.addItem("requests 미설치 — pip install requests")
             return
 
         # PDB ID 직접 입력 (4자리 영숫자)
         if re.match(r'^[A-Za-z0-9]{4}$', query):
             self.result_list.clear()
-            item = QListWidgetItem(f"📌 {query.upper()}  (PDB ID 직접 입력)")
+            item = QListWidgetItem(f"{query.upper()}  (PDB ID 직접 입력)")
             item.setData(Qt.ItemDataRole.UserRole, query.upper())
             self.result_list.addItem(item)
             self._current_pdb_id = query.upper()
             self.btn_load_receptor.setEnabled(True)
-            self.receptor_info.setText(f"PDB ID: {query.upper()}  — RCSB에서 구조 다운로드 가능")
+            self.receptor_info.setText(
+                f"PDB ID: {query.upper()} selected. Load receptor to request RCSB data; "
+                "no protein service result yet."
+            )
             return
 
         # RCSB Full-text 검색
@@ -11888,13 +12783,13 @@ class DockingEnergyPanel(QWidget):
 
             if resp.status_code != 200:
                 logger.warning("RCSB PDB 검색 실패: HTTP %d", resp.status_code)
-                self.result_list.addItem(f"⚠️ 검색 실패 (HTTP {resp.status_code})")
+                self.result_list.addItem(f"검색 실패 (HTTP {resp.status_code})")
                 return
 
             data = resp.json()
             if not isinstance(data, dict):
                 logger.warning("RCSB search response not dict: %s", type(data))
-                self.result_list.addItem("⚠️ 검색 응답 형식 오류")
+                self.result_list.addItem("검색 응답 형식 오류")
                 return
             entries = data.get("result_set", [])
             if not isinstance(entries, list):
@@ -11909,12 +12804,12 @@ class DockingEnergyPanel(QWidget):
                     continue
                 pdb_id = entry.get("identifier", "?")
                 score = entry.get("score", 0)
-                item = QListWidgetItem(f"🔬 {pdb_id}  (score: {score:.2f})")
+                item = QListWidgetItem(f"{pdb_id}  (score: {score:.2f})")
                 item.setData(Qt.ItemDataRole.UserRole, pdb_id)
                 self.result_list.addItem(item)
         except Exception as e:
             self.result_list.clear()
-            self.result_list.addItem(f"⚠️ 검색 오류: {str(e)[:50]}")
+            self.result_list.addItem(f"검색 오류: {str(e)[:50]}")
 
     def _on_result_selected(self, item: QListWidgetItem):
         pdb_id = item.data(Qt.ItemDataRole.UserRole) or ""
@@ -11923,7 +12818,7 @@ class DockingEnergyPanel(QWidget):
             self.btn_load_receptor.setEnabled(True)
             self.btn_pdbe_molstar.setEnabled(True)   # M645_W9: PDBe Mol* 활성
             self.btn_alphafold_ext.setEnabled(True)  # M645_W9: AlphaFold 활성
-            self.receptor_info.setText(f"선택: PDB {pdb_id}  — [📥 수용체 로드] 버튼으로 다운로드")
+            self.receptor_info.setText(f"선택: PDB {pdb_id}  — [수용체 로드] 버튼으로 다운로드")
 
     def _on_preset_selected(self, idx: int):
         if idx <= 0:
@@ -11933,7 +12828,10 @@ class DockingEnergyPanel(QWidget):
         self.btn_load_receptor.setEnabled(True)
         self.btn_pdbe_molstar.setEnabled(True)   # M645_W9: PDBe Mol* 활성
         self.btn_alphafold_ext.setEnabled(True)  # M645_W9: AlphaFold 활성
-        self.receptor_info.setText(f"PDB {pdb_id}: {name}\n{desc}")
+        self.receptor_info.setText(
+            f"PDB {pdb_id}: {name}\n{desc}\nReference target selected; no receptor download, "
+            "Vina pose, or binding result yet."
+        )
 
         # M831 anger#34: 프리셋 선택 즉시 도킹 버튼 활성화 (SMILES 보유 시)
         # 이전: 반드시 PDB 다운로드 완료 후에만 활성. 사용자 격분: "버튼이 왜 비활성이냐"
@@ -12006,11 +12904,11 @@ class DockingEnergyPanel(QWidget):
             return
         if not REQUESTS_AVAILABLE:
             logger.warning("수용체 로드 건너뜀: requests 라이브러리 미설치")
-            self.receptor_info.setText("⚠️ requests 미설치")
+            self.receptor_info.setText("requests 미설치")
             return
 
         pdb_id = self._current_pdb_id
-        self.receptor_info.setText(f"🔄 {pdb_id} 다운로드 중 (RCSB PDB)...")
+        self.receptor_info.setText(f"{pdb_id} 다운로드 중 (RCSB PDB)...")
         QApplication.processEvents()
 
         try:
@@ -12026,7 +12924,7 @@ class DockingEnergyPanel(QWidget):
                     raise
             if resp.status_code != 200:
                 logger.warning("PDB 다운로드 실패: HTTP %d (pdb_id=%s)", resp.status_code, pdb_id)
-                self.receptor_info.setText(f"⚠️ 다운로드 실패 (HTTP {resp.status_code})")
+                self.receptor_info.setText(f"다운로드 실패 (HTTP {resp.status_code})")
                 return
 
             # Cα 백본 파싱
@@ -12046,7 +12944,7 @@ class DockingEnergyPanel(QWidget):
             self._receptor_atoms = ca_atoms
             n_chains = len(set(a[4] for a in ca_atoms))
             self.receptor_info.setText(
-                f"✅ {pdb_id} 로드 완료  |  Cα 원자: {len(ca_atoms)}개  |  체인: {n_chains}개")
+                f"{pdb_id} 로드 완료  |  Cα 원자: {len(ca_atoms)}개  |  체인: {n_chains}개")
             self.btn_dock.setEnabled(True)
 
             # PDB 파일 로컬 저장 (선택적)
@@ -12057,22 +12955,22 @@ class DockingEnergyPanel(QWidget):
             logger.info(f"PDB saved: {pdb_path}")
 
         except Exception as e:
-            self.receptor_info.setText(f"⚠️ 다운로드 오류: {str(e)[:60]}")
+            self.receptor_info.setText(f"다운로드 오류: {str(e)[:60]}")
 
     # ── 경험적 도킹 시뮬레이션 ─────────────────────────────────────────
     def _run_docking(self):
         """도킹 실행: Vina 우선, 미설치 시 경험적 근사 폴백"""
         if not self._smiles:
             logger.warning("도킹 실행 건너뜀: 리간드 SMILES 없음")
-            self.dock_result.setPlainText("⚠️ 리간드(분자) SMILES 없음 — 분자를 먼저 로드하세요")
+            self.dock_result.setPlainText("리간드(분자) SMILES 없음 — 분자를 먼저 로드하세요")
             return
         if not self._receptor_atoms:
             logger.warning("도킹 실행 건너뜀: 수용체 미로드")
-            self.dock_result.setPlainText("⚠️ 수용체 미로드 — [📥 수용체 로드] 먼저 실행하세요")
+            self.dock_result.setPlainText("수용체 미로드 — [수용체 로드] 먼저 실행하세요")
             return
 
         self.btn_dock.setEnabled(False)
-        self.dock_result.setPlainText("🔄 도킹 시뮬레이션 중...")
+        self.dock_result.setPlainText("로컬 도킹 점수 추정 중...")
         QApplication.processEvents()
 
         # [VINA-WIRE] 실제 Vina 사용 가능하면 시도
@@ -12082,7 +12980,7 @@ class DockingEnergyPanel(QWidget):
                 return  # Vina 비동기 실행 → 완료 시 콜백에서 결과 표시
             except Exception as e:
                 logger.warning(f"Vina failed, falling back to empirical: {e}")
-                self.dock_result.setPlainText("🔄 Vina 실패 → 경험적 근사치 계산 중...")
+                self.dock_result.setPlainText("Vina 실패 — 로컬 경험적 점수 추정 중...")
                 QApplication.processEvents()
 
         # 경험적 근사 폴백
@@ -12091,7 +12989,7 @@ class DockingEnergyPanel(QWidget):
             self._docking_energy = energy
             self._show_docking_result(energy, method="경험적 근사")
         except Exception as e:
-            self.dock_result.setPlainText(f"⚠️ 도킹 오류: {e}")
+            self.dock_result.setPlainText(f"도킹 오류: {e}")
         finally:
             self.btn_dock.setEnabled(True)
 
@@ -12139,7 +13037,7 @@ class DockingEnergyPanel(QWidget):
 
         # 4) Vina 비동기 실행
         self.dock_result.setPlainText(
-            f"🔄 AutoDock Vina 도킹 중...\n"
+            f"AutoDock Vina 도킹 중...\n"
             f"수용체: {self._current_pdb_id}\n"
             f"결합 부위: ({center[0]:.1f}, {center[1]:.1f}, {center[2]:.1f})\n"
             f"박스 크기: {size[0]:.0f}×{size[1]:.0f}×{size[2]:.0f} Å"
@@ -12156,7 +13054,7 @@ class DockingEnergyPanel(QWidget):
             parent=self,
         )
         self._vina_thread.progress.connect(
-            lambda msg: self.dock_result.setPlainText(f"🔄 {msg}"))
+            lambda msg: self.dock_result.setPlainText(str(msg)))
         self._vina_thread.result.connect(self._on_vina_result)
         self._vina_thread.error.connect(self._on_vina_error)
         self._vina_thread.start()
@@ -12171,7 +13069,7 @@ class DockingEnergyPanel(QWidget):
             self._show_docking_result(best.affinity_kcal, method="AutoDock Vina")
             # 추가 포즈 정보
             if len(dock_result.poses) > 1:
-                extra = "\n\n📊 상위 포즈 결합 에너지:\n"
+                extra = "\n\n상위 포즈 점수:\n"
                 for i, pose in enumerate(dock_result.poses[:5]):
                     extra += f"  Pose {i+1}: {pose.affinity_kcal:.2f} kcal/mol\n"
                 self.dock_result.append(extra)
@@ -12181,19 +13079,19 @@ class DockingEnergyPanel(QWidget):
             except Exception as e:
                 logger.warning("auto 3D docking visualization failed: %s", e)
         else:
-            self.dock_result.setPlainText("⚠️ Vina 도킹 완료되었으나 포즈가 생성되지 않았습니다.")
+            self.dock_result.setPlainText("Vina가 종료되었으나 포즈가 생성되지 않았습니다.")
 
     def _on_vina_error(self, error_msg):
         """[VINA-WIRE] Vina 오류 → 경험적 근사 폴백"""
         logger.warning(f"Vina error: {error_msg}")
-        self.dock_result.setPlainText(f"⚠️ Vina 오류: {error_msg}\n\n🔄 경험적 근사치로 대체 계산 중...")
+        self.dock_result.setPlainText(f"Vina 오류: {error_msg}\n\n로컬 경험적 점수 추정으로 전환 중...")
         QApplication.processEvents()
         try:
             energy = self._empirical_docking_score()
             self._docking_energy = energy
             self._show_docking_result(energy, method="경험적 근사 (Vina 실패)")
         except Exception as e:
-            self.dock_result.setPlainText(f"⚠️ 도킹 오류: {e}")
+            self.dock_result.setPlainText(f"도킹 오류: {e}")
         finally:
             self.btn_dock.setEnabled(True)
 
@@ -12277,8 +13175,8 @@ class DockingEnergyPanel(QWidget):
         return round(score, 2)
 
     def _show_docking_result(self, energy: float, method: str = "경험적 근사"):
-        """도킹 결과 표시"""
-        # 등급 판정
+        """도킹 점수 추정 결과 표시"""
+        # 참조 구간 판정
         grade_label, grade_color, grade_ki = "비결합", "#95a5a6", ""
         for lo, hi, label, color, ki in self.THRESHOLDS:
             if lo <= energy < hi:
@@ -12286,11 +13184,14 @@ class DockingEnergyPanel(QWidget):
                 break
 
         # 결과 텍스트
+        is_real_vina_pose = "Vina" in method and "실패" not in method and bool(
+            self._vina_result and getattr(self._vina_result, "poses", None)
+        )
         lines = [
-            f"═══════ 도킹 결과 ({self._current_pdb_id}) ═══════",
+            f"═══════ 도킹 점수 컨텍스트 ({self._current_pdb_id}) ═══════",
             f"계산 방법:  {method}",
-            f"예측 결합 에너지:  ΔG = {energy:+.2f} kcal/mol",
-            f"결합 등급:  {grade_label}  ({grade_ki})",
+            f"표시 점수:  ΔG-like = {energy:+.2f} kcal/mol",
+            f"참조 구간:  {grade_label}  ({grade_ki})",
             f"─────────────────────────────────",
             f"리간드: {self._smiles[:40]}{'...' if len(self._smiles)>40 else ''}",
             f"수용체 Cα 원자 수: {len(self._receptor_atoms)}개",
@@ -12310,23 +13211,23 @@ class DockingEnergyPanel(QWidget):
         }
         refs = preset_drug_map.get(self._current_pdb_id, [])
         if refs:
-            lines.append("참조 약물 비교:")
+            lines.append("참조 약물 점수 비교(교육용):")
             for drug, ref_e in refs:
                 diff = energy - ref_e
-                sign = "↑ 강함" if diff < 0 else "↓ 약함"
+                sign = "lower score" if diff < 0 else "higher score"
                 lines.append(f"  vs {drug}: {diff:+.1f} kcal/mol ({sign})")
 
         lines.append("─────────────────────────────────")
-        if "Vina" in method:
-            lines.append("✅ AutoDock Vina 실제 도킹 결과")
+        if is_real_vina_pose:
+            lines.append("[BOUNDARY] Vina pose returned by backend; this is docking context, not biological binding proof.")
         else:
-            lines.append("📊 경험적 스코어링 함수 기반 결과 (AutoDock Vina 연동 시 정밀도 향상)")
+            lines.append("[SIMULATION_MODE] Local empirical score estimate only; no Vina pose or protein-binding proof.")
 
         self.dock_result.setPlainText("\n".join(lines))
 
-        # 결합 등급 레이블
+        # 참조 구간 레이블
         self.grade_lbl.setText(
-            f"ΔG = {energy:+.2f} kcal/mol  →  {grade_label}  ({grade_ki})")
+            f"Score estimate = {energy:+.2f} kcal/mol | reference band: {grade_label} ({grade_ki}) | not validation")
         self.grade_lbl.setStyleSheet(
             f"font-size:12pt; color:{grade_color}; padding:8px; "
             f"border:2px solid {grade_color}; border-radius:6px; "
@@ -12398,12 +13299,12 @@ class DockingEnergyPanel(QWidget):
                 popup = popup.parent()
             if popup is None or not hasattr(popup, 'viewer'):
                 logger.warning("3D 도킹 표시 건너뜀: Molecule3DPopup 뷰어를 찾을 수 없음")
-                self.dock_result.append("\n⚠️ 3D 뷰어를 찾을 수 없습니다.")
+                self.dock_result.append("\n3D 뷰어를 찾을 수 없습니다.")
                 return
             viewer = popup.viewer
             if not viewer or not hasattr(viewer, 'set_protein_data'):
                 logger.warning("3D 도킹 표시 건너뜀: 뷰어에 set_protein_data 없음")
-                self.dock_result.append("\n⚠️ 3D 뷰어가 도킹 시각화를 지원하지 않습니다.")
+                self.dock_result.append("\n3D 뷰어가 도킹 시각화를 지원하지 않습니다.")
                 return
 
             # 결합 부위 중심: DockingConfig.center 우선, 없으면 Cα 무게중심 폴백
@@ -12473,10 +13374,10 @@ class DockingEnergyPanel(QWidget):
             viewer.update()
 
             self.dock_result.append(
-                "\n🎬 3D 도킹 시각화 시작 — 뷰어에서 단백질+리간드 확인")
+                "\n3D context shown. This display is not binding-success or target-affinity evidence.")
         except Exception as e:
             logger.error(f"3D 도킹 시각화 오류: {e}")
-            self.dock_result.append(f"\n⚠️ 3D 시각화 오류: {e}")
+            self.dock_result.append(f"\n3D 시각화 오류: {e}")
 
     def set_molecule_smiles(self, smiles: str):
         self._smiles = smiles
@@ -12487,8 +13388,9 @@ class DockingEnergyPanel(QWidget):
         if parser and parser.total_energy is not None:
             e_kcal = parser.total_energy * 627.509
             self.dock_result.setPlainText(
-                f"ORCA DFT 절대 에너지: {parser.total_energy:.6f} Eh ({e_kcal:.1f} kcal/mol)\n"
-                "⚠️ 도킹 ΔG ≠ DFT 절대 에너지. 위 도킹 버튼을 사용하세요.")
+                f"ORCA DFT single-molecule energy: {parser.total_energy:.6f} Eh ({e_kcal:.1f} kcal/mol)\n"
+                "This is not docking dG or protein-binding evidence. Use docking only with receptor context."
+            )
 
 
 # ============================================================
@@ -12863,7 +13765,7 @@ class NewmanProjectionWidget(QWidget):
 
         if self._front_idx < 0 or self._back_idx < 0:
             p.setPen(QColor(150, 150, 150))
-            p.setFont(QFont("Arial", 11))
+            p.setFont(QFont(_QT_KR_FONT, 11))  # [M1461] Rule Q: 한국어 텍스트
             p.drawText(0, canvas_y, canvas_w, canvas_h,
                        Qt.AlignmentFlag.AlignCenter, "C-C 결합을 선택하세요")
             p.end()
@@ -12898,7 +13800,7 @@ class NewmanProjectionWidget(QWidget):
             p.setBrush(QBrush(QColor(255, 255, 255, 220)))
             p.setPen(QPen(label_color, 1.5))
             p.drawEllipse(QPointF(ex, ey), text_r, text_r)
-            p.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+            p.setFont(QFont(_QT_KR_FONT, 12, QFont.Weight.Bold))  # [M1461] Rule Q: offscreen 폰트
             p.drawText(int(ex - text_r), int(ey - text_r),
                        int(text_r * 2), int(text_r * 2),
                        Qt.AlignmentFlag.AlignCenter, label)
@@ -12929,13 +13831,13 @@ class NewmanProjectionWidget(QWidget):
         p.drawEllipse(QPointF(cx, cy), 5, 5)
 
         # Legend
-        p.setFont(QFont("Arial", 9))
+        p.setFont(QFont(_QT_KR_FONT, 9))  # [M1461] Rule Q: offscreen 폰트
         p.setPen(QColor(100, 100, 100))
         p.drawText(int(cx - 40), int(cy + R + bond_len + 20), "Front = dot (center)")
         p.drawText(int(cx - 40), int(cy + R + bond_len + 35), "Back = circle")
 
         # Dihedral annotation
-        p.setFont(QFont("Arial", 10, QFont.Weight.Bold))
+        p.setFont(QFont(_QT_KR_FONT, 10, QFont.Weight.Bold))  # [M1461] Rule Q: offscreen 폰트
         p.setPen(QColor(41, 121, 255))
         dihedral_text = f"Dihedral: {self._dihedral:.0f} deg"
         conf_name = self._conformer_name()
@@ -12988,6 +13890,8 @@ class Molecule3DPopup(QWidget):
 
     def __init__(self, mol_data: Molecule3DData, parent=None):
         super().__init__(parent)
+        # [M1461] Rule Q: 한국어 폰트 offscreen 캡처 전 등록 (토푸 방지)
+        _ensure_qt_korean_font_ready()
         # ★ 독립 최상위 창으로 설정 — 이동/최소화/최대화/닫기 모두 가능
         self.setWindowFlags(
             Qt.WindowType.Window |
@@ -13028,32 +13932,40 @@ class Molecule3DPopup(QWidget):
             popup_x, popup_y, popup_w, popup_h = 120, 10, 1020, 1080
         self.setGeometry(popup_x, popup_y, popup_w, popup_h)
         self.setMinimumSize(780, 940)  # keep tabs/popup workflows visible without fullscreen.
-        self.setStyleSheet("""
-            QWidget { background-color: #1e1e1e; color: #e0e0e0; }
-            QPushButton {
+        # [M1461] Rule Q: font-family 전체 stylesheet에 한국어 폰트 지정 (토푸 방지)
+        _kr_font = _QT_KR_FONT  # _ensure_qt_korean_font_ready() 호출 후 확정된 값
+        self.setStyleSheet(f"""
+            QWidget {{ background-color: #1e1e1e; color: #e0e0e0;
+                       font-family: "{_kr_font}", "Malgun Gothic", sans-serif; }}
+            QPushButton {{
                 background-color: #333; border: 1px solid #555;
                 padding: 5px 12px; border-radius: 3px; color: #e0e0e0;
-            }
-            QPushButton:hover { background-color: #444; }
-            QPushButton:checked { background-color: #2979ff; border-color: #2979ff; }
-            QLabel { color: #bbb; }
-            QSlider::groove:horizontal { height: 6px; background: #444; border-radius: 3px; }
-            QSlider::handle:horizontal {
+            }}
+            QPushButton:hover {{ background-color: #444; }}
+            QPushButton:checked {{ background-color: #2979ff; border-color: #2979ff; }}
+            QLabel {{ color: #bbb;
+                      font-family: "{_kr_font}", "Malgun Gothic", sans-serif; }}
+            QSlider::groove:horizontal {{ height: 6px; background: #444; border-radius: 3px; }}
+            QSlider::handle:horizontal {{
                 background: #2979ff; width: 14px; margin: -4px 0; border-radius: 7px;
-            }
-            QGroupBox {
+            }}
+            QGroupBox {{
                 border: 1px solid #444; border-radius: 4px;
                 margin-top: 8px; padding-top: 16px; color: #ccc;
-            }
-            QGroupBox::title { subcontrol-origin: margin; left: 10px; }
-            QTabWidget::pane { border: 1px solid #444; background: #1e1e1e; }
-            QTabBar::tab {
+                font-family: "{_kr_font}", "Malgun Gothic", sans-serif;
+            }}
+            QGroupBox::title {{ subcontrol-origin: margin; left: 10px; }}
+            QTabWidget::pane {{ border: 1px solid #444; background: #1e1e1e; }}
+            QTabBar::tab {{
                 background: #2a2a2a; border: 1px solid #444;
                 padding: 6px 16px; margin-right: 2px; color: #bbb;
-            }
-            QTabBar::tab:selected { background: #333; color: #fff; border-bottom: 2px solid #2979ff; }
-            QListWidget { background: #252525; color: #ddd; border: 1px solid #444; }
-            QTextEdit { border: 1px solid #444; }
+                font-family: "{_kr_font}", "Malgun Gothic", sans-serif;
+            }}
+            QTabBar::tab:selected {{ background: #333; color: #fff; border-bottom: 2px solid #2979ff; }}
+            QListWidget {{ background: #252525; color: #ddd; border: 1px solid #444;
+                           font-family: "{_kr_font}", "Malgun Gothic", sans-serif; }}
+            QTextEdit {{ border: 1px solid #444;
+                         font-family: "{_kr_font}", "Malgun Gothic", sans-serif; }}
         """)
 
         main_layout = QVBoxLayout()
@@ -13116,41 +14028,10 @@ class Molecule3DPopup(QWidget):
         self.orbital_combo.currentIndexChanged.connect(self._on_orbital_mode_changed)
         ctrl.addWidget(self.orbital_combo)
 
-        # [ORCA_AVAILABLE guard: THEORY-AUTO-109/110] UV-Vis/MO 버튼은 ORCA 미설치 시에도
-        # popup_uvvis/popup_molorbital 의 내부 SIMULATION_MODE 배너로 표시 제어됨.
-        # ORCA_AVAILABLE=False 시 버튼은 활성 유지하되, 팝업 내부에서 시뮬레이션 모드 표시.
-        # Rule GG: 학술 위조 방지 — 팝업이 ORCA 결과를 직접 계산한다고 주장하지 않음.
-        self.btn_uvvis_orca = QPushButton("UV-Vis")
-        self.btn_uvvis_orca.setToolTip("Open UV-Vis TD-DFT analysis (ORCA output or simulation banner)")
-        self.btn_uvvis_orca.setStyleSheet("""
-            QPushButton {
-                background-color: #5E35B1;
-                border: 1px solid #7E57C2;
-                color: #D1C4E9;
-                padding: 5px 10px;
-                border-radius: 3px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #673AB7; }
-        """)
-        self.btn_uvvis_orca.clicked.connect(self._open_uvvis_from_3d)
-        ctrl.addWidget(self.btn_uvvis_orca)
-
-        self.btn_molorbital_orca = QPushButton("MO")
-        self.btn_molorbital_orca.setToolTip("Open molecular orbital analysis (ORCA output or simulation banner)")
-        self.btn_molorbital_orca.setStyleSheet("""
-            QPushButton {
-                background-color: #00695C;
-                border: 1px solid #00897B;
-                color: #B2DFDB;
-                padding: 5px 10px;
-                border-radius: 3px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #00796B; }
-        """)
-        self.btn_molorbital_orca.clicked.connect(self._open_molorbital_from_3d)
-        ctrl.addWidget(self.btn_molorbital_orca)
+        # ORCA-labeled UV-Vis/MO analysis routes are preserved as backend handlers,
+        # but are not exposed as visible toolbar controls in the 3D popup.
+        self.btn_uvvis_orca = None
+        self.btn_molorbital_orca = None
 
         ctrl.addSpacing(12)
         ctrl.addWidget(QLabel("Zoom:"))
@@ -13182,145 +14063,13 @@ class Molecule3DPopup(QWidget):
 
         ctrl.addStretch()
 
-        # 정밀 DFT (ORCA) 버튼 — B3LYP/6-31G* Opt+Freq 비동기 계산
-        self.btn_dft = QPushButton("⚛ 정밀 DFT (ORCA)")
-        self.btn_dft.setToolTip(
-            "ORCA B3LYP/6-31G* 정밀 DFT 계산 실행\n"
-            "• 구조 최적화 (Opt)\n"
-            "• IR 진동수 계산 (Freq)\n"
-            "• Mulliken 전하 분석\n"
-            "⚠ 분자 크기에 따라 수 분~수십 분 소요"
-        )
-        self.btn_dft.setStyleSheet("""
-            QPushButton {
-                background-color: #4A148C;
-                border: 1px solid #7B1FA2;
-                color: #CE93D8;
-                padding: 5px 12px;
-                border-radius: 3px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #6A1B9A; }
-            QPushButton:disabled {
-                background-color: #333;
-                border-color: #555;
-                color: #777;
-            }
-        """)
-        self.btn_dft.clicked.connect(self._start_dft_calculation)
-        ctrl.addWidget(self.btn_dft)
-
-        # DFT 진행 상태 표시 라벨 (숨김 상태로 시작)
+        # DFT/ORCA backend is retained for provenance/import compatibility, but
+        # the popup toolbar no longer exposes a manual calculation route.
+        self.btn_dft = None
         self._dft_status_label = QLabel("")
         self._dft_status_label.setStyleSheet(
             "color: #CE93D8; font-size: 11px; padding: 0 4px;")
         self._dft_status_label.setVisible(False)
-        ctrl.addWidget(self._dft_status_label)
-
-        # [M438] ORCA 미설치 시 정밀 DFT 버튼 즉시 disable + tooltip 갱신
-        # [M529] CHEMGRID_DISABLE_ORCA=1 시 자동 spawn 차단 — 다이얼로그 폭주 방지
-        # [M911] ORCA_DEGRADED_REMOTE_DFT_MISLABEL: degraded 시 [REMOTE_DFT] 라벨 금지
-        #   orca_exists=False / api_key_set=False 상태에서 [REMOTE_DFT] 라벨 표시 차단.
-        #   _check_orca_remote_available()는 strict-ready 시만 True 반환하므로 이미
-        #   올바른 필터를 제공하지만, degraded 서버가 연결된 경우(configured=True &
-        #   ready=False)에도 DFT 비활성 + [DFT 미연결] 라벨을 명시적으로 표시해야 함.
-        # Rule M: silent failure 금지 — 버튼 클릭 전에 사용자가 인지해야 함
-        # Rule I: 거짓 메시지("Using built-in engine") 금지 — 실제 DFT 엔진 없음
-        import os as _os
-        _orca_disabled_by_env = _os.environ.get("CHEMGRID_DISABLE_ORCA", "0") == "1"
-        _orca_at_init = _find_orca_exe()  # _find_orca_exe도 DISABLE 체크 포함
-        _orca_wsl_at_init = (not _orca_disabled_by_env) and _check_orca_wsl_available()
-        # [M911] remote health status 캐싱: degraded 감지를 위해 raw status 별도 보존
-        _orca_remote_health_raw: dict = {}
-        _orca_remote_configured = False
-        if not _orca_disabled_by_env:
-            try:
-                from orca_remote_client import (  # type: ignore
-                    is_remote_configured as _irc,
-                    quick_health_check as _qhc,
-                )
-                _orca_remote_configured = bool(_irc())
-                if _orca_remote_configured:
-                    _orca_remote_health_raw = _qhc() or {}
-                    if not isinstance(_orca_remote_health_raw, dict):
-                        logger.warning(
-                            "[popup_3d][M911] quick_health_check 반환 타입 오류: %s",
-                            type(_orca_remote_health_raw).__name__,
-                        )
-                        _orca_remote_health_raw = {}
-            except Exception as _e_rc:
-                logger.warning("[popup_3d][M911] remote health 캐시 실패: %s", _e_rc)
-        # strict-ready 판정 (orca_exists=False / api_key_set=False 이면 False)
-        _orca_remote_at_init = (not _orca_disabled_by_env) and _check_orca_remote_available()
-        # [M911] degraded 감지: configured=True & ready=False → DFT 미연결
-        _orca_remote_degraded = (
-            _orca_remote_configured
-            and not _orca_remote_at_init
-            and not _orca_disabled_by_env
-        )
-        # health 세부 텍스트 (degraded 시 사용자 안내용)
-        _remote_health_str = (
-            _orca_remote_health_raw.get("health", "unknown")
-            if isinstance(_orca_remote_health_raw, dict)
-            else "unknown"
-        )
-        if _orca_disabled_by_env:
-            # [M529] 환경변수로 명시 차단 — btn_dft 비활성화 + 명시적 안내
-            self.btn_dft.setEnabled(False)
-            self.btn_dft.setToolTip(
-                "ORCA 차단됨 (CHEMGRID_DISABLE_ORCA=1)\n"
-                "사용 재개: 환경변수 CHEMGRID_DISABLE_ORCA=0 설정 후 재시작"
-            )
-            self._dft_status_label.setText(
-                "ORCA 차단됨 (CHEMGRID_DISABLE_ORCA=1) — 환경변수로 비활성화"
-            )
-            self._dft_status_label.setStyleSheet(
-                "color: #FFCC80; font-size: 11px; padding: 0 4px;")
-            self._dft_status_label.setVisible(False)
-            logger.debug(
-                "[popup_3d] CHEMGRID_DISABLE_ORCA=1 — btn_dft 비활성화 (사이클 자동 spawn 차단)"
-            )
-        elif _orca_at_init is None and not _orca_wsl_at_init and not _orca_remote_at_init:
-            _orca_status_text = _get_orca_simulation_banner()
-            _orca_status_line = (
-                _orca_status_text.splitlines()[0]
-                if isinstance(_orca_status_text, str) and _orca_status_text.splitlines()
-                else "SIMULATION_MODE: ORCA unavailable"
-            )
-            self.btn_dft.setEnabled(False)
-            self.btn_dft.setToolTip(_orca_status_text)
-            self._dft_status_label.setText(_orca_status_line)
-            self._dft_status_label.setStyleSheet(
-                "color: #FFCC80; font-size: 11px; padding: 0 4px;")
-            self._dft_status_label.setVisible(True)
-            logger.info(
-                "[popup_3d] ORCA DFT disabled with explicit fallback status: %s",
-                _orca_status_line,
-            )
-        else:
-            if _orca_at_init is not None:
-                logger.info("[popup_3d] ORCA 발견: %s — btn_dft 활성화", _orca_at_init)
-            elif _orca_wsl_at_init:
-                self.btn_dft.setToolTip(
-                    "ORCA WSL backend 연결됨\n"
-                    "Linux ORCA 6.1.x via WSL로 정밀 DFT 계산 실행\n"
-                    "⚠ 분자 크기에 따라 수 분~수십 분 소요"
-                )
-                self._dft_status_label.setText("ORCA WSL backend 연결됨")
-                self._dft_status_label.setStyleSheet(
-                    "color: #A5D6A7; font-size: 11px; padding: 0 4px;")
-                self._dft_status_label.setVisible(True)
-                logger.info("[popup_3d] ORCA WSL backend 발견 — btn_dft 활성화")
-            else:
-                self.btn_dft.setToolTip(
-                    "ORCA remote API backend connected via ORCA_SERVER_URL\n"
-                    "DFT requests are sent to the configured ChemGrid ORCA server."
-                )
-                self._dft_status_label.setText("ORCA remote API backend connected")
-                self._dft_status_label.setStyleSheet(
-                    "color: #A5D6A7; font-size: 11px; padding: 0 4px;")
-                self._dft_status_label.setVisible(True)
-                logger.info("[popup_3d] ORCA remote backend detected — btn_dft enabled")
 
         # DFT 계산 스레드 참조 (GC 방지)
         self._dft_thread: Optional[DFTCalculatorThread] = None
@@ -13332,11 +14081,7 @@ class Molecule3DPopup(QWidget):
         # 💾 내보내기 버튼 — XYZ/ORCA/Gaussian/MOL 다중 형식 지원
         self.btn_export = QPushButton("💾 내보내기")
         self.btn_export.setToolTip(
-            "3D 구조를 파일로 저장\n"
-            "• XYZ  — ORCA/Avogadro/VMD\n"
-            "• ORCA .inp — DFT 계산 템플릿\n"
-            "• Gaussian .gjf — GaussView\n"
-            "• MDL .mol — Avogadro/ChemDraw"
+            "3D structure export options"
         )
         self.btn_export.setStyleSheet("""
             QPushButton {
@@ -13359,7 +14104,6 @@ class Molecule3DPopup(QWidget):
             "• 리드 최적화 (신약 설계)\n"
             "• ADMET 분석\n"
             "• AlphaFold 구조 예측\n"
-            "• 분자 도킹\n"
             "• 신약 스크리닝"
         )
         self.btn_advanced.setStyleSheet("""
@@ -13379,12 +14123,11 @@ class Molecule3DPopup(QWidget):
             "QMenu { background-color: #2a2a2a; color: #ddd; border: 1px solid #555; }"
             "QMenu::item:selected { background-color: #1565C0; }"
         )
-        adv_menu.addAction("리드 최적화 (신약 설계)", self._open_lead_optimizer_from_3d)
+        adv_menu.addAction("Lead Optimizer (advanced sandbox)", self._open_lead_optimizer_from_3d)
         adv_menu.addAction("ADMET 분석", self._open_admet_from_3d)
         adv_menu.addSeparator()
-        adv_menu.addAction("AlphaFold 구조 예측", self._open_alphafold_from_3d)
-        adv_menu.addAction("분자 도킹", self._open_docking_from_3d)
-        adv_menu.addAction("신약 스크리닝", self._open_drug_screening_from_3d)
+        adv_menu.addAction("AlphaFold/PDB reference lookup", self._open_alphafold_from_3d)
+        adv_menu.addAction("Drug Screening (local/advanced)", self._open_drug_screening_from_3d)
         self.btn_advanced.setMenu(adv_menu)
         ctrl.addWidget(self.btn_advanced)
 
@@ -13422,7 +14165,7 @@ class Molecule3DPopup(QWidget):
             self.tabs = QTabWidget()
             route_evidence_label = QLabel(
                 "Route evidence mode: heavy analysis tabs are deferred; "
-                "UV-Vis and MO controls above remain real clickable routes."
+                "Only the 3D viewer controls remain available in this fast mode."
             )
             route_evidence_label.setWordWrap(True)
             route_evidence_label.setStyleSheet(
@@ -13481,7 +14224,7 @@ class Molecule3DPopup(QWidget):
         # [M688 Fix item22] 사용자 요청: "화학적 특성 분석" → "화학적 특성" 으로 약칭.
         self.tabs.addTab(self.tab_chem_char, "🔬 화학적 특성")  # tab 3
         self.tabs.addTab(self.tab_admet, "💊 ADMET")          # tab 4
-        self.tabs.addTab(self.tab_docking, "🧬 도킹 에너지")  # tab 5
+        self.tabs.addTab(self.tab_docking, "도킹 점수")  # tab 5
 
         # 알파폴드/합성 탭
         self.tab_alphafold = self._create_alphafold_synthesis_tab()
@@ -13814,6 +14557,16 @@ class Molecule3DPopup(QWidget):
                 f"ORCA 파일 로드 중 오류 발생:\n{e}"
             )
 
+    def _set_dft_button_state(self, enabled: Optional[bool] = None, text: Optional[str] = None):
+        """No-op unless a legacy DFT toolbar button exists."""
+        button = getattr(self, "btn_dft", None)
+        if button is None:
+            return
+        if enabled is not None:
+            button.setEnabled(enabled)
+        if text is not None:
+            button.setText(text)
+
     # ================================================================
     # DFT Calculation (ORCA B3LYP/6-31G* Opt+Freq)
     # ================================================================
@@ -13851,12 +14604,12 @@ class Molecule3DPopup(QWidget):
                 "color: #EF5350; font-size: 11px; padding: 0 4px;")
             self._dft_status_label.setVisible(True)
             # 버튼도 disable (이미 초기화 시 disable됐어야 하나 혹시 재호출 대비)
-            self.btn_dft.setEnabled(False)
+            self._set_dft_button_state(enabled=False)
             return
 
         # UI 피드백: 버튼 비활성화 + 상태 표시
-        self.btn_dft.setEnabled(False)
-        self.btn_dft.setText("⏳ DFT 계산 중...")
+        self._set_dft_button_state(enabled=False)
+        self._set_dft_button_state(text="⏳ DFT 계산 중...")
         self._dft_status_label.setText("ORCA 초기화 중...")
         self._dft_status_label.setStyleSheet(
             "color: #CE93D8; font-size: 11px; padding: 0 4px;")
@@ -13910,8 +14663,8 @@ class Molecule3DPopup(QWidget):
             "color: #66BB6A; font-size: 11px; padding: 0 4px;")
 
         # 버튼 복원
-        self.btn_dft.setEnabled(True)
-        self.btn_dft.setText("⚛ 정밀 DFT (ORCA)")
+        self._set_dft_button_state(enabled=True)
+        self._set_dft_button_state(text="⚛ 정밀 DFT (ORCA)")
 
         # AI 분석 탭에도 DFT 에너지 정보 갱신
         orca_info = {}
@@ -13991,8 +14744,8 @@ class Molecule3DPopup(QWidget):
             logger.warning("[B10-5] spectrum fallback label update failed: %s", _e)
 
         # 버튼 복원
-        self.btn_dft.setEnabled(True)
-        self.btn_dft.setText("⚛ 정밀 DFT (ORCA)")
+        self._set_dft_button_state(enabled=True)
+        self._set_dft_button_state(text="⚛ 정밀 DFT (ORCA)")
 
     def _on_orbital_mode_changed(self, index: int):
         """[CHEM-8] 오비탈 모드 콤보 변경 핸들러."""
@@ -14086,8 +14839,9 @@ class Molecule3DPopup(QWidget):
         # [VIB-SPEC] 진동 원자 하이라이트 설정
         if (self.viewer and self.tab_vibration._vib_result
                 and mode_idx < len(self.tab_vibration._vib_result.modes)):
-            mode = self.tab_vibration._vib_result.modes[mode_idx]
-            self.viewer._vib_highlight_indices = set(mode.bond_indices)
+            self.viewer._vib_highlight_indices = set(
+                _vibration_active_atom_indices(vectors)
+            )
         elif self.viewer:
             self.viewer._vib_highlight_indices = set()
 
@@ -14451,6 +15205,38 @@ class Molecule3DPopup(QWidget):
         )
         outer.addWidget(citation_lbl)
 
+        guide_group = QGroupBox("Conformer learner guide")
+        guide_group.setObjectName("d891_item019_conformer_guidance_group")
+        guide_group.setStyleSheet(
+            "QGroupBox { border: 1px solid #4a9eff; border-radius: 4px; "
+            "margin-top: 8px; padding: 8px; color: #bbdefb; "
+            "font-weight: bold; }"
+            "QGroupBox::title { subcontrol-origin: margin; left: 10px; "
+            "padding: 0 4px; }"
+        )
+        guide_group.setMinimumHeight(132)
+        guide_layout = QVBoxLayout(guide_group)
+        guide_layout.setContentsMargins(8, 8, 8, 8)
+        guide_text = QLabel(
+            "What this tab means: conformers are different 3D shapes of the same molecule; "
+            "the atoms and bonds stay the same, but rotatable bonds change the shape.\n"
+            "Why it is useful: check conformers before drug-design or ADMET-style reasoning "
+            "when a flexible molecule may bind, cross a membrane, or expose groups differently.\n"
+            "How to read results: lower Delta E is closer to the lowest-energy candidate; "
+            "RMSD measures 3D shape difference, so low RMSD is similar and high RMSD is distinct.\n"
+            "Engine boundary: yellow SIMULATION_MODE = RDKit ETKDG/MMFF fallback, not "
+            "CREST/xTB evidence; not DFT, ORCA, Vina docking, or experimental validation."
+        )
+        guide_text.setObjectName("d891_item019_conformer_guidance_text")
+        guide_text.setWordWrap(True)
+        guide_text.setStyleSheet(
+            "color: #e3f2fd; font-size: 10pt; line-height: 135%; "
+            "font-weight: normal;"
+        )
+        guide_text.setMinimumHeight(96)
+        guide_layout.addWidget(guide_text)
+        outer.addWidget(guide_group)
+
         # ── 옵션 + 실행 버튼 ──
         opt_group = QGroupBox("🌀 CREST 옵션")
         opt_group.setStyleSheet("QGroupBox { font-weight: bold; color: #64b5f6; }")
@@ -14805,7 +15591,7 @@ class Molecule3DPopup(QWidget):
 
         # AlphaFold 열기 버튼
         af_btn_row = QHBoxLayout()
-        self._btn_af_open = QPushButton("🧬 AlphaFold 구조 예측 열기")
+        self._btn_af_open = QPushButton("AlphaFold/PDB reference lookup")
         self._btn_af_open.setStyleSheet(
             "QPushButton { background: #1565C0; color: #90CAF9; border: 1px solid #1976D2; "
             "padding: 7px 14px; border-radius: 4px; font-weight: bold; }"
@@ -14827,7 +15613,7 @@ class Molecule3DPopup(QWidget):
         self._drug_goal_combo.setStyleSheet("padding: 6px; font-size: 12px;")
         self._drug_goal_combo.addItems([
             "🎯 항암 효과를 추가하고 싶어",
-            "🧠 뇌까지 약이 도달하게 하고 싶어 (BBB 투과)",
+            "🧠 TPSA/LogP descriptor boundary를 확인하고 싶어 (BBB endpoint 아님)",
             "⏱️ 약효가 더 오래 지속되게 하고 싶어",
             "💧 물에 더 잘 녹게 하고 싶어",
             "🛡️ 부작용을 줄이고 싶어 (선택성 향상)",
@@ -14838,7 +15624,7 @@ class Molecule3DPopup(QWidget):
 
         # 직접 입력 필드 (기본 숨김)
         self._drug_custom_goal = QLineEdit()
-        self._drug_custom_goal.setPlaceholderText("예: 통증을 줄이면서 위장에 안전한 약을 만들고 싶어")
+        self._drug_custom_goal.setPlaceholderText("예: 구조 경고와 용해도 descriptor를 함께 보고 싶어")
         self._drug_custom_goal.setStyleSheet("padding: 6px;")
         self._drug_custom_goal.hide()
         goal_layout.addWidget(self._drug_custom_goal)
@@ -14850,7 +15636,7 @@ class Molecule3DPopup(QWidget):
 
         # ── 실행 버튼 ──
         btn_row = QHBoxLayout()
-        self._btn_drug_start = QPushButton("🚀 자동 분석 시작!")
+        self._btn_drug_start = QPushButton("Run local design estimate")
         self._btn_drug_start.setStyleSheet(
             "QPushButton { background: #e65100; color: white; padding: 14px 24px; "
             "border-radius: 8px; font-size: 15px; font-weight: bold; }"
@@ -14858,6 +15644,9 @@ class Molecule3DPopup(QWidget):
             "QPushButton:disabled { background: #555; color: #888; }"
         )
         self._btn_drug_start.clicked.connect(self._run_drug_design)
+        self._btn_drug_start.setToolTip(
+            "Local RDKit/ADMET-style estimate only. No DrugBank, protein service, Vina, or lead success is implied."
+        )
         btn_row.addStretch()
         btn_row.addWidget(self._btn_drug_start)
         btn_row.addStretch()
@@ -14872,7 +15661,9 @@ class Molecule3DPopup(QWidget):
         self._drug_progress.hide()
         layout.addWidget(self._drug_progress)
 
-        self._drug_status = QLabel("")
+        self._drug_status = QLabel(
+            "Local estimate only: no DrugBank match, protein service, Vina pose, or lead-success evidence loaded."
+        )
         self._drug_status.setStyleSheet("color: #aaa; font-size: 11px;")
         self._drug_status.setWordWrap(True)
         layout.addWidget(self._drug_status)
@@ -14889,13 +15680,17 @@ class Molecule3DPopup(QWidget):
         layout.addWidget(self._drug_result)
 
         # ── 상세 분석 버튼 (결과 나온 후 표시) ──
-        self._btn_drug_detail = QPushButton("📊 상세 분석 환경 열기 (리드 최적화)")
+        self._btn_drug_detail = QPushButton("Open Lead Optimizer sandbox")
         self._btn_drug_detail.setStyleSheet(
             "QPushButton { background: #1565c0; color: white; padding: 8px; "
             "border-radius: 4px; font-weight: bold; }"
             "QPushButton:hover { background: #1976d2; }"
         )
         self._btn_drug_detail.clicked.connect(self._open_lead_optimizer)
+        self._btn_drug_detail.setEnabled(False)
+        self._btn_drug_detail.setToolTip(
+            "Route preserved but unavailable from quick estimate until a separate proven lead workflow exists."
+        )
         self._btn_drug_detail.hide()
         layout.addWidget(self._btn_drug_detail)
 
@@ -14911,7 +15706,7 @@ class Molecule3DPopup(QWidget):
         goal_idx = self._drug_goal_combo.currentIndex()
         goal_map = {
             0: "항암 효과 추가",
-            1: "BBB 투과 개선",
+            1: "BBB descriptor boundary review",
             2: "지속 시간 개선",
             3: "수용성 개선",
             4: "선택성 향상",
@@ -14931,7 +15726,7 @@ class Molecule3DPopup(QWidget):
         self._btn_drug_start.setEnabled(False)
         self._drug_progress.show()
         self._drug_progress.setRange(0, 0)  # indeterminate
-        self._drug_status.setText(f"🔄 '{goal}' 방향으로 유도체 탐색 중...")
+        self._drug_status.setText(f"Running local derivative estimate for '{goal}'. No protein-service claim.")
         self._drug_result.hide()
         self._btn_drug_detail.hide()
 
@@ -14981,25 +15776,30 @@ class Molecule3DPopup(QWidget):
                     variants.sort(key=lambda x: x.composite_rank, reverse=True)
 
                     # Build result text
-                    lines = [f"✅ {len(variants)}개 유도체 발견! (목표: {self._goal})\n"]
+                    lines = [f"Local derivative candidates: {len(variants)} (goal: {self._goal})\n"]
+                    lines.append("[SIMULATION_MODE] RDKit/ADMET-style ranking only; no DrugBank, protein, Vina, BBB endpoint/model, PK/safety, or lead-success evidence.")
                     lines.append(f"전략: {strategy.name_kr}")
                     if strategy.rationale:
                         lines.append(f"근거: {strategy.rationale[:80]}\n")
 
-                    lines.append("━━━ TOP 5 후보 ━━━")
+                    lines.append("Top 5 candidates (ranked estimates):")
                     for i, v in enumerate(variants[:5]):
                         tier_emoji = {"A": "🟢", "B": "🟡", "C": "🔴"}.get(v.tier, "⚪")
-                        bbb = f"BBB={'통과' if v.bbb_score > 0.5 else '미통과'}" if v.bbb_score else ""
+                        bbb = (
+                            f"BBB descriptor score={v.bbb_score:.2f}; not BBB evidence"
+                            if getattr(v, "bbb_score", None) is not None
+                            else "BBB descriptor unavailable"
+                        )
                         lines.append(
-                            f"\n{i+1}위 {tier_emoji} [{v.tier}등급] 점수: {v.composite_rank:.2f}"
+                            f"\nEstimated rank {i+1} {tier_emoji} [{v.tier}] score: {v.composite_rank:.2f}"
                         )
                         lines.append(f"   변형: {v.modification_detail}")
                         lines.append(f"   SMILES: {v.smiles[:50]}")
                         lines.append(f"   약물성(QED): {v.qed_score:.2f} | "
                                      f"합성난이도: {v.sa_score:.1f}/10 | {bbb}")
 
-                    lines.append("\n💡 '상세 분석 환경'에서 도킹 시뮬레이션, 합성 경로,")
-                    lines.append("   ADMET 분석을 더 자세히 확인할 수 있습니다.")
+                    lines.append("\nLead Optimizer remains an advanced sandbox; it does not validate binding or optimization success.")
+                    lines.append("Use only as local estimate context unless backend evidence is separately loaded.")
 
                     self.finished.emit("\n".join(lines))
                 except Exception as e:
@@ -15011,8 +15811,8 @@ class Molecule3DPopup(QWidget):
             self._btn_drug_start.setEnabled(True)
             self._drug_result.setPlainText(text)
             self._drug_result.show()
-            self._btn_drug_detail.show()
-            self._drug_status.setText("✅ 분석 완료!")
+            self._btn_drug_detail.hide()
+            self._drug_status.setText("Local estimate available. No DrugBank/protein/Vina/lead-success evidence is loaded.")
 
         def _on_error(msg):
             self._drug_progress.hide()
@@ -15028,9 +15828,9 @@ class Molecule3DPopup(QWidget):
         """AlphaFold 팝업 열기."""
         try:
             from popup_alphafold import AlphaFoldPopup
-            popup = AlphaFoldPopup(parent=self)
             # 현재 분자 SMILES를 팝업에 전달 (PDB ID 검색창 미리 채우기)
             smiles = getattr(self, '_current_smiles', '') or ''
+            popup = AlphaFoldPopup(parent=self, initial_smiles=smiles)
             if smiles and hasattr(popup, 'pdb_id_input'):
                 popup.pdb_id_input.setPlaceholderText(
                     f"현재 분자: {smiles[:30]}… (PDB ID 입력 또는 아래 목록 선택)")
@@ -15048,11 +15848,10 @@ class Molecule3DPopup(QWidget):
         """
         try:
             from popup_alphafold import AlphaFoldPopup
-            popup = AlphaFoldPopup(parent=self)
-
             idx = self._af_target_combo.currentIndex()
             pdb_val = self._af_target_combo.itemData(idx) if idx >= 0 else ""
             smiles = getattr(self, '_current_smiles', '') or ''
+            popup = AlphaFoldPopup(parent=self, initial_smiles=smiles)
 
             if pdb_val == "__custom__":
                 custom_text = self._af_custom_input.text().strip()
@@ -15116,7 +15915,7 @@ class Molecule3DPopup(QWidget):
                         if hasattr(tab_d, 'receptor_info'):
                             tab_d.receptor_info.setText(
                                 f"[신약설계 탭 연동] PDB {pdb_val} — "
-                                "'도킹 에너지' 탭에서 수용체 로드 가능"
+                                "'도킹 점수' 탭에서 수용체 로드 가능"
                             )
                         if hasattr(tab_d, 'btn_dock') and smiles:
                             tab_d.btn_dock.setEnabled(True)
@@ -15191,15 +15990,9 @@ class Molecule3DPopup(QWidget):
         self._open_alphafold()
 
     def _open_docking_from_3d(self):
-        """고급 도구 메뉴에서 분자 도킹 팝업 열기."""
-        try:
-            from popup_docking import DockingPopup
-            popup = DockingPopup(parent=self)
-            popup.exec()
-        except Exception as e:
-            logger.warning("도킹 팝업 열기 실패: %s", e)
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, "분자 도킹", f"도킹 팝업 열기 실패: {e}")
+        """Manual docking popup route disabled for 3D popup containment."""
+        logger.info("Manual docking popup route disabled in Molecule3DPopup advanced tools")
+        return
 
     def _open_drug_screening_from_3d(self):
         """고급 도구 메뉴에서 신약 스크리닝 팝업 열기."""
@@ -15216,6 +16009,12 @@ class Molecule3DPopup(QWidget):
                 names_list=names_list,
                 parent=self,
             )
+            if hasattr(popup, "setWindowTitle"):
+                popup.setWindowTitle("Drug Screening - local/advanced, unavailable proof boundary")
+            if hasattr(popup, "status_label"):
+                popup.status_label.setText(
+                    "Local screening route only. No DrugBank service, protein service, Vina, or binding-success evidence is implied."
+                )
             popup.exec()
         except Exception as e:
             logger.warning("신약 스크리닝 팝업 열기 실패: %s", e)
