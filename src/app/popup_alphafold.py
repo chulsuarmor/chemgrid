@@ -4,9 +4,9 @@ ChemGrid: AlphaFold 신약개발 통합 대시보드 — M463 W_ALPHAFOLD_STUDEN
 
 6단계 학생 경험 흐름:
   Tab 1: 단계 1 수용체 선택  — 드롭다운(COX-2/EGFR/NMDA/4PE5), UniProt ID 표시
-  Tab 2: 단계 2 알파폴드 미리보기 — 외부 AlphaFold DB 링크 (M460 보존)
+  Tab 2: 단계 2 알파폴드 미리보기 — 외부 AlphaFold EBI 링크 (M460 보존)
   Tab 3: 단계 3 PDB 계산    — AlphaFold API → 잔기/pLDDT/결합부위 추출
-  Tab 4: 단계 4 결합 데이터 — pLDDT 차트 + 잔기/결합부위/도킹 affinity 표 (M440 보존)
+  Tab 4: 단계 4 결합 데이터 — pLDDT 차트 + 잔기/결합부위/휴리스틱 도킹 행 (M440 보존)
   Tab 5: 단계 5 PDBe Mol 시각화 — 학계 표준 외부 시각화 버튼 (Sehnal 2021)
   Tab 6: 단계 6 DryLab Report — 학술지 양식 자동 생성 버튼
 
@@ -23,7 +23,7 @@ import math
 import os
 import re
 from pathlib import Path  # [M675 FIX] pathlib import 누락으로 _on_download_alphafold_pdb 크래시 (사용자 LV.14 item 1+7)
-from typing import Optional, List, Tuple, Dict
+from typing import Optional, List, Tuple, Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -34,16 +34,51 @@ try:
         QTableWidget, QTableWidgetItem, QGroupBox, QFormLayout,
         QProgressBar, QTextEdit, QWidget, QHeaderView, QSizePolicy,
         QSpinBox, QComboBox, QCheckBox, QApplication, QFrame,
-        QScrollArea,
+        QScrollArea, QAbstractItemView,
     )
     from PyQt6.QtCore import Qt, QThread, pyqtSignal, QUrl
     from PyQt6.QtGui import (
-        QFont, QColor, QDesktopServices,
+        QFont, QColor, QBrush, QDesktopServices, QFontDatabase,
     )
     PYQT_AVAILABLE = True
 except ImportError:
     PYQT_AVAILABLE = False
     logger.warning("PyQt6 not available - AlphaFold popup UI disabled")
+
+
+_QT_KR_FONT = "Malgun Gothic"
+_QT_KR_FONT_READY = False
+
+
+def _ensure_qt_korean_font_ready() -> str:
+    """Register a Korean-capable Qt font before popup widgets paint."""
+    global _QT_KR_FONT, _QT_KR_FONT_READY
+    if _QT_KR_FONT_READY:
+        return _QT_KR_FONT
+    if not PYQT_AVAILABLE:
+        return _QT_KR_FONT
+    app = QApplication.instance()
+    if app is None:
+        return _QT_KR_FONT
+    for font_path in (
+        r"C:\Windows\Fonts\malgun.ttf",
+        r"C:\Windows\Fonts\malgunbd.ttf",
+        "C:/Windows/Fonts/NanumGothic.ttf",
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+    ):
+        try:
+            if os.path.exists(font_path):
+                font_id = QFontDatabase.addApplicationFont(font_path)
+                if font_id >= 0:
+                    families = QFontDatabase.applicationFontFamilies(font_id)
+                    if families:
+                        _QT_KR_FONT = families[0]
+                        break
+        except Exception as exc:
+            logger.warning("[D891-R3] AlphaFold Korean font load failed: %s", exc)
+    app.setFont(QFont(_QT_KR_FONT, 10))
+    _QT_KR_FONT_READY = True
+    return _QT_KR_FONT
 
 try:
     from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -220,6 +255,76 @@ def _get_alphafold_search_url(uniprot_id: str = "", protein_name: str = "") -> s
     return "https://alphafold.ebi.ac.uk/search/text/human+protein"
 
 
+def _get_alphafold_model_url(uniprot_id: str) -> str:
+    """Return the legacy AlphaFold model-file route; not used by selected-protein UI."""
+    if not isinstance(uniprot_id, str):
+        logger.warning("_get_alphafold_model_url: UniProt ID is not str: %r", uniprot_id)
+        return ""
+    uid = uniprot_id.strip().upper()
+    if not uid or not re.match(r'^[A-Z][0-9][A-Z0-9]{3}[0-9]$', uid):
+        logger.warning("_get_alphafold_model_url: invalid UniProt ID: %r", uniprot_id)
+        return ""
+    return f"https://alphafold.ebi.ac.uk/entry/AF-{uid}-F1"
+
+
+def _get_blocked_pdbe_alphafold_url(uniprot_id: str) -> str:
+    """Return the rejected PDBe AlphaFold candidate URL for boundary labeling."""
+    if not isinstance(uniprot_id, str):
+        logger.warning("_get_blocked_pdbe_alphafold_url: UniProt ID is not str: %r", uniprot_id)
+        return ""
+    uid = uniprot_id.strip().upper()
+    if not uid or not re.match(r'^[A-Z][0-9][A-Z0-9]{3}[0-9]$', uid):
+        logger.warning("_get_blocked_pdbe_alphafold_url: invalid UniProt ID: %r", uniprot_id)
+        return ""
+    return f"https://www.ebi.ac.uk/pdbe/entry/alphafold/AF-{uid}-F1"
+
+
+def _get_experimental_pdb_urls(pdb_id: str) -> Dict[str, str]:
+    """Return distinct PDBe/RCSB experimental PDB routes for a 4-character PDB ID."""
+    if not isinstance(pdb_id, str):
+        logger.warning("_get_experimental_pdb_urls: PDB ID is not str: %r", pdb_id)
+        return {}
+    pid = pdb_id.strip().upper()
+    if not re.match(r"^[A-Z0-9]{4}$", pid):
+        logger.warning("_get_experimental_pdb_urls: invalid PDB ID: %r", pdb_id)
+        return {}
+    return {
+        "pdbe_pdb": f"https://www.ebi.ac.uk/pdbe/entry/pdb/{pid.lower()}",
+        "rcsb_pdb": f"https://www.rcsb.org/structure/{pid}",
+    }
+
+
+def _get_pubchem_smiles_sdf_url(smiles: str) -> str:
+    """Build the PubChem SMILES SDF route used by official 3Dmol URL loading."""
+    if not isinstance(smiles, str):
+        logger.warning("_get_pubchem_smiles_sdf_url: smiles is not str: %r", smiles)
+        return ""
+    raw = smiles.strip()
+    if not raw:
+        logger.warning("_get_pubchem_smiles_sdf_url: empty SMILES")
+        return ""
+    import urllib.parse as _up
+    encoded_smiles = _up.quote(raw, safe="")
+    return (
+        "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/"
+        f"{encoded_smiles}/SDF?record_type=3d"
+    )
+
+
+def _get_official_3dmol_pubchem_sdf_url(smiles: str) -> str:
+    """Build official 3Dmol URL route using a PubChem SDF URL, not raw smiles=."""
+    sdf_url = _get_pubchem_smiles_sdf_url(smiles)
+    if not sdf_url:
+        logger.warning("_get_official_3dmol_pubchem_sdf_url: PubChem SDF URL unavailable")
+        return ""
+    import urllib.parse as _up
+    encoded_sdf_url = _up.quote(sdf_url, safe="")
+    return (
+        "https://3dmol.csb.pitt.edu/viewer.html?"
+        f"url={encoded_sdf_url}&type=sdf&style=stick"
+    )
+
+
 def _get_molstar_smiles_url(smiles: str) -> str:
     """사용자 SMILES → Mol* viewer URL 생성 (격분 #30 — M852).
 
@@ -245,15 +350,36 @@ def _get_molstar_smiles_url(smiles: str) -> str:
         logger.warning("_get_molstar_smiles_url: 빈 SMILES")
         return ""
 
-    import urllib.parse as _up
-
-    # 방법 A: 3Dmol.js 공개 뷰어 — SMILES URL 파라미터 지원
-    # https://3dmol.csb.pitt.edu/viewer.html?smiles=<url_encoded>
-    encoded = _up.quote(smiles, safe="")
-    url_3dmol = f"https://3dmol.csb.pitt.edu/viewer.html?smiles={encoded}"
+    url_3dmol = _get_official_3dmol_pubchem_sdf_url(smiles)
 
     logger.info("_get_molstar_smiles_url: %s", url_3dmol)
     return url_3dmol
+
+
+def _validate_3dmol_smiles(smiles: str) -> Tuple[str, str]:
+    """Validate and canonicalize SMILES before using it in a 3Dmol URL."""
+    if not isinstance(smiles, str) or not smiles.strip():
+        logger.warning("_validate_3dmol_smiles: empty or non-string SMILES: %r", smiles)
+        return "", "SMILES is empty."
+    raw = smiles.strip()
+    try:
+        from rdkit import Chem as _Chem
+    except ImportError:
+        logger.warning("_validate_3dmol_smiles: RDKit unavailable; using raw SMILES")
+        return raw, ""
+    try:
+        mol = _Chem.MolFromSmiles(raw)
+        if mol is None:
+            logger.warning("_validate_3dmol_smiles: invalid SMILES: %r", raw)
+            return "", "Invalid SMILES structure."
+        canonical = _Chem.MolToSmiles(mol, canonical=True)
+        if not canonical:
+            logger.warning("_validate_3dmol_smiles: canonical SMILES empty for %r", raw)
+            return "", "SMILES canonicalization returned empty text."
+        return canonical, ""
+    except Exception as exc:
+        logger.warning("_validate_3dmol_smiles: validation failed for %r: %s", raw, exc)
+        return "", f"SMILES validation failed: {exc}"
 
 
 try:
@@ -271,6 +397,478 @@ try:
 except ImportError:
     ALPHAFOLD_AVAILABLE = False
     logger.warning("alphafold_interface not available - AlphaFold features disabled")
+
+
+def _safe_text(value: Any) -> str:
+    if isinstance(value, str):
+        return value.strip()
+    return str(value or "").strip()
+
+
+def _line_edit_text(widget: Any) -> str:
+    text_fn = getattr(widget, "text", None)
+    if callable(text_fn):
+        return _safe_text(text_fn())
+    return ""
+
+
+def _alphafold_plddt_summary(structure: Any) -> Dict[str, Any]:
+    residues = getattr(structure, "residues", None)
+    if not isinstance(residues, (list, tuple)):
+        return {
+            "avg_plddt": 0.0,
+            "mean_plddt": 0.0,
+            "total_residues": 0,
+            "very_high_count": 0,
+            "confident_count": 0,
+            "low_count": 0,
+            "very_low_count": 0,
+            "very_high_pct": 0.0,
+            "confident_pct": 0.0,
+            "low_pct": 0.0,
+            "very_low_pct": 0.0,
+        }
+
+    scores = []
+    for res in residues:
+        score = getattr(res, "plddt", 0.0)
+        if isinstance(score, (int, float)):
+            scores.append(float(score))
+    total = len(scores)
+    avg = round(sum(scores) / total, 2) if total else 0.0
+    very_high = sum(1 for score in scores if score >= 90.0)
+    confident = sum(1 for score in scores if 70.0 <= score < 90.0)
+    low = sum(1 for score in scores if 50.0 <= score < 70.0)
+    very_low = sum(1 for score in scores if score < 50.0)
+
+    def pct(count: int) -> float:
+        return round((count / total) * 100.0, 2) if total else 0.0
+
+    return {
+        "avg_plddt": avg,
+        "mean_plddt": avg,
+        "total_residues": total,
+        "very_high_count": very_high,
+        "confident_count": confident,
+        "low_count": low,
+        "very_low_count": very_low,
+        "very_high_pct": pct(very_high),
+        "confident_pct": pct(confident),
+        "low_pct": pct(low),
+        "very_low_pct": pct(very_low),
+    }
+
+
+def _residue_plddt_lookup(structure: Any) -> Dict[Tuple[str, int], float]:
+    residues = getattr(structure, "residues", None)
+    if not isinstance(residues, (list, tuple)):
+        return {}
+    lookup: Dict[Tuple[str, int], float] = {}
+    for res in residues:
+        chain = _safe_text(getattr(res, "chain_id", "A")) or "A"
+        seq_num = getattr(res, "seq_num", 0)
+        score = getattr(res, "plddt", 0.0)
+        if isinstance(seq_num, int) and isinstance(score, (int, float)):
+            lookup[(chain, seq_num)] = float(score)
+    return lookup
+
+
+def _normalize_binding_residues(binding_site_result: Any, structure: Any) -> List[Dict[str, Any]]:
+    if not isinstance(binding_site_result, dict):
+        return []
+    atoms = binding_site_result.get("atoms", [])
+    if not isinstance(atoms, list):
+        logger.warning("_normalize_binding_residues: atoms is not list: %s", type(atoms).__name__)
+        atoms = []
+
+    center = binding_site_result.get("center", None)
+    if not (
+        isinstance(center, (list, tuple))
+        and len(center) == 3
+        and all(isinstance(v, (int, float)) for v in center)
+    ):
+        center = None
+
+    plddt_lookup = _residue_plddt_lookup(structure)
+    residues: Dict[Tuple[str, int], Dict[str, Any]] = {}
+    for atom in atoms:
+        chain = _safe_text(getattr(atom, "chain_id", "A")) or "A"
+        seq = getattr(atom, "res_seq", 0)
+        if not isinstance(seq, int):
+            continue
+        resname = _safe_text(getattr(atom, "res_name", "")) or _safe_text(getattr(atom, "name", "?"))
+        distance = None
+        if center is not None:
+            try:
+                distance = math.sqrt(
+                    (float(getattr(atom, "x", 0.0)) - float(center[0])) ** 2
+                    + (float(getattr(atom, "y", 0.0)) - float(center[1])) ** 2
+                    + (float(getattr(atom, "z", 0.0)) - float(center[2])) ** 2
+                )
+            except Exception as e:
+                logger.warning("_normalize_binding_residues: distance failed: %s", e)
+                distance = None
+        key = (chain, seq)
+        row = residues.get(key)
+        if row is None or (
+            isinstance(distance, float)
+            and isinstance(row.get("distance_a"), float)
+            and distance < row["distance_a"]
+        ):
+            residues[key] = {
+                "resname": resname,
+                "res_num": seq,
+                "chain": chain,
+                "distance_a": round(distance, 2) if isinstance(distance, float) else None,
+                "plddt": round(plddt_lookup.get(key, 0.0), 2),
+            }
+    return sorted(residues.values(), key=lambda row: (row["chain"], row["res_num"]))
+
+
+def _normalize_alphafold_docking_results(docking_results: Any) -> List[Dict[str, Any]]:
+    if not isinstance(docking_results, list):
+        return []
+    normalized: List[Dict[str, Any]] = []
+    for index, entry in enumerate(docking_results):
+        if not isinstance(entry, dict):
+            logger.warning("_normalize_alphafold_docking_results: row %d not dict", index)
+            continue
+        row = dict(entry)
+        affinity = row.get("score", row.get("binding_energy", row.get("affinity", None)))
+        if isinstance(affinity, (int, float)):
+            row.setdefault("score", float(affinity))
+            row.setdefault("binding_energy", float(affinity))
+        row.setdefault("name", row.get("ligand_name", row.get("compound", f"alphafold_docking_{index + 1}")))
+        row.setdefault(
+            "method",
+            "AlphaFold Step 6 pLDDT-weighted heuristic; AutoDock Vina was not run",
+        )
+        row.setdefault(
+            "engine_basis",
+            "APP_DATA_BRIDGE_ONLY_NO_REAL_VINA_NO_BROWSER_CDP",
+        )
+        row.setdefault("has_real_vina_evidence", False)
+        normalized.append(row)
+    return normalized
+
+
+_STEP6_LEAD_PROVENANCE_ATTRS = (
+    "_lead_optimization_provenance",
+    "lead_optimization_provenance",
+    "_lead_optimizer_provenance",
+    "lead_optimizer_provenance",
+    "_lead_optimization_artifact",
+    "lead_optimization_artifact",
+)
+
+_STEP6_LEAD_RESULT_ATTRS = (
+    "_lead_optimization_result",
+    "lead_optimization_result",
+    "_lead_optimizer_result",
+    "lead_optimizer_result",
+)
+
+_STEP6_SELECTED_DERIVATIVE_ATTRS = (
+    "_selected_derivative",
+    "selected_derivative",
+    "_selected_variant",
+    "selected_variant",
+)
+
+_STEP6_DERIVATIVE_ATTRS = (
+    "_lead_optimization_derivatives",
+    "lead_optimization_derivatives",
+    "_derivatives",
+    "derivatives",
+)
+
+
+def _step6_get_value(source: Any, names: Tuple[str, ...]) -> Any:
+    if isinstance(source, dict):
+        for name in names:
+            if name in source:
+                return source.get(name)
+        return None
+    for name in names:
+        if hasattr(source, name):
+            try:
+                return getattr(source, name)
+            except Exception as e:
+                logger.warning("_step6_get_value failed for %s: %s", name, e)
+                return None
+    return None
+
+
+def _step6_public_dict(value: Any) -> Dict[str, Any]:
+    if isinstance(value, dict):
+        raw = dict(value)
+    else:
+        raw = {
+            name: getattr(value, name)
+            for name in dir(value)
+            if not name.startswith("_") and not callable(getattr(value, name, None))
+        }
+    allowed = {
+        "smiles",
+        "parent_smiles",
+        "name",
+        "modification_type",
+        "modification_detail",
+        "docking_score",
+        "docking_delta",
+        "qed_score",
+        "sa_score",
+        "tier",
+        "engine_basis",
+        "generation_rationale",
+        "rationale_boundary",
+        "validation_notes",
+        "rdkit_validated",
+    }
+    return {key: raw.get(key) for key in allowed if key in raw}
+
+
+def _step6_normalize_derivatives(raw_derivatives: Any) -> List[Dict[str, Any]]:
+    if raw_derivatives is None:
+        return []
+    if not isinstance(raw_derivatives, (list, tuple)):
+        raw_derivatives = [raw_derivatives]
+    normalized = []
+    for entry in raw_derivatives:
+        row = _step6_public_dict(entry)
+        smiles = _safe_text(row.get("smiles", ""))
+        if not smiles:
+            logger.warning("Step6 lead derivative skipped: missing SMILES")
+            continue
+        row["smiles"] = smiles
+        row.setdefault(
+            "engine_basis",
+            "Lead optimizer provenance only; no real Vina/Browser/CDP evidence.",
+        )
+        normalized.append(row)
+    return normalized
+
+
+def _step6_result_variants(result: Any) -> Any:
+    if result is None:
+        return None
+    if isinstance(result, dict):
+        return result.get("ranked_variants") or result.get("variants")
+    return getattr(result, "ranked_variants", None)
+
+
+def _normalize_step6_lead_gate_inputs(
+    *,
+    provenance: Any,
+    result: Any = None,
+    selected_derivative: Any = None,
+    derivatives: Any = None,
+) -> Dict[str, Any]:
+    raw_provenance = dict(provenance) if isinstance(provenance, dict) else {}
+    missing = []
+
+    source = _safe_text(
+        raw_provenance.get("source")
+        or raw_provenance.get("provenance_source")
+        or raw_provenance.get("producer")
+    )
+    if source not in {"lead_optimizer", "popup_lead_optimizer", "LeadOptimizerPopup"}:
+        missing.append("lead optimizer provenance source")
+
+    artifact_id = _safe_text(
+        raw_provenance.get("artifact_id")
+        or raw_provenance.get("run_id")
+        or raw_provenance.get("report_path")
+        or raw_provenance.get("artifact_path")
+        or raw_provenance.get("source_id")
+    )
+    if not artifact_id:
+        missing.append("lead optimizer artifact/run id")
+
+    candidate_derivatives = derivatives
+    if candidate_derivatives is None:
+        candidate_derivatives = raw_provenance.get("derivatives")
+    if candidate_derivatives is None:
+        candidate_derivatives = _step6_result_variants(result)
+    normalized_derivatives = _step6_normalize_derivatives(candidate_derivatives)
+
+    selected = selected_derivative
+    if selected is None:
+        selected = raw_provenance.get("selected_derivative") or raw_provenance.get("selected_variant")
+    normalized_selected = _step6_public_dict(selected) if selected is not None else {}
+    if not _safe_text(normalized_selected.get("smiles", "")) and normalized_derivatives:
+        normalized_selected = dict(normalized_derivatives[0])
+    if not _safe_text(normalized_selected.get("smiles", "")):
+        missing.append("selected derivative SMILES")
+    if not normalized_derivatives:
+        missing.append("lead optimizer derivative list")
+
+    can_generate = not missing
+    return {
+        "can_generate": can_generate,
+        "blocked_reason": "" if can_generate else "missing lead optimization provenance",
+        "missing_requirements": missing,
+        "lead_optimization_provenance": {
+            "status": "WARN_LEAD_OPTIMIZER_PROVENANCE_PRESENT" if can_generate else "BLOCKED",
+            "source": source,
+            "artifact_id": artifact_id,
+            "raw_keys": sorted(raw_provenance.keys()),
+            "has_real_vina_evidence": False,
+            "has_browser_cdp_external_capture": False,
+            "claim_boundary": (
+                "Lead optimizer provenance only; no target-binding, Vina, Browser/CDP, "
+                "ORCA, synthesis, or Item017 completion proof."
+            ),
+        },
+        "selected_derivative": normalized_selected,
+        "derivatives": normalized_derivatives,
+    }
+
+
+def evaluate_alphafold_step6_drylab_readiness(state: Any) -> Dict[str, Any]:
+    """Return a fail-closed Step 6 DryLab gate decision from popup or fixture state."""
+    provenance = _step6_get_value(state, _STEP6_LEAD_PROVENANCE_ATTRS)
+    result = _step6_get_value(state, _STEP6_LEAD_RESULT_ATTRS)
+    selected_derivative = _step6_get_value(state, _STEP6_SELECTED_DERIVATIVE_ATTRS)
+    derivatives = _step6_get_value(state, _STEP6_DERIVATIVE_ATTRS)
+    gate = _normalize_step6_lead_gate_inputs(
+        provenance=provenance,
+        result=result,
+        selected_derivative=selected_derivative,
+        derivatives=derivatives,
+    )
+    gate["status"] = "READY_WARN_ONLY" if gate["can_generate"] else "BLOCKED_MISSING_LEAD_PROVENANCE"
+    return gate
+
+
+def build_alphafold_step6_drylab_payload(
+    *,
+    smiles: str,
+    selected_receptor: Any,
+    uniprot_id: str,
+    pdb_id: str,
+    structure: Any,
+    prediction_result: Any,
+    binding_site_result: Any,
+    docking_results: Any,
+    step6_gate: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    if isinstance(step6_gate, dict) and not step6_gate.get("can_generate", False):
+        missing = ", ".join(step6_gate.get("missing_requirements", []))
+        raise ValueError(f"Step 6 DryLab gate blocked: {missing or 'lead optimizer provenance missing'}")
+
+    receptor = selected_receptor if isinstance(selected_receptor, dict) else {}
+    uid = _safe_text(uniprot_id or receptor.get("uniprot", "")).upper()
+    pdb = _safe_text(pdb_id or receptor.get("pdb_id", "")).upper()
+    receptor_name = _safe_text(receptor.get("name", "")) or "AlphaFold receptor"
+    binding_residues = _normalize_binding_residues(binding_site_result, structure)
+    plddt_summary = _alphafold_plddt_summary(structure)
+
+    external_links = {
+        "alphafold_ebi": _get_alphafold_search_url(uid, receptor_name),
+    }
+    if uid:
+        external_links["alphafold_ebi_entry"] = _get_alphafold_search_url(uid, receptor_name)
+        external_links["pdbe_alphafold_blocked_candidate"] = _get_blocked_pdbe_alphafold_url(uid)
+    if pdb:
+        external_links.update(_get_experimental_pdb_urls(pdb))
+
+    receptor_info = {
+        "name": receptor_name,
+        "uniprot": uid,
+        "uniprot_id": uid,
+        "pdb_id": pdb,
+        "description": _safe_text(receptor.get("description", "")),
+        "binding_site_residues": [
+            f"{row.get('resname', '?')}{row.get('res_num', '')}"
+            for row in binding_residues
+        ],
+        "alphafold_method": _safe_text(getattr(prediction_result, "method", "")),
+        "alphafold_source": _safe_text(getattr(structure, "source", "")),
+        "external_links": external_links,
+    }
+    if isinstance(step6_gate, dict):
+        receptor_info["step6_lead_gate"] = {
+            "status": step6_gate.get("status", ""),
+            "can_generate": bool(step6_gate.get("can_generate", False)),
+            "blocked_reason": step6_gate.get("blocked_reason", ""),
+            "missing_requirements": list(step6_gate.get("missing_requirements", [])),
+        }
+        receptor_info["lead_optimization_provenance"] = dict(
+            step6_gate.get("lead_optimization_provenance", {})
+        )
+
+    return {
+        "smiles": _safe_text(smiles),
+        "name": receptor_name,
+        "receptor_info": receptor_info,
+        "structure": structure,
+        "docking_results": _normalize_alphafold_docking_results(docking_results),
+        "derivatives": list(step6_gate.get("derivatives", [])) if isinstance(step6_gate, dict) else [],
+        "alphafold_uniprot_id": uid,
+        "alphafold_pdb_path": "",
+        "alphafold_plddt_summary": plddt_summary,
+        "alphafold_binding_residues": binding_residues,
+        "engine_basis": "AlphaFold Step 6 link/static/export guard; no real Vina or Browser/CDP proof",
+        "external_links": external_links,
+        "external_route_evidence_status": "APP_LINK_ONLY_BROWSER_CDP_REQUIRED",
+        "has_browser_cdp_external_capture": False,
+        "has_loaded_webgl_structure_proof": False,
+        "has_nonblank_alphafold_pdbe_image": False,
+        "alphafold_entry_status": "LINK_ONLY_ACCESS_MAY_BE_BLOCKED",
+        "pdbe_alphafold_route_status": "BLOCKED_ROUTE_NOT_ACCEPTED_REQUIRES_BROWSER_CDP",
+        "ai_analysis_text": (
+            "R14-W2 boundary: available AlphaFold/PDB/pLDDT/binding and heuristic docking rows "
+            "were bridged with Step 6 lead provenance gate; real Vina and Browser/CDP evidence are absent."
+        ),
+    }
+
+
+_ITEM17_GUARD_ALLOWED_PREFIXES = ("WARN", "REJECT", "BLOCKED", "MISSING", "ERROR")
+
+
+def _collapse_item17_guard_status(raw_status: Any) -> str:
+    """Fail closed: sidecar PASS/unknown/malformed status never reaches UI as PASS."""
+    status = _safe_text(raw_status).upper()
+    if not status:
+        return "WARN_HELD_MALFORMED_SIDECAR_STATUS"
+    if status == "PASS" or status.startswith("PASS"):
+        return "WARN_HELD_UNTRUSTED_PASS_SIDECAR_STATUS"
+    if any(status.startswith(prefix) for prefix in _ITEM17_GUARD_ALLOWED_PREFIXES):
+        return status
+    return "WARN_HELD_UNKNOWN_SIDECAR_STATUS"
+
+
+def read_item17_guard_sidecar_status(pdf_path: str) -> Dict[str, Any]:
+    sidecar_path = f"{pdf_path}.item17_claim_guard.json"
+    if not os.path.isfile(sidecar_path):
+        return {
+            "status": "WARN_SIDECAR_NOT_FOUND",
+            "sidecar_path": sidecar_path,
+            "sidecar_exists": False,
+            "sidecar_count": 0,
+        }
+    try:
+        import json
+        with open(sidecar_path, "r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+        claim = payload.get("claim_validation", {}) if isinstance(payload, dict) else {}
+        status = claim.get("final_claim_safety", "") if isinstance(claim, dict) else ""
+        return {
+            "status": _collapse_item17_guard_status(status),
+            "raw_status": _safe_text(status),
+            "sidecar_path": sidecar_path,
+            "sidecar_exists": True,
+            "sidecar_count": 1,
+        }
+    except Exception as e:
+        logger.warning("read_item17_guard_sidecar_status failed: %s", e)
+        return {
+            "status": "WARN_SIDECAR_READ_FAILED",
+            "sidecar_path": sidecar_path,
+            "sidecar_exists": True,
+            "sidecar_count": 0,
+        }
 
 
 # ============================================================================
@@ -302,6 +900,7 @@ if PYQT_AVAILABLE:
                 return
 
             self.progress.emit("AlphaFold API 요청 중...")
+            # Mirdita M et al. ColabFold: making protein folding accessible to all. Nature Methods 2022;19:679-682
             result = predict_structure(
                 sequence=self.sequence,
                 pdb_id=self.pdb_id,
@@ -332,12 +931,15 @@ class AlphaFoldPopup(QDialog):
 
     def __init__(self, parent=None, initial_smiles: str = ""):
         super().__init__(parent)
+        _ensure_qt_korean_font_ready()
+        self.setFont(QFont(_QT_KR_FONT, 10))
         self._structure: Optional[object] = None
         self._prediction_result: Optional[object] = None
         self._worker: Optional[object] = None
-        self._ligand_smiles: str = initial_smiles
+        self._ligand_smiles: str = initial_smiles.strip() if isinstance(initial_smiles, str) else ""
         self._selected_receptor: Dict = _RECEPTOR_PRESETS[0]
         self._docking_results: List[Dict] = []
+        self._binding_site_result: Dict[str, Any] = {}
 
         self.setWindowTitle("AlphaFold 신약개발 통합 분석 — 6단계 학생 경험 흐름")
         # M647-W4 USR-LV4-10 직격: "알파폴드 창 크기 조절 불가" 격분
@@ -365,7 +967,15 @@ class AlphaFoldPopup(QDialog):
     def _init_ui(self):
         # [M681 item_8] 팝업 배경 명시 흰색 — 부모 다크 테마 상속 차단
         # 사용자: "일부 파란 글씨가 까만 배경에 겹쳐서 안보인다"
-        self.setStyleSheet("QDialog { background-color: #FFFFFF; color: #212121; }")
+        _kr_font_stack = (
+            f'"{_QT_KR_FONT}", "Malgun Gothic", "NanumGothic", '
+            '"Segoe UI", Arial, sans-serif'
+        )
+        self.setStyleSheet(
+            "QDialog { background-color: #FFFFFF; color: #212121; "
+            f"font-family: {_kr_font_stack}; }}"
+            f"QWidget {{ font-family: {_kr_font_stack}; }}"
+        )
         main_layout = QVBoxLayout(self)
 
         # ── 헤더: 통합 흐름 다이어그램 ──────────────────────────────────
@@ -498,7 +1108,7 @@ class AlphaFoldPopup(QDialog):
         tab = QWidget()
         layout = QVBoxLayout(tab)
 
-        hint = QLabel("Step 2: AlphaFold DB에서 단백질의 예시 구조를 확인합니다.")
+        hint = QLabel("Step 2: AlphaFold EBI (alphafold.ebi.ac.uk)에서 단백질의 예시 구조를 확인합니다.")
         hint.setStyleSheet(
             "background: #E8F5E9; color: #1B5E20; font-size: 10pt; font-weight: bold; "
             "padding: 8px; border-radius: 4px; border-left: 4px solid #388E3C;"
@@ -506,7 +1116,7 @@ class AlphaFoldPopup(QDialog):
         layout.addWidget(hint)
 
         # ── [M460 보존] AlphaFold 공식 DB 링크 ────────���─────────────────
-        alphafold_banner = QGroupBox("AlphaFold 공식 데이터베이스 (권장)")
+        alphafold_banner = QGroupBox("AlphaFold EBI 공개 경로 (권장)")
         alphafold_banner.setStyleSheet(
             "QGroupBox { border: 2px solid #1976D2; border-radius: 6px; "
             "background: #E3F2FD; padding: 4px; }"
@@ -558,11 +1168,11 @@ class AlphaFoldPopup(QDialog):
         btn_3d_row = QHBoxLayout()
 
         self.btn_alphafold_pdbe_molstar = QPushButton(
-            "\U0001F9EC PDBe Mol* 3D 뷰어 (브라우저)"
+            "\U0001F9EC AlphaFold EBI 공개 경로 (브라우저)"
         )
         self.btn_alphafold_pdbe_molstar.setToolTip(
-            "PDBe Mol* (Sehnal 2021 NAR 49:W431) — 학술 표준 3D 단백질 뷰어\n"
-            "Rule FF: PDBe Mol* 학술 표준 우선 / af-pdb-id={UniProt} 형식"
+            "D891: selected proteins open the AlphaFold EBI UniProt entry route.\n"
+            "PDBe AlphaFold candidate remains blocked until separately proven."
         )
         self.btn_alphafold_pdbe_molstar.setStyleSheet(
             "QPushButton { background: #5E35B1; color: #FFFFFF; font-size: 12px; "
@@ -605,13 +1215,13 @@ class AlphaFoldPopup(QDialog):
         layout.addWidget(alphafold_banner)
 
         # ── 사용 안내 ────────────────────────────────────────────────────
-        guide_group = QGroupBox("AlphaFold DB 사용 안내 (학생 학습용)")
+        guide_group = QGroupBox("AlphaFold EBI 사용 안내 (학생 학습용)")
         guide_layout = QVBoxLayout(guide_group)
         guide_text = QTextEdit()
         guide_text.setReadOnly(True)
         guide_text.setMaximumHeight(200)
         guide_text.setHtml(
-            "<b>AlphaFold DB 화면 구성</b><br><br>"
+            "<b>AlphaFold EBI 화면 구성</b><br><br>"
             "<b>1. 3D 구조 뷰어</b><br>"
             "- 색상: 파란색(Very high &ge;90) &rarr; 하늘색(Confident 70-90) &rarr;"
             " 노란색(Low 50-70) &rarr; 주황(Very low &lt;50)<br>"
@@ -730,15 +1340,44 @@ class AlphaFoldPopup(QDialog):
     # TAB 4: 결합 데이터
     # ====================================================================
     def _create_tab4_binding(self) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
         tab = QWidget()
+        _step4_font_stack = (
+            f'"{_QT_KR_FONT}", "Malgun Gothic", "NanumGothic", '
+            '"Segoe UI", Arial, sans-serif'
+        )
+        tab.setStyleSheet(
+            f"QWidget {{ font-family: {_step4_font_stack}; font-size: 9pt; }}"
+            f"QLabel {{ font-family: {_step4_font_stack}; }}"
+            f"QGroupBox {{ font-family: {_step4_font_stack}; font-weight: bold; color: #263238; }}"
+            f"QTableWidget {{ font-family: {_step4_font_stack}; }}"
+            f"QHeaderView::section {{ font-family: {_step4_font_stack}; }}"
+        )
         layout = QVBoxLayout(tab)
 
         hint = QLabel("Step 4: 예측 결과 데이터로 결합 양상을 학습합니다.")
         hint.setStyleSheet(
             "background: #EDE7F6; color: #4527A0; font-size: 10pt; font-weight: bold; "
+            f"font-family: {_step4_font_stack}; "
             "padding: 8px; border-radius: 4px; border-left: 4px solid #673AB7;"
         )
         layout.addWidget(hint)
+
+        self.ptm_warning_label = QLabel(
+            "주의: pTM/iPTM 값은 현재 화면에서 실제 AlphaFold/PDBe 실행 증거가 아닙니다. "
+            "연결된 외부 구조 검증이나 Vina 도킹 결과 없이 표시되는 학습용 근사 안내입니다."
+        )
+        self.ptm_warning_label.setStyleSheet(
+            f"font-family: {_step4_font_stack}; font-size: 10pt; font-weight: bold; "
+            "color: #B71C1C; background: #FFF3E0; padding: 10px; "
+            "border: 2px solid #E65100; border-radius: 4px;"
+        )
+        self.ptm_warning_label.setWordWrap(True)
+        layout.addWidget(self.ptm_warning_label)
 
         # ── pLDDT 분포 차트 ──────────────────────────────────────────────
         plddt_group = QGroupBox(
@@ -757,7 +1396,9 @@ class AlphaFoldPopup(QDialog):
             plddt_layout.addWidget(plddt_placeholder)
 
         self.plddt_stats_label = QLabel("계산 완료 후 표시됩니다.")
-        self.plddt_stats_label.setStyleSheet("font-size: 9pt; color: #555; padding: 4px;")
+        self.plddt_stats_label.setStyleSheet(
+            f"font-family: {_step4_font_stack}; font-size: 9pt; color: #555; padding: 4px;"
+        )
         self.plddt_stats_label.setWordWrap(True)
         plddt_layout.addWidget(self.plddt_stats_label)
         layout.addWidget(plddt_group)
@@ -770,10 +1411,22 @@ class AlphaFoldPopup(QDialog):
 
         self.residue_summary = QLabel("잔기 데이터: 계산 완료 후 표시됩니다.")
         self.residue_summary.setStyleSheet(
-            "font-size: 10pt; padding: 6px; background: #F5F5F5; border-radius: 4px;"
+            f"font-family: {_step4_font_stack}; font-size: 10pt; padding: 6px; "
+            "background: #F5F5F5; border-radius: 4px;"
         )
         self.residue_summary.setWordWrap(True)
         residue_layout.addWidget(self.residue_summary)
+
+        self.residue_select_hint = QLabel(
+            "잔기 분포 표의 행을 선택(클릭)하면 아래 기준 잔기와 체인 입력칸이 자동으로 채워집니다. "
+            "이 기준점은 반경 안의 가까운 잔기를 찾기 위한 중심이며, 리간드 결합부위가 증명되었다는 뜻은 아닙니다."
+        )
+        self.residue_select_hint.setStyleSheet(
+            f"font-family: {_step4_font_stack}; font-size: 9pt; color: #2E3A59; padding: 6px; "
+            "background: #EAF2FF; border: 1px solid #90CAF9; border-radius: 4px;"
+        )
+        self.residue_select_hint.setWordWrap(True)
+        residue_layout.addWidget(self.residue_select_hint)
 
         self.residue_table = QTableWidget()
         self.residue_table.setColumnCount(5)
@@ -784,6 +1437,16 @@ class AlphaFoldPopup(QDialog):
         if header:
             header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.residue_table.setMaximumHeight(220)
+        self.residue_table.setMinimumHeight(180)
+        self.residue_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.residue_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.residue_table.setAlternatingRowColors(True)
+        self.residue_table.setStyleSheet(
+            f"QTableWidget {{ font-family: {_step4_font_stack}; gridline-color: #B0BEC5; alternate-background-color: #F7FAFF; }}"
+            "QTableWidget::item:selected { background: #1565C0; color: #FFFFFF; }"
+            f"QHeaderView::section {{ font-family: {_step4_font_stack}; background: #ECEFF1; color: #263238; font-weight: bold; padding: 4px; }}"
+        )
+        self.residue_table.cellClicked.connect(self._on_residue_table_cell_selected)
         residue_layout.addWidget(self.residue_table)
         layout.addWidget(residue_group)
 
@@ -825,45 +1488,78 @@ class AlphaFoldPopup(QDialog):
         ctrl_row.addStretch()
         binding_layout.addLayout(ctrl_row)
 
-        self.binding_summary = QLabel("")
-        self.binding_summary.setStyleSheet("padding: 4px; font-size: 9pt; color: #555;")
+        self.binding_reference_preview = QLabel(
+            "선택된 기준 잔기: 아직 없음. 위 잔기 표에서 행을 선택하면 여기와 입력칸이 함께 바뀝니다."
+        )
+        self.binding_reference_preview.setStyleSheet(
+            f"font-family: {_step4_font_stack}; padding: 8px; font-size: 10pt; "
+            "font-weight: bold; color: #0D47A1; background: #E3F2FD; "
+            "border: 1px solid #64B5F6; border-radius: 4px;"
+        )
+        self.binding_reference_preview.setWordWrap(True)
+        binding_layout.addWidget(self.binding_reference_preview)
+
+        self.binding_summary = QLabel(
+            "잔기 분포 표에서 행을 선택하거나 기준 잔기/체인을 직접 입력한 뒤 가까운 잔기를 찾습니다. "
+            "선택 후 '결합부위 추출' 버튼을 눌러 표를 채웁니다. "
+            "결과는 기하학적 근접 목록이며 실제 도킹 또는 표적 결합 검증이 아닙니다."
+        )
+        self.binding_summary.setStyleSheet(
+            f"font-family: {_step4_font_stack}; padding: 6px; font-size: 9pt; color: #37474F; background: #FAFAFA; "
+            "border: 1px solid #E0E0E0; border-radius: 4px;"
+        )
+        self.binding_summary.setWordWrap(True)
         binding_layout.addWidget(self.binding_summary)
 
         self.binding_table = QTableWidget()
-        self.binding_table.setColumnCount(4)
+        self.binding_table.setColumnCount(5)
         self.binding_table.setHorizontalHeaderLabels(
-            ["잔기 이름", "잔기 번호", "체인", "거리 (\u00c5)"]
+            ["잔기 이름", "잔기 번호", "체인", "거리 (\u00c5)", "pLDDT"]
         )
         bheader = self.binding_table.horizontalHeader()
         if bheader:
             bheader.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.binding_table.setMaximumHeight(180)
+        self.binding_table.setMaximumHeight(260)
+        self.binding_table.setMinimumHeight(210)
+        self.binding_table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.binding_table.setAlternatingRowColors(True)
+        self.binding_table.setStyleSheet(
+            f"QTableWidget {{ font-family: {_step4_font_stack}; gridline-color: #B0BEC5; alternate-background-color: #F7FAFF; }}"
+            "QTableWidget::item:selected { background: #1565C0; color: #FFFFFF; }"
+            f"QHeaderView::section {{ font-family: {_step4_font_stack}; background: #ECEFF1; color: #263238; font-weight: bold; padding: 4px; }}"
+        )
         binding_layout.addWidget(self.binding_table)
         layout.addWidget(binding_group)
 
-        # ── 도킹 affinity 표 (M461 통합) ─────────────────────────────────
+        # ── 휴리스틱 도킹 행 (M461 통합) ─────────────────────────────────
         docking_group = QGroupBox(
-            "도킹 Affinity 비교 표 (Trott & Olson 2010 J Comput Chem 31:455)"
+            "휴리스틱 도킹 행 (실제 Vina 실행 아님)"
         )
         docking_layout = QVBoxLayout(docking_group)
 
         docking_info = QLabel(
-            "도킹 결과는 '도킹 시뮬레이션' 팝업에서 계산 후 자동 반영됩니다.\n"
-            "pLDDT 가중 affinity: Liu K. et al. 2019 J Med Chem 62:9583"
+            "이 표는 앱 내부 후보 행을 전달합니다. 실제 Vina 실행, 결합 개선, 리드 최적화 증거는 별도 가져오기 전까지 없음으로 표시됩니다.\n"
+            "pLDDT 가중 휴리스틱 점수: Liu K. et al. 2019 J Med Chem 62:9583"
         )
-        docking_info.setStyleSheet("color: #555; font-size: 9pt; padding: 4px;")
+        docking_info.setStyleSheet(
+            f"font-family: {_step4_font_stack}; color: #555; font-size: 9pt; padding: 4px;"
+        )
         docking_info.setWordWrap(True)
         docking_layout.addWidget(docking_info)
 
         self.docking_table = QTableWidget()
         self.docking_table.setColumnCount(4)
         self.docking_table.setHorizontalHeaderLabels(
-            ["유도체 이름", "SMILES", "Affinity (kcal/mol)", "pLDDT 가중"]
+            ["후보 이름", "SMILES", "표시값(실제 Vina 아님)", "pLDDT 가중"]
         )
         dock_header = self.docking_table.horizontalHeader()
         if dock_header:
             dock_header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.docking_table.setMaximumHeight(150)
+        self.docking_table.setStyleSheet(
+            f"QTableWidget {{ font-family: {_step4_font_stack}; gridline-color: #B0BEC5; }}"
+            f"QHeaderView::section {{ font-family: {_step4_font_stack}; background: #ECEFF1; color: #263238; font-weight: bold; padding: 4px; }}"
+        )
         docking_layout.addWidget(self.docking_table)
         layout.addWidget(docking_group)
 
@@ -877,11 +1573,12 @@ class AlphaFoldPopup(QDialog):
         ptm_desc = QLabel(
             "pTM (predicted TM-score): 단량체 전체 구조 신뢰도 (0~1, ≥0.5 = 신뢰)\n"
             "iPTM (interface pTM): 복합체 계면 신뢰도 (≥0.6 = 고신뢰 상호작용)\n"
-            "SIMULATION MODE — 실제 AlphaFold API 반환값 없음: 경험적 근사값 표시"
+            "SIMULATION MODE — 실제 AlphaFold/PDBe API 반환값 없음: 경험적 근사값 표시"
         )
         ptm_desc.setStyleSheet(
-            "background: #FFF9C4; color: #333; font-size: 9pt; padding: 6px; "
-            "border: 1px solid #FFC107; border-radius: 4px;"
+            f"font-family: {_step4_font_stack}; background: #FFF3E0; color: #B71C1C; "
+            "font-size: 10pt; font-weight: bold; padding: 10px; "
+            "border: 2px solid #E65100; border-radius: 4px;"
         )
         ptm_desc.setWordWrap(True)
         ptm_layout.addWidget(ptm_desc)
@@ -895,8 +1592,45 @@ class AlphaFoldPopup(QDialog):
         )
         ptm_layout.addWidget(self.ptm_label)
         layout.addWidget(ptm_group)
+        layout.addStretch()
 
-        return tab
+        scroll.setWidget(tab)
+        return scroll
+
+    def _on_residue_table_cell_selected(self, row: int, _column: int = 0):
+        """Transfer a residue-table row into the binding-site reference controls."""
+        if not hasattr(self, 'residue_table'):
+            return
+        seq_item = self.residue_table.item(row, 0)
+        chain_item = self.residue_table.item(row, 2)
+        name_item = self.residue_table.item(row, 1)
+        if seq_item is None or chain_item is None:
+            logger.warning("_on_residue_table_cell_selected: row %d missing sequence/chain item", row)
+            return
+        seq_text = seq_item.text().strip()
+        chain_text = chain_item.text().strip() or "A"
+        try:
+            seq_num = int(seq_text)
+        except ValueError as e:
+            logger.warning("_on_residue_table_cell_selected: invalid residue number %r: %s", seq_text, e)
+            return
+
+        self.bind_ref_residue.setValue(seq_num)
+        self.bind_chain.setText(chain_text)
+        self.residue_table.selectRow(row)
+        if hasattr(self, 'binding_reference_preview'):
+            res_name = name_item.text().strip() if name_item is not None else "?"
+            self.binding_reference_preview.setText(
+                f"선택된 기준 잔기: {chain_text}:{seq_num} {res_name}. "
+                "이 값으로 반경 안의 가까운 잔기를 찾을 준비가 되었습니다."
+            )
+        if hasattr(self, 'binding_summary'):
+            res_name = name_item.text().strip() if name_item is not None else "?"
+            self.binding_summary.setText(
+                f"선택 기준: {chain_text}:{seq_num} {res_name}. "
+                "'결합부위 추출' 버튼을 눌러 가까운 잔기 표를 채우세요. "
+                "이 중심점은 실제 리간드 결합부위 증명이 아닙니다."
+            )
 
     # ====================================================================
     # TAB 5: PDBe Mol 시각화
@@ -990,6 +1724,8 @@ class AlphaFoldPopup(QDialog):
         self.pdbe_smiles_input.setStyleSheet(
             "font-size: 10pt; padding: 6px; border: 1px solid #C2185B; border-radius: 4px;"
         )
+        if self._ligand_smiles:
+            self.pdbe_smiles_input.setText(self._ligand_smiles)
         smiles_row.addWidget(self.pdbe_smiles_input)
 
         self.btn_pdbe_smiles = QPushButton("내 분자 3D 보기")
@@ -1063,7 +1799,7 @@ class AlphaFoldPopup(QDialog):
         usage_text = QLabel(
             "[URL 패턴]\n"
             "  PDB 단백질  : https://www.ebi.ac.uk/pdbe/entry/pdb/{PDB_ID}\n"
-            "  AlphaFold구조: https://alphafold.ebi.ac.uk/entry/{UniProt_ID}\n\n"
+            "  AlphaFold EBI: https://alphafold.ebi.ac.uk/entry/{UniProt_ID}\n\n"
             "[기본 조작법]\n"
             "  회전   : 좌클릭 + 드래그\n"
             "  줌인/아웃: 마우스 스크롤 (트랙패드: 두 손가락 스크롤)\n"
@@ -1139,7 +1875,7 @@ class AlphaFoldPopup(QDialog):
         layout = QVBoxLayout(tab)
 
         hint = QLabel(
-            "Step 6: 모든 결과가 DryLab Report에 학술지 양식으로 기록됩니다."
+            "Step 6: lead optimizer provenance is required before DryLab export."
         )
         hint.setStyleSheet(
             "background: #E0F2F1; color: #004D40; font-size: 10pt; font-weight: bold; "
@@ -1148,19 +1884,27 @@ class AlphaFoldPopup(QDialog):
         layout.addWidget(hint)
 
         # ── DryLab Report 생성 버튼 ──────────────────────────────────────
-        drylab_group = QGroupBox("DryLab Report 생성 (학술지 양식)")
+        drylab_group = QGroupBox("DryLab Report gate (journal-style export)")
         drylab_layout = QVBoxLayout(drylab_group)
 
         drylab_desc = QLabel(
-            "수용체 선택, PDB 계산, 결합 데이터, 도킹 결과를 학술지 양식으로 자동 생성합니다.\n"
-            "전국과학전람회 수준 보고서 — 학술 인용 6건 자동 포함."
+            "Export remains blocked until direct lead-optimization provenance and a selected derivative are present.\n"
+            "Even when opened, this route stays WARN/NOT_PASSED without real Vina, Browser/CDP, ORCA, or synthesis proof."
         )
         drylab_desc.setStyleSheet("color: #333; font-size: 9pt;")
         drylab_desc.setWordWrap(True)
         drylab_layout.addWidget(drylab_desc)
 
+        self.drylab_gate_label = QLabel("Step 6 gate: BLOCKED - lead optimizer provenance required")
+        self.drylab_gate_label.setWordWrap(True)
+        self.drylab_gate_label.setStyleSheet(
+            "background: #FFF3E0; color: #E65100; font-size: 9pt; padding: 6px; "
+            "border-left: 4px solid #FB8C00;"
+        )
+        drylab_layout.addWidget(self.drylab_gate_label)
+
         self.btn_drylab_report = QPushButton(
-            "\U0001F4DD DryLab Report 생성 (AlphaFold + 도킹 + 리드 최적화)"
+            "Check Step 6 gate and export WARN artifact"
         )
         self.btn_drylab_report.setStyleSheet(
             "QPushButton { background: #00695C; color: white; font-size: 14px; "
@@ -1180,11 +1924,11 @@ class AlphaFoldPopup(QDialog):
         sections_text.setHtml(
             "<b>신약개발 통합 분석 보고서</b><br><br>"
             "<b>Section 1.</b> 단백질 정보 (UniProt + pLDDT 분포 차트)<br>"
-            "<b>Section 2.</b> 도킹 방법 비교 (Vina 간이 vs AlphaFold 정밀)<br>"
-            "<b>Section 3.</b> 리간드 정보 + 유도체별 Affinity 표<br>"
+            "<b>Section 2.</b> 휴리스틱 도킹 행 (실제 Vina 실행 증거 없음)<br>"
+            "<b>Section 3.</b> 리간드 정보 + 후보별 휴리스틱 점수 표<br>"
             "<b>Section 4.</b> 결합부위 잔기 표 (5\u00c5)<br>"
             "<b>Section 5.</b> 시각화 링크 (PDBe Mol*)<br>"
-            "<b>Section 6.</b> 학생 학습 결론 + 다음 실험 단계<br><br>"
+            "<b>Section 6.</b> 학생 학습 결론 + ITEM17_GUARD 상태<br><br>"
             "<b>References (학술 인용 6건):</b><br>"
             "1. Jumper J. et al. 2021. Nature 596:583 (AlphaFold2)<br>"
             "2. Trott O &amp; Olson AJ. 2010. J Comput Chem 31:455 (Vina)<br>"
@@ -1196,7 +1940,8 @@ class AlphaFoldPopup(QDialog):
         sections_layout.addWidget(sections_text)
         layout.addWidget(sections_group)
 
-        self.drylab_status_label = QLabel("DryLab Report: 대기 중")
+        self.drylab_status_label = QLabel("DryLab Report: waiting for Step 6 gate")
+        self.drylab_status_label.setWordWrap(True)
         self.drylab_status_label.setStyleSheet("color: #555; font-size: 9pt; padding: 4px;")
         layout.addWidget(self.drylab_status_label)
 
@@ -1211,11 +1956,11 @@ class AlphaFoldPopup(QDialog):
         """탭 전환 시 상태바 안내 갱신."""
         messages = [
             "Step 1: 도킹 시뮬할 단백질을 선택합니다.",
-            "Step 2: AlphaFold DB에서 단백질의 예시 구조를 확인합니다.",
+            "Step 2: AlphaFold EBI (alphafold.ebi.ac.uk)에서 단백질의 예시 구조를 확인합니다.",
             "Step 3: AlphaFold AI가 단백질 3D 구조를 예측합니다.",
             "Step 4: 예측 결과 데이터로 결합 양상을 학습합니다.",
             "Step 5: PDBe Mol*로 단백질+리간드 복합체를 시각화합니다 (학계 표준).",
-            "Step 6: 모든 결과가 DryLab Report에 학술지 양식으로 기록됩니다.",
+            "Step 6: 링크/정적 데이터와 ITEM17_GUARD 상태를 DryLab Report에 기록합니다.",
         ]
         if 0 <= index < len(messages):
             self.status_label.setText(messages[index])
@@ -1252,7 +1997,7 @@ class AlphaFoldPopup(QDialog):
                 logger.info("_on_fasta_text_changed: UniProt ID 자동 채움: %s", extracted)
 
     def _on_open_alphafold_external(self):
-        """[M460 보존] AlphaFold EBI 공식 DB 외부 링크 열기.
+        """[M460 보존] AlphaFold EBI public UniProt route 열기.
 
         M455: AlphaFold v4 URL (https://alphafold.ebi.ac.uk/entry/)
         Rule M: UniProt ID 없을 시 사용자 피드백 (silent return 금지).
@@ -1323,6 +2068,9 @@ class AlphaFoldPopup(QDialog):
         if hasattr(self, 'pdbe_smiles_input'):
             smiles = self.pdbe_smiles_input.text().strip()
 
+        if not smiles and hasattr(self, 'ligand_smiles_input'):
+            smiles = self.ligand_smiles_input.text().strip()
+
         # 비어있으면 현재 팝업에 전달된 리간드 SMILES 사용
         if not smiles and hasattr(self, '_ligand_smiles') and self._ligand_smiles:
             smiles = self._ligand_smiles
@@ -1337,6 +2085,21 @@ class AlphaFoldPopup(QDialog):
                 "ChemGrid 캔버스에서 분자를 그리면 자동으로 입력됩니다."
             )
             return
+
+        smiles, validation_error = _validate_3dmol_smiles(smiles)
+        if not smiles:
+            logger.warning("_on_open_3dmol_smiles: invalid SMILES blocked: %s", validation_error)
+            QMessageBox.warning(
+                self,
+                "SMILES 형식 오류",
+                f"3Dmol 뷰어를 열 수 없습니다.\n{validation_error}",
+            )
+            return
+        self._ligand_smiles = smiles
+        if hasattr(self, 'pdbe_smiles_input'):
+            self.pdbe_smiles_input.setText(smiles)
+        if hasattr(self, 'ligand_smiles_input'):
+            self.ligand_smiles_input.setText(smiles)
 
         url = _get_molstar_smiles_url(smiles)
         if not url:
@@ -1356,7 +2119,7 @@ class AlphaFoldPopup(QDialog):
             )
 
     def _on_open_alphafold_pdbe_molstar(self):
-        """[M647-W4 USR-LV4-08] PDBe Mol* 3D 뷰어로 AlphaFold 구조 표시.
+        """[M647-W4 USR-LV4-08] AlphaFold EBI public UniProt route 열기.
 
         사용자 격분 LV.4 직격: "메인사이트만 쳐 나옴 / 3D 구조 안 나옴"
         해결: PDBe Mol* iframe URL — `af-pdb-id={UniProt}` 파라미터로 자동 표시
@@ -1379,7 +2142,7 @@ class AlphaFoldPopup(QDialog):
             QMessageBox.information(
                 self, "UniProt ID 필요",
                 "UniProt ID를 입력하세요 (예: P00533, P12345).\n"
-                "PDBe Mol* 3D 뷰어가 해당 단백질을 자동 표시합니다."
+                "AlphaFold EBI 공개 페이지에서 해당 단백질 항목을 엽니다."
             )
             return
         # Rule N: UniProt 정규식 가드 ^[OPQA-Z][0-9][A-Z0-9]{3}[0-9]$
@@ -1392,21 +2155,18 @@ class AlphaFoldPopup(QDialog):
                 "올바른 형식: P00533, Q9NZN9 등"
             )
             return
-        # [M685 FIX / A55-COND-FIX] ISSUE-1: PDBe Mol* af-pdb-id URL 404 해소
-        # 변경 전: /pdbe/molstar/?af-pdb-id={uid} → HTTPError (URL 변경됨, 2026 기준)
-        # 변경 후: /pdbe/entry/alphafold/{uid} — UniProt ID 전용 AlphaFold entry 페이지
-        # 실측 검증: https://www.ebi.ac.uk/pdbe/entry/alphafold/P00533 → HTTP 200 (2026-05-04)
-        # 학술 인용 (Rule NN): Sehnal D. et al. 2021 Nucleic Acids Res 49:W431 (PDBe Mol*)
-        # [MAGIC] /pdbe/entry/alphafold/ — AlphaFold UniProt ID 전용 PDBe entry endpoint
-        url = f"https://www.ebi.ac.uk/pdbe/entry/alphafold/{uid}"
+        # D891 route boundary: AlphaFold EBI is the accepted UniProt route.
+        # PDBe /entry/alphafold/AF-{uid}-F1 remains a blocked candidate until
+        # separately proven by browser/CDP evidence; do not silently substitute it.
+        url = _get_alphafold_search_url(uid)
         logger.info("_on_open_alphafold_pdbe_molstar: %s", url)
         try:
             QDesktopServices.openUrl(QUrl(url))
         except Exception as e:
-            logger.warning("PDBe Mol* 외부 열기 실패: %s", e)
+            logger.warning("AlphaFold EBI 외부 열기 실패: %s", e)
             QMessageBox.warning(
                 self, "외부 브라우저 열기 실패",
-                f"PDBe Mol* 외부 링크 열기 실패: {e}\n"
+                f"AlphaFold EBI 외부 링크 열기 실패: {e}\n"
                 f"수동으로 접속: {url}"
             )
 
@@ -1523,7 +2283,7 @@ class AlphaFoldPopup(QDialog):
                 f"AlphaFold {uid} PDB 다운 완료 ({len(pdb_bytes):,} bytes)\n\n"
                 f"[ChemGrid 자체 3D 뷰어 — 폴백 모드]\n"
                 f"학술 논문 제출 시 PDBe Mol* 사용 권장:\n"
-                f"  https://www.ebi.ac.uk/pdbe/entry/alphafold/{uid}\n\n"
+                f"  {_get_alphafold_search_url(uid)}\n\n"
                 f"인용 의무 (Rule FF):\n"
                 f"  Sehnal D. et al. 2021. Nucleic Acids Res 49(W1):W431\n"
                 f"  DOI: 10.1093/nar/gkab325\n\n"
@@ -1797,7 +2557,14 @@ class AlphaFoldPopup(QDialog):
                 item = QTableWidgetItem(text)
                 if bg is not None:
                     item.setBackground(bg)
+                    if col in (3, 4) and plddt_val >= 90:
+                        item.setForeground(QBrush(QColor("#FFFFFF")))
+                    else:
+                        item.setForeground(QBrush(QColor("#111111")))
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                item.setToolTip(
+                    "행을 클릭하면 이 잔기가 결합부위 근접 검색의 기준 잔기/체인으로 입력됩니다."
+                )
                 self.residue_table.setItem(row, col, item)
 
     def _on_extract_binding_site(self):
@@ -1824,7 +2591,13 @@ class AlphaFoldPopup(QDialog):
 
         if center is None:
             logger.warning("_on_extract_binding_site: 기준 잔기 %s:%d 없음", chain_id, ref_seq)
-            QMessageBox.warning(self, "오류", f"잔기 {chain_id}:{ref_seq}을 찾을 수 없습니다.")
+            QMessageBox.warning(
+                self,
+                "기준 잔기를 찾을 수 없음",
+                f"현재 입력한 기준 잔기 {chain_id}:{ref_seq}을 구조에서 찾을 수 없습니다.\n\n"
+                "잔기 분포 표에서 실제 행을 클릭하거나, 존재하는 체인/잔기 번호를 입력하세요.\n"
+                "이 입력은 가까운 잔기 검색의 중심점이며 리간드 결합 증거가 아닙니다."
+            )
             return
 
         result = extract_binding_site(self._structure, center=center, radius=radius)
@@ -1832,6 +2605,8 @@ class AlphaFoldPopup(QDialog):
             logger.warning("_on_extract_binding_site: dict 아님: %s", type(result).__name__)
             QMessageBox.warning(self, "오류", "결합부위 추출 결과가 올바르지 않습니다.")
             return
+        result["center"] = center
+        self._binding_site_result = result
 
         n_res = result.get("n_residues", 0)
         n_atoms = result.get("n_atoms", 0)
@@ -1839,10 +2614,20 @@ class AlphaFoldPopup(QDialog):
             self.binding_summary.setText(
                 f"기준: {chain_id}:{ref_seq}  |  "
                 f"반경: {radius:.1f}\u00c5 (Gilson 2007)  |  "
-                f"잔기: {n_res}개, 원자: {n_atoms}개"
+                f"가까운 잔기: {n_res}개, 원자: {n_atoms}개  |  "
+                "기하학적 근접 검색 결과이며 실제 도킹/결합 검증은 아닙니다."
+            )
+        if hasattr(self, 'binding_reference_preview'):
+            self.binding_reference_preview.setText(
+                f"추출 기준 잔기: {chain_id}:{ref_seq}, 반경 {radius:.1f}\u00c5. "
+                f"표에는 가까운 잔기 {n_res}개가 표시됩니다."
             )
 
         res_map: Dict = {}
+        plddt_lookup = {
+            (getattr(res, 'chain_id', 'A'), getattr(res, 'seq_num', 0)): getattr(res, 'plddt', 0.0)
+            for res in self._structure.residues
+        }
         cx, cy, cz = center
         atoms_list = result.get("atoms", [])
         if not isinstance(atoms_list, list):
@@ -1862,10 +2647,12 @@ class AlphaFoldPopup(QDialog):
             return
         self.binding_table.setRowCount(len(sorted_res))
         for row, ((chain, seq), (name, dist)) in enumerate(sorted_res):
-            items_data = [name, str(seq), chain, f"{dist:.2f}"]
+            plddt_val = plddt_lookup.get((chain, seq), 0.0)
+            items_data = [name, str(seq), chain, f"{dist:.2f}", f"{plddt_val:.1f}"]
             for col, text in enumerate(items_data):
                 item = QTableWidgetItem(text)
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                item.setToolTip("기준 잔기 주변의 기하학적 근접 잔기입니다. 실제 결합 검증은 별도 증거가 필요합니다.")
                 self.binding_table.setItem(row, col, item)
 
     def set_docking_results(self, docking_data: List[Dict]):
@@ -1888,7 +2675,7 @@ class AlphaFoldPopup(QDialog):
             items_data = [
                 entry.get("name", f"유도체 {row+1}"),
                 entry.get("smiles", ""),
-                f"{entry.get('affinity', 0.0):.2f} kcal/mol",
+                f"{entry.get('affinity', 0.0):.2f} (휴리스틱)",
                 f"{entry.get('plddt_weight', 0.0):.1f}",
             ]
             for col, text in enumerate(items_data):
@@ -1982,22 +2769,68 @@ class AlphaFoldPopup(QDialog):
             )
             return
 
+        step6_gate = evaluate_alphafold_step6_drylab_readiness(self)
+        if not step6_gate.get("can_generate", False):
+            missing = ", ".join(step6_gate.get("missing_requirements", []))
+            message = (
+                "Step 6 BLOCKED: lead optimization provenance is required before DryLab export.\n"
+                f"Missing: {missing or 'lead optimizer provenance'}\n\n"
+                "No report artifact was written. This prevents an AlphaFold-only route from being "
+                "misreported as lead optimization or Item017 completion evidence."
+            )
+            logger.warning("_on_generate_drylab_report blocked by Step 6 gate: %s", missing)
+            if hasattr(self, 'drylab_gate_label'):
+                self.drylab_gate_label.setText(
+                    f"Step 6 gate: BLOCKED - {missing or 'lead optimizer provenance required'}"
+                )
+            if hasattr(self, 'drylab_status_label'):
+                self.drylab_status_label.setText("DryLab Report: BLOCKED before export")
+            QMessageBox.warning(self, "Step 6 gate blocked", message)
+            return
+
+        if hasattr(self, 'drylab_gate_label'):
+            self.drylab_gate_label.setText(
+                "Step 6 gate: READY_WARN_ONLY - lead provenance present; completion proof still absent"
+            )
         if hasattr(self, 'drylab_status_label'):
-            self.drylab_status_label.setText("DryLab Report 생성 중...")
+            self.drylab_status_label.setText("DryLab Report artifact export running...")
 
         try:
-            drylab_data = DryLabData(
+            bridge_payload = build_alphafold_step6_drylab_payload(
                 smiles=smiles,
-                receptor_info=receptor_info,
+                selected_receptor=self._selected_receptor,
+                uniprot_id=receptor_info.get("uniprot", ""),
+                pdb_id=receptor_info.get("pdb_id", ""),
                 structure=self._structure,
+                prediction_result=self._prediction_result,
+                binding_site_result=getattr(self, "_binding_site_result", {}),
                 docking_results=self._docking_results,
+                step6_gate=step6_gate,
             )
+            drylab_data = DryLabData(**bridge_payload)
             pdf_path = export_drylab_report_pdf(drylab_data)
             if pdf_path and os.path.exists(pdf_path):
+                guard_summary = read_item17_guard_sidecar_status(pdf_path)
+                guard_status = guard_summary.get("status", "WARN")
                 if hasattr(self, 'drylab_status_label'):
-                    self.drylab_status_label.setText(f"완료: {pdf_path}")
-                logger.info("_on_generate_drylab_report: %s", pdf_path)
-                QMessageBox.information(self, "완료", f"DryLab Report 생성:\n{pdf_path}")
+                    self.drylab_status_label.setText(
+                        f"Artifact written (WARN/NOT_PASSED): {os.path.basename(pdf_path)} | ITEM17_GUARD:{guard_status}"
+                    )
+                logger.info(
+                    "_on_generate_drylab_report: %s ITEM17_GUARD:%s sidecar=%s",
+                    pdf_path,
+                    guard_status,
+                    guard_summary.get("sidecar_path", ""),
+                )
+                QMessageBox.information(
+                    self,
+                    "DryLab artifact written",
+                    "DryLab Report artifact:\n"
+                    f"{pdf_path}\n\n"
+                    f"ITEM17_GUARD:{guard_status}\n"
+                    "ITEM17_VERDICT: NOT_PASSED\n"
+                    "Real Vina, Browser/CDP, ORCA, synthesis, and Item017 completion evidence remain absent.",
+                )
             else:
                 logger.warning("_on_generate_drylab_report: PDF 없음: %s", pdf_path)
                 QMessageBox.warning(self, "경고", "PDF 생성 결과 파일을 확인할 수 없습니다.")
