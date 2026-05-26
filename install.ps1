@@ -3,12 +3,14 @@ $ProgressPreference = 'SilentlyContinue'
 
 $HelpArgs = @('/?', '-?', '--help', '/help', '-h')
 $DryRunArgs = @('/dryrun', '--dry-run', '-dryrun')
+$NoLaunchArgs = @('/nolaunch', '--no-launch', '-nolaunch', '-NoLaunch')
 if ($args | Where-Object { $HelpArgs -contains $_ }) {
     Write-Host "Usage: powershell -ExecutionPolicy Bypass -File install.ps1"
-    Write-Host "Downloads the pinned ChemGrid v1.0.0-lite-rc1 onefile EXE to Desktop and starts it."
+    Write-Host "Downloads the pinned ChemGrid v1.0.0-lite-rc1 onefile EXE to Desktop and starts it unless -NoLaunch is set."
     exit 0
 }
 $DryRun = [bool]($args | Where-Object { $DryRunArgs -contains $_ })
+$NoLaunch = [bool]($args | Where-Object { $NoLaunchArgs -contains $_ })
 
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -29,7 +31,11 @@ $TempOutput = Join-Path $env:TEMP ("ChemGrid_{0}.exe" -f ([guid]::NewGuid().ToSt
 if ($DryRun) {
     Write-Host "DRYRUN: would download $Url"
     Write-Host "DRYRUN: would verify SHA256 $ExpectedSha256"
-    Write-Host "DRYRUN: would write $Output and start ChemGrid"
+    if ($NoLaunch) {
+        Write-Host "DRYRUN: would write $Output without starting ChemGrid"
+    } else {
+        Write-Host "DRYRUN: would write $Output and start ChemGrid"
+    }
     exit 0
 }
 
@@ -67,5 +73,9 @@ try {
     Remove-Item -Force -ErrorAction SilentlyContinue $TempOutput
 }
 
-Write-Host "Starting ChemGrid..."
-Start-Process -FilePath $Output
+if ($NoLaunch) {
+    Write-Host "ChemGrid downloaded and verified: $Output"
+} else {
+    Write-Host "Starting ChemGrid..."
+    Start-Process -FilePath $Output
+}
