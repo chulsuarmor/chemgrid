@@ -28,7 +28,7 @@ irm https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/in
 |------|------|------|
 | [ChemGrid.exe](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid.exe) | 128.6 MB | Windows 단일 실행 파일 (설치 불필요) |
 | [ChemGrid_Lite.zip](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/ChemGrid_Lite.zip) | 305 MB | ZIP 패키지 |
-| [install.ps1](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install.ps1) | 1.1 KB | PowerShell 설치 스크립트 |
+| [install.ps1](https://github.com/chulsuarmor/chemgrid/releases/download/v1.0.0-lite-rc1/install.ps1) | 2.5 KB | PowerShell 설치 스크립트 |
 
 ---
 
